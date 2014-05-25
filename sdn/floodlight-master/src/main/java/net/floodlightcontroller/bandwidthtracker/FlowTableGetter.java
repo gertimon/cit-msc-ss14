@@ -2,6 +2,14 @@ package net.floodlightcontroller.bandwidthtracker;
 
 import net.floodlightcontroller.core.IFloodlightProviderService;
 import net.floodlightcontroller.core.IOFSwitch;
+import net.floodlightcontroller.core.ImmutablePort;
+import net.floodlightcontroller.devicemanager.IDevice;
+import net.floodlightcontroller.devicemanager.IDeviceService;
+import net.floodlightcontroller.linkdiscovery.LinkInfo;
+import net.floodlightcontroller.topology.ITopologyService;
+import net.floodlightcontroller.topology.NodePortTuple;
+import net.floodlightcontroller.topology.TopologyInstance;
+import net.floodlightcontroller.topology.TopologyManager;
 import org.openflow.protocol.OFMatch;
 import org.openflow.protocol.OFStatisticsRequest;
 import org.openflow.protocol.statistics.OFFlowStatisticsReply;
@@ -10,6 +18,7 @@ import org.openflow.protocol.statistics.OFStatistics;
 import org.openflow.protocol.statistics.OFStatisticsType;
 import org.openflow.util.HexString;
 import org.slf4j.Logger;
+import sun.security.krb5.internal.HostAddress;
 
 import java.util.*;
 import java.util.concurrent.Future;
@@ -21,18 +30,24 @@ import java.util.concurrent.TimeUnit;
 public class FlowTableGetter implements Runnable {
     IFloodlightProviderService provider;
     Logger log;
-    protected HashMap<Integer, IpCounter> ipSave;
+    HashMap<String, FlowInformation> dataCouter;
+    ITopologyService topology;
+    int help = 0;
     public FlowTableGetter(IFloodlightProviderService floodlightProvider, Logger log){
         provider = floodlightProvider;
         this.log = log;
-        ipSave = new HashMap<Integer, IpCounter>();
+        dataCouter = new HashMap<String, FlowInformation>();
+
     }
 
     @Override
     public void run() {
+
         while(true){
             getFlows(provider);
+
             try {
+
                 Thread.sleep(10000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -44,19 +59,48 @@ public class FlowTableGetter implements Runnable {
 
     public void getFlows(IFloodlightProviderService floodlightProvider)
     {
+
+
         List<IOFSwitch> switches = getSwitches(floodlightProvider);
+
 
         for( IOFSwitch sw : switches )
         {
+
+            Collection<ImmutablePort> set = sw.getEnabledPorts();
+            for (ImmutablePort port : set){
+                System.err.println(port);
+
+            }
+            System.err.println("--------------------------------------------");
             List<OFFlowStatisticsReply> flowTable = getSwitchFlowTable(sw, (short)-1);
             for(OFFlowStatisticsReply flow : flowTable)
             {
+
+               // help++;
+           //     System.out.println(help);
+
                 String src = HexString.toHexString(flow.getMatch().getDataLayerSource());
+                String dst = HexString.toHexString(flow.getMatch().getDataLayerDestination());
                 long switchId = sw.getId();
+
                 long count = flow.getByteCount();
                 int time = flow.getDurationSeconds();
-                long mbps = ((count/time)*8)/1000000;
-                System.err.println("Client: " + src + " used: " + mbps + "Mbit/s of Switch: " + switchId);
+                long mbps = ((count)*8)/1000000;
+            //    System.err.println("Client: " + src + " sent: " + mbps + "Mbit to Switch: " + switchId);
+
+                String key = src;
+                boolean changed = false;
+                if (dataCouter.containsKey(key)){
+                    double size = dataCouter.get(key).getDataSize();
+                    dataCouter.get(key).setDataSize((count/1000000));
+                    changed = true;
+                }else{
+                    FlowInformation counter = new FlowInformation(0,src,dst,count/1000000);
+                    dataCouter.put(key,counter);
+                    changed = true;
+                }
+
             }
             }
 
@@ -79,7 +123,6 @@ public class FlowTableGetter implements Runnable {
         List<OFFlowStatisticsReply> statsReply = new ArrayList<OFFlowStatisticsReply>();
         List<OFStatistics> values = null;
         Future<List<OFStatistics>> future;
-
         // Statistics request object for getting flows
         OFStatisticsRequest req = new OFStatisticsRequest();
         req.setStatisticType(OFStatisticsType.FLOW);
@@ -111,22 +154,5 @@ public class FlowTableGetter implements Runnable {
 
     }
 
-    private class IpCounter{
-        private int mac;
-        private int dataSize;
 
-        public IpCounter(int ip){
-            this.mac = ip;
-            dataSize = 0;
-        }
-
-        public int getMac(){
-            return this.mac;
-        }
-
-        public int getDataSize(){
-            return dataSize;
-        }
-
-    }
 }
