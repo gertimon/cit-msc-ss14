@@ -43,12 +43,27 @@ public class FlowInformation {
         this.dstIp = dstIp;
     }
 
+    public String getSrcMac() {
+        return srcMac;
+    }
+
+    public void setSrcMac(String srcMac) {
+        this.srcMac = srcMac;
+    }
+
+    public String getDstMac() {
+        return dstMac;
+    }
+
+    public void setDstMac(String dstMac) {
+        this.dstMac = dstMac;
+    }
+
     public double getDataSize() {
         return dataSize;
     }
 
     public void setDataSize(double dataSize) {
-
         this.dataSize = dataSize;
         sizeMB = dataSize/1000000;
     }
