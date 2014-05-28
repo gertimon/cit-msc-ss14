@@ -6,11 +6,16 @@ public class FlowInformation {
     private String dstMac;
     private double dataSize;
 
-    public FlowInformation(int id,String src, String dst, double dataSize){
+
+
+    private double time;
+
+    public FlowInformation(int id,String src, String dst, double dataSize, double time){
         flowId = id;
         srcMac = src;
         dstMac = dst;
         this.dataSize = dataSize;
+        this.time = time;
     }
 
     public int getFlowId() {
@@ -45,7 +50,15 @@ public class FlowInformation {
         this.dataSize = dataSize;
     }
 
+    public double getTime() {
+        return time;
+    }
 
+    public void setTime(double time) {
+        this.time = time;
+    }
 
-
+    public String toString(){
+        return "Flow: " + flowId + ", Src: " + srcMac + ", Dst: " + dstMac + ", Datasize: " + dataSize + ", DurationTime: " + time +" s";
+    }
 }

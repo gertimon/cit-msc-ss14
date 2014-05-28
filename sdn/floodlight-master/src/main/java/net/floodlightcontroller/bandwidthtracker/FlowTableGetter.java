@@ -6,12 +6,13 @@ import net.floodlightcontroller.core.ImmutablePort;
 import net.floodlightcontroller.devicemanager.IDevice;
 import net.floodlightcontroller.devicemanager.IDeviceService;
 import net.floodlightcontroller.linkdiscovery.LinkInfo;
+import net.floodlightcontroller.staticflowentry.StaticFlowEntryPusher;
 import net.floodlightcontroller.topology.ITopologyService;
 import net.floodlightcontroller.topology.NodePortTuple;
 import net.floodlightcontroller.topology.TopologyInstance;
 import net.floodlightcontroller.topology.TopologyManager;
-import org.openflow.protocol.OFMatch;
-import org.openflow.protocol.OFStatisticsRequest;
+import org.openflow.protocol.*;
+import org.openflow.protocol.action.OFAction;
 import org.openflow.protocol.statistics.OFFlowStatisticsReply;
 import org.openflow.protocol.statistics.OFFlowStatisticsRequest;
 import org.openflow.protocol.statistics.OFStatistics;
@@ -20,6 +21,7 @@ import org.openflow.util.HexString;
 import org.slf4j.Logger;
 import sun.security.krb5.internal.HostAddress;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -31,12 +33,13 @@ public class FlowTableGetter implements Runnable {
     IFloodlightProviderService provider;
     Logger log;
     HashMap<String, FlowInformation> dataCouter;
-    ITopologyService topology;
+   // StaticFlowEntryPusher pusher;
     int help = 0;
     public FlowTableGetter(IFloodlightProviderService floodlightProvider, Logger log){
         provider = floodlightProvider;
         this.log = log;
         dataCouter = new HashMap<String, FlowInformation>();
+      // pusher = new StaticFlowEntryPusher();
 
     }
 
@@ -46,6 +49,9 @@ public class FlowTableGetter implements Runnable {
         while(true){
             getFlows(provider);
 
+            for (FlowInformation inf : dataCouter.values()){
+                System.out.println(inf);
+            }
             try {
 
                 Thread.sleep(10000);
@@ -67,18 +73,10 @@ public class FlowTableGetter implements Runnable {
         for( IOFSwitch sw : switches )
         {
 
-            Collection<ImmutablePort> set = sw.getEnabledPorts();
-            for (ImmutablePort port : set){
-                System.err.println(port);
-
-            }
-            System.err.println("--------------------------------------------");
             List<OFFlowStatisticsReply> flowTable = getSwitchFlowTable(sw, (short)-1);
             for(OFFlowStatisticsReply flow : flowTable)
             {
-
-               // help++;
-           //     System.out.println(help);
+                deletFlowEntry(sw,flow);
 
                 String src = HexString.toHexString(flow.getMatch().getDataLayerSource());
                 String dst = HexString.toHexString(flow.getMatch().getDataLayerDestination());
@@ -86,24 +84,48 @@ public class FlowTableGetter implements Runnable {
 
                 long count = flow.getByteCount();
                 int time = flow.getDurationSeconds();
-                long mbps = ((count)*8)/1000000;
-            //    System.err.println("Client: " + src + " sent: " + mbps + "Mbit to Switch: " + switchId);
-
+                long mb = (count)/1000000;
                 String key = src;
                 boolean changed = false;
+                FlowInformation inf = dataCouter.get(key);
                 if (dataCouter.containsKey(key)){
-                    double size = dataCouter.get(key).getDataSize();
-                    dataCouter.get(key).setDataSize((count/1000000));
+                    double size = inf.getDataSize();
+                    inf.setDataSize(size + mb);
+                    inf.setTime(inf.getTime()+time);
                     changed = true;
+                  //  System.out.println(inf);
                 }else{
-                    FlowInformation counter = new FlowInformation(0,src,dst,count/1000000);
+                    FlowInformation counter = new FlowInformation(flow.getTableId(),src,dst,mb,time);
                     dataCouter.put(key,counter);
-                    changed = true;
+                   // changed = true;
+                   // System.err.println(counter);
                 }
 
             }
+
+
             }
 
+    }
+
+    private void deletFlowEntry(IOFSwitch sw, OFFlowStatisticsReply rp){
+        OFMatch match = new OFMatch();
+
+        match.setDataLayerSource(rp.getMatch().getDataLayerSource());
+        match.setDataLayerDestination(rp.getMatch().getDataLayerDestination());
+        match.setInputPort(rp.getMatch().getInputPort());
+        match.setWildcards(Wildcards.FULL.matchOn(Wildcards.Flag.DL_SRC, Wildcards.Flag.DL_DST, Wildcards.Flag.IN_PORT));
+
+        OFFlowMod flowMod = (OFFlowMod)provider.getOFMessageFactory().getMessage(OFType.FLOW_MOD);
+
+        flowMod.setMatch(match);
+        flowMod.setCommand(OFFlowMod.OFPFC_DELETE);
+        try {
+            sw.write(flowMod,null);
+            sw.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public List<IOFSwitch> getSwitches(IFloodlightProviderService floodlightProvider)
