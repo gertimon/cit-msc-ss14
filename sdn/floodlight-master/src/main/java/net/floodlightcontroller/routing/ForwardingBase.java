@@ -38,6 +38,7 @@ import net.floodlightcontroller.devicemanager.IDeviceService;
 import net.floodlightcontroller.devicemanager.SwitchPort;
 import net.floodlightcontroller.packet.Ethernet;
 import net.floodlightcontroller.packet.IPacket;
+import net.floodlightcontroller.packet.IPv4;
 import net.floodlightcontroller.routing.IRoutingService;
 import net.floodlightcontroller.routing.IRoutingDecision;
 import net.floodlightcontroller.routing.Route;
@@ -72,10 +73,10 @@ public abstract class ForwardingBase
     protected static int OFMESSAGE_DAMPER_CAPACITY = 10000; // TODO: find sweet spot
     protected static int OFMESSAGE_DAMPER_TIMEOUT = 250; // ms
 
-    public static short FLOWMOD_DEFAULT_IDLE_TIMEOUT = 5; // in seconds
+    public static short FLOWMOD_DEFAULT_IDLE_TIMEOUT = 0; // in seconds
     public static short FLOWMOD_DEFAULT_HARD_TIMEOUT = 0; // infinite
 
-    public static final short FLOWMOD_DEFAULT_IDLE_TIMEOUT_CONSTANT = 5;
+    public static final short FLOWMOD_DEFAULT_IDLE_TIMEOUT_CONSTANT = 0;
     public static final short FLOWMOD_DEFAULT_HARD_TIMEOUT_CONSTANT = 0;
 
     protected IFloodlightProviderService floodlightProvider;
@@ -232,7 +233,9 @@ public abstract class ForwardingBase
             .setActions(actions)
             .setLengthU(OFFlowMod.MINIMUM_LENGTH+OFActionOutput.MINIMUM_LENGTH);
 
+
         List<NodePortTuple> switchPortList = route.getPath();
+
 
         for (int indx = switchPortList.size()-1; indx > 0; indx -= 2) {
             // indx and indx-1 will always have the same switch DPID.

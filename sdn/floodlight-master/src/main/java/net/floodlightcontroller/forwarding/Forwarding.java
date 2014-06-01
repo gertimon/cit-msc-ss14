@@ -138,7 +138,7 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule {
         List<OFAction> actions = new ArrayList<OFAction>(); // Set no action to
                                                             // drop
         long cookie = AppCookie.makeCookie(FORWARDING_APP_ID, 0);
-
+        //Switche IdleTimout to 0 to make it permanent
         fm.setCookie(cookie)
           .setHardTimeout((short) 0)
           .setIdleTimeout((short) 5)
@@ -273,15 +273,22 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule {
                                 wildcard_hints = decision.getWildcards();
                             } else {
                             	// L2 only wildcard if there is no prior route decision
-                                wildcard_hints = ((Integer) sw
-                                        .getAttribute(IOFSwitch.PROP_FASTWILDCARDS))
-                                        .intValue()
-                                        & ~OFMatch.OFPFW_IN_PORT
-                                        & ~OFMatch.OFPFW_DL_VLAN
-                                        & ~OFMatch.OFPFW_DL_SRC
-                                        & ~OFMatch.OFPFW_DL_DST
-                                        & ~OFMatch.OFPFW_NW_SRC_MASK
-                                        & ~OFMatch.OFPFW_NW_DST_MASK;
+                                //Changed by Fubezz to get Ip Information
+                                wildcard_hints = 0;
+//                                wildcard_hints = ((Integer) sw
+//                                        .getAttribute(IOFSwitch.PROP_FASTWILDCARDS))
+//                                        .intValue()
+//                                        & ~OFMatch.OFPFW_IN_PORT
+//                                        & ~OFMatch.OFPFW_DL_VLAN
+//                                        & ~OFMatch.OFPFW_DL_SRC
+//                                        & ~OFMatch.OFPFW_DL_DST
+//                                        & ~OFMatch.OFPFW_NW_SRC_MASK
+//                                        & ~OFMatch.OFPFW_NW_DST_MASK
+//                                        & ~OFMatch.OFPFW_NW_SRC_BITS
+//                                        & ~OFMatch.OFPFW_NW_DST_BITS;
+//                               Added by fubezz: & ~OFMatch.OFPFW_NW_SRC_BITS
+//                                                & ~OFMatch.OFPFW_NW_DST_BITS;
+
                             }
 
                             pushRoute(route, match, wildcard_hints, pi, sw.getId(), cookie,

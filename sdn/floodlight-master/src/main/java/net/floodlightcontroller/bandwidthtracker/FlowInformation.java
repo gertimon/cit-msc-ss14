@@ -2,18 +2,19 @@ package net.floodlightcontroller.bandwidthtracker;
 
 public class FlowInformation {
     private int flowId;
-    private String srcMac;
-    private String dstMac;
+    private String srcIp;
+    private String dstIp;
     private double dataSize;
+    private double sizeMB;
 
 
 
     private double time;
 
-    public FlowInformation(int id,String src, String dst, double dataSize, double time){
+    public FlowInformation(int id,String src, String dst, long dataSize, double time){
         flowId = id;
-        srcMac = src;
-        dstMac = dst;
+        srcIp = src;
+        dstIp = dst;
         this.dataSize = dataSize;
         this.time = time;
     }
@@ -26,20 +27,20 @@ public class FlowInformation {
         this.flowId = flowId;
     }
 
-    public String getSrcMac() {
-        return srcMac;
+    public String getSrcIp() {
+        return srcIp;
     }
 
-    public void setSrcMac(String srcMac) {
-        this.srcMac = srcMac;
+    public void setSrcIp(String srcIp) {
+        this.srcIp = srcIp;
     }
 
-    public String getDstMac() {
-        return dstMac;
+    public String getDstIp() {
+        return dstIp;
     }
 
-    public void setDstMac(String dstMac) {
-        this.dstMac = dstMac;
+    public void setDstIp(String dstIp) {
+        this.dstIp = dstIp;
     }
 
     public double getDataSize() {
@@ -47,7 +48,9 @@ public class FlowInformation {
     }
 
     public void setDataSize(double dataSize) {
+
         this.dataSize = dataSize;
+        sizeMB = dataSize/1000000;
     }
 
     public double getTime() {
@@ -59,6 +62,6 @@ public class FlowInformation {
     }
 
     public String toString(){
-        return "Flow: " + flowId + ", Src: " + srcMac + ", Dst: " + dstMac + ", Datasize: " + dataSize + ", DurationTime: " + time +" s";
+        return "Flow: " + flowId + ", Src: " + srcIp + ", Dst: " + dstIp + ", Datasize in MB: " + sizeMB + ", DurationTime: " + time +" s";
     }
 }

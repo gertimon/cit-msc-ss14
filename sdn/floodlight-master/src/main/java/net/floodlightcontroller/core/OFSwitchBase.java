@@ -938,7 +938,7 @@ public abstract class OFSwitchBase implements IOFSwitch {
         String channelString =
                 (channel != null) ? channel.getRemoteAddress().toString() :
                                     "?";
-        return "OFSwitchBase [" + channelString + " DPID[" + ((stringId != null) ? stringId : "?") + "]]";
+        return  "OFSwitchBase [" + channelString + " DPID[" + ((stringId != null) ? stringId : "?") + "]]";
     }
 
     @Override

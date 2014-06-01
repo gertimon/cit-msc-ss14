@@ -82,7 +82,7 @@ public class BandwidthTracker implements IFloodlightModule{
         provider.addOFMessageListener(OFType.PACKET_IN,new IOFMessageListener() {
             @Override
             public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
-                System.out.println(sw);
+            //    System.out.println(sw);
                 return null;
             }
 

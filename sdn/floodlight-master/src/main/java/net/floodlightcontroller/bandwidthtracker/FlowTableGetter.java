@@ -1,11 +1,11 @@
 package net.floodlightcontroller.bandwidthtracker;
 
-import net.floodlightcontroller.core.IFloodlightProviderService;
-import net.floodlightcontroller.core.IOFSwitch;
-import net.floodlightcontroller.core.ImmutablePort;
+import net.floodlightcontroller.core.*;
 import net.floodlightcontroller.devicemanager.IDevice;
 import net.floodlightcontroller.devicemanager.IDeviceService;
 import net.floodlightcontroller.linkdiscovery.LinkInfo;
+import net.floodlightcontroller.packet.Ethernet;
+import net.floodlightcontroller.packet.IPv4;
 import net.floodlightcontroller.staticflowentry.StaticFlowEntryPusher;
 import net.floodlightcontroller.topology.ITopologyService;
 import net.floodlightcontroller.topology.NodePortTuple;
@@ -22,6 +22,9 @@ import org.slf4j.Logger;
 import sun.security.krb5.internal.HostAddress;
 
 import java.io.IOException;
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -37,7 +40,7 @@ public class FlowTableGetter implements Runnable {
     int help = 0;
     public FlowTableGetter(IFloodlightProviderService floodlightProvider, Logger log){
         provider = floodlightProvider;
-        this.log = log;
+   //     provider.addOFMessageListener(OFType.PACKET_IN,new PacketListener());
         dataCouter = new HashMap<String, FlowInformation>();
       // pusher = new StaticFlowEntryPusher();
 
@@ -52,6 +55,7 @@ public class FlowTableGetter implements Runnable {
             for (FlowInformation inf : dataCouter.values()){
                 System.out.println(inf);
             }
+            System.out.println("-----------------------------------------------------");
             try {
 
                 Thread.sleep(10000);
@@ -76,31 +80,33 @@ public class FlowTableGetter implements Runnable {
             List<OFFlowStatisticsReply> flowTable = getSwitchFlowTable(sw, (short)-1);
             for(OFFlowStatisticsReply flow : flowTable)
             {
-                deletFlowEntry(sw,flow);
 
-                String src = HexString.toHexString(flow.getMatch().getDataLayerSource());
-                String dst = HexString.toHexString(flow.getMatch().getDataLayerDestination());
+              //  System.err.println(String.valueOf(flow));
+
+                String nw_src =IPv4.fromIPv4Address(flow.getMatch().getNetworkSource());
+                String nw_dst = IPv4.fromIPv4Address(flow.getMatch().getNetworkDestination());
+             //   System.err.println(nw_src + ", " + nw_dst);
                 long switchId = sw.getId();
 
                 long count = flow.getByteCount();
                 int time = flow.getDurationSeconds();
-                long mb = (count)/1000000;
-                String key = src;
+                long mb = (count);
+                String key = nw_src;
                 boolean changed = false;
                 FlowInformation inf = dataCouter.get(key);
                 if (dataCouter.containsKey(key)){
                     double size = inf.getDataSize();
-                    inf.setDataSize(size + mb);
+                    inf.setDataSize((long)size + mb);
                     inf.setTime(inf.getTime()+time);
                     changed = true;
                   //  System.out.println(inf);
                 }else{
-                    FlowInformation counter = new FlowInformation(flow.getTableId(),src,dst,mb,time);
+                    FlowInformation counter = new FlowInformation(flow.getTableId(),nw_src,nw_dst,mb,time);
                     dataCouter.put(key,counter);
                    // changed = true;
                    // System.err.println(counter);
                 }
-
+                deleteFlowEntry(sw, flow);
             }
 
 
@@ -108,13 +114,13 @@ public class FlowTableGetter implements Runnable {
 
     }
 
-    private void deletFlowEntry(IOFSwitch sw, OFFlowStatisticsReply rp){
+    private void deleteFlowEntry(IOFSwitch sw, OFFlowStatisticsReply rp){
         OFMatch match = new OFMatch();
 
         match.setDataLayerSource(rp.getMatch().getDataLayerSource());
         match.setDataLayerDestination(rp.getMatch().getDataLayerDestination());
         match.setInputPort(rp.getMatch().getInputPort());
-        match.setWildcards(Wildcards.FULL.matchOn(Wildcards.Flag.DL_SRC, Wildcards.Flag.DL_DST, Wildcards.Flag.IN_PORT));
+        match.setWildcards(Wildcards.FULL.matchOn(Wildcards.Flag.DL_SRC).matchOn(Wildcards.Flag.DL_DST).matchOn(Wildcards.Flag.IN_PORT));
 
         OFFlowMod flowMod = (OFFlowMod)provider.getOFMessageFactory().getMessage(OFType.FLOW_MOD);
 
