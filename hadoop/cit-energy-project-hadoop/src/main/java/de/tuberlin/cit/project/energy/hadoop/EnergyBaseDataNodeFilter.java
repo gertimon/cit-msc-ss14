@@ -24,9 +24,12 @@ public class EnergyBaseDataNodeFilter {
     private final String dataNodeSelectorAddress;
     private final int dataNodeSelectorPort;
 
-    private final String BLACK_BOX_URI = "" + "/api/v1/";
-    private final String SERVICE_FAST_RACK_NAME = "";
-    private final String SERVICE_CHEAP_RACK_NAME = "";
+    private final String BLACK_BOX_URI = "TODO" + "/api/v1/";
+
+    public enum BlockStrategy {
+
+        FAST, CHEAP
+    };
 
     public EnergyBaseDataNodeFilter(String dataNodeSelectorAddress, int dataNodeSelectorPort) {
         this.dataNodeSelectorAddress = dataNodeSelectorAddress;
@@ -36,7 +39,10 @@ public class EnergyBaseDataNodeFilter {
             + this.dataNodeSelectorAddress + " and port=" + this.dataNodeSelectorPort + ".");
     }
 
-    public LocatedBlocks filterBlockLocations(LocatedBlocks locatedBlocks, String path, String username, String remoteAddress) {
+    public LocatedBlocks filterBlockLocations(LocatedBlocks locatedBlocks, String path, String username, String remoteAddress, String nnConfigValue) {
+
+        LocatedBlocks orderedBlocks = null;
+
         try {
 
             // send username and ip to blackbox
@@ -45,19 +51,31 @@ public class EnergyBaseDataNodeFilter {
             final String userInfoURI = BLACK_BOX_URI + "setCurrentUser?user=" + username + "&ip=" + remoteAddress;
             Future<Response> f = asyncHttpClient.preparePut(userInfoURI).execute();
             Response response = f.get();
-
-            LOG.info("updated ip from user '" + username + "' to " + remoteAddress);
-
-            // default decision is fast, remove blocks from different sources
-            locatedBlocks.getLocatedBlocks().get(0).getBlock().getBlockPoolId();
-
+            if (response.getStatusCode() != 250) {
+                LOG.error("could not update ip for user '" + username + "' to '" + remoteAddress + "'");
+            } else {
+                LOG.info("successfully updated ip from user '" + username + "' to '" + remoteAddress + "'");
+            }
+            if (nnConfigValue.equals("FAST")) {
+                orderedBlocks = orderBlocks(BlockStrategy.FAST, locatedBlocks);
+            } else if (nnConfigValue.equals("CHEAP")) {
+                orderedBlocks = orderBlocks(BlockStrategy.CHEAP, locatedBlocks);
+            } else {
+                orderedBlocks = locatedBlocks;
+                LOG.warn("Did not optimize list of blocks for current user '" + username + "'");
+            }
             LOG.info("Got decision request (" + path + ")!");
             LOG.info("Request: " + toJson(locatedBlocks, path, username, remoteAddress));
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
+            LOG.fatal(e);
         }
         // TODO: ask blackbox
+        return orderedBlocks;
+    }
+
+    private LocatedBlocks orderBlocks(BlockStrategy blockStrategy, LocatedBlocks locatedBlocks) {
         return locatedBlocks;
     }
 
