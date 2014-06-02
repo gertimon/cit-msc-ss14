@@ -11,6 +11,7 @@ import net.floodlightcontroller.topology.ITopologyService;
 import net.floodlightcontroller.topology.NodePortTuple;
 import net.floodlightcontroller.topology.TopologyInstance;
 import net.floodlightcontroller.topology.TopologyManager;
+import net.floodlightcontroller.zabbix_pusher.ProjectTrapper;
 import org.openflow.protocol.*;
 import org.openflow.protocol.action.OFAction;
 import org.openflow.protocol.statistics.OFFlowStatisticsReply;
@@ -54,14 +55,30 @@ public class FlowTableGetter implements Runnable {
 
             for (FlowInformation inf : dataCouter.values()){
                 System.out.println(inf);
+                sendToZabbix();
             }
             System.out.println("-----------------------------------------------------");
+
             try {
 
                 Thread.sleep(10000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+        }
+
+
+    }
+
+    private void sendToZabbix() {
+        ProjectTrapper trapper = new ProjectTrapper();
+        for (FlowInformation flow : dataCouter.values()){
+
+            //Send IP
+            trapper.sendMetric("192.168.56.101","CitProjectDummy","project.user.ipport.klaus",false,flow.getSrcIp());
+            //Send Datasize
+            trapper.sendMetric("192.168.56.101","CitProjectDummy","project.user.bandwidth.klaus",true,flow.getDataSize());
+
         }
 
 
@@ -85,7 +102,6 @@ public class FlowTableGetter implements Runnable {
 
                 String nw_src =IPv4.fromIPv4Address(flow.getMatch().getNetworkSource());
                 String nw_dst = IPv4.fromIPv4Address(flow.getMatch().getNetworkDestination());
-             //   System.err.println(nw_src + ", " + nw_dst);
                 long switchId = sw.getId();
 
                 long count = flow.getByteCount();
@@ -98,7 +114,7 @@ public class FlowTableGetter implements Runnable {
                     double size = inf.getDataSize();
                     inf.setDataSize((long)size + mb);
                     inf.setTime(inf.getTime()+time);
-                    changed = true;
+                  //  changed = true;
                   //  System.out.println(inf);
                 }else{
                     FlowInformation counter = new FlowInformation(flow.getTableId(),nw_src,nw_dst,mb,time);
