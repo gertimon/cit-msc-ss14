@@ -75,10 +75,9 @@ public class FlowTableGetter implements Runnable {
         for (FlowInformation flow : dataCouter.values()){
 
             //Send IP
-            trapper.sendMetric("192.168.56.101","CitProjectDummy","project.user.ipport.klaus",false,flow.getSrcIp());
+            trapper.sendMetric("localhost","CitProjectDummy","project.user.ipport.klaus",false,flow.getSrcIp());
             //Send Datasize
-            trapper.sendMetric("192.168.56.101","CitProjectDummy","project.user.bandwidth.klaus",true,flow.getDataSize());
-
+            //trapper.sendMetric("192.168.56.101","CitProjectDummy","project.user.bandwidth.klaus",true,flow.getDataSize());
         }
 
 

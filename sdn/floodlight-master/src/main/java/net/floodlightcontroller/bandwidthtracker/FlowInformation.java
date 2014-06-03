@@ -6,6 +6,8 @@ public class FlowInformation {
     private String dstIp;
     private double dataSize;
     private double sizeMB;
+    private String srcMac;
+    private String dstMac;
 
 
 
