@@ -3,7 +3,9 @@ package de.tuberlin.cit.project.energy.hadoop;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TreeMap;
 import java.util.concurrent.Future;
 import org.apache.commons.logging.Log;
@@ -68,9 +70,28 @@ public class EnergyBaseDataNodeFilter {
         return orderedBlocks;
     }
 
+    /**
+     * removes some blocks that mismatchs a filter strategy iff required packets
+     * exist on desired data nodes.
+     *
+     * @param blockFilterStrategy recognises CHEAP, FAST, null
+     * @param locatedBlocks
+     * @return
+     */
     private LocatedBlocks orderBlocks(String blockFilterStrategy, LocatedBlocks locatedBlocks) {
-        // TODO handle filters
-        return locatedBlocks;
+        LocatedBlocks filteredLocatedBlocks = null;
+        Properties properties = loadProperties();
+        // try to recognize filter strategy or return same list
+        if (blockFilterStrategy != null && blockFilterStrategy.equals("CHEAP")) {
+            // remove everything, thats not CHEAP if copy existing
+        } else if (blockFilterStrategy != null && blockFilterStrategy.equals("FAST")) {
+
+        } else {
+            LOG.warn("could not recognize a filter strategy for '" + blockFilterStrategy + "', use 'CHEAP' or 'FAST' instead, return same list of blocks.");
+            filteredLocatedBlocks = locatedBlocks;
+        }
+
+        return filteredLocatedBlocks;
     }
 
     public String toJson(LocatedBlocks locatedBlocks, String path, String username, String remoteAddress) throws IOException {
@@ -80,5 +101,41 @@ public class EnergyBaseDataNodeFilter {
         m.put("username", username);
         m.put("remoteAddress", remoteAddress);
         return JSON.toString(m);
+    }
+
+    /**
+     * loads file, TODO cache file for specific time te reduce disk io
+     *
+     * @return
+     */
+    private Properties loadProperties() {
+
+        Properties prop = new Properties();
+        InputStream input = null;
+
+        try {
+
+            String filename = "energy.config.properties";
+            input = EnergyBaseDataNodeFilter.class.getClassLoader().getResourceAsStream(filename);
+            if (input == null) {
+                System.out.println("Sorry, unable to find " + filename);
+                return null;
+            }
+
+            //load a properties file from class path, inside static method
+            prop.load(input);
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        } finally {
+            if (input != null) {
+                try {
+                    input.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return prop;
     }
 }
