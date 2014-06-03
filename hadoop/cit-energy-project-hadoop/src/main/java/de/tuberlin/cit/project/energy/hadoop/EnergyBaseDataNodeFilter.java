@@ -26,11 +26,6 @@ public class EnergyBaseDataNodeFilter {
 
     private final String BLACK_BOX_URI = "TODO" + "/api/v1/";
 
-    public enum BlockStrategy {
-
-        FAST, CHEAP
-    };
-
     public EnergyBaseDataNodeFilter(String dataNodeSelectorAddress, int dataNodeSelectorPort) {
         this.dataNodeSelectorAddress = dataNodeSelectorAddress;
         this.dataNodeSelectorPort = dataNodeSelectorPort;
@@ -56,10 +51,8 @@ public class EnergyBaseDataNodeFilter {
             } else {
                 LOG.info("successfully updated ip from user '" + username + "' to '" + remoteAddress + "'");
             }
-            if (nnConfigValue.equals("FAST")) {
-                orderedBlocks = orderBlocks(BlockStrategy.FAST, locatedBlocks);
-            } else if (nnConfigValue.equals("CHEAP")) {
-                orderedBlocks = orderBlocks(BlockStrategy.CHEAP, locatedBlocks);
+            if (nnConfigValue != null && !nnConfigValue.isEmpty()) {
+                orderedBlocks = orderBlocks(nnConfigValue, locatedBlocks);
             } else {
                 orderedBlocks = locatedBlocks;
                 LOG.warn("Did not optimize list of blocks for current user '" + username + "'");
@@ -75,7 +68,8 @@ public class EnergyBaseDataNodeFilter {
         return orderedBlocks;
     }
 
-    private LocatedBlocks orderBlocks(BlockStrategy blockStrategy, LocatedBlocks locatedBlocks) {
+    private LocatedBlocks orderBlocks(String blockFilterStrategy, LocatedBlocks locatedBlocks) {
+        // TODO handle filters
         return locatedBlocks;
     }
 
