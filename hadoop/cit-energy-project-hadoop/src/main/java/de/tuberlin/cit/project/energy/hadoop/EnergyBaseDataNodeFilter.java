@@ -1,7 +1,5 @@
 package de.tuberlin.cit.project.energy.hadoop;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -11,7 +9,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.Future;
+import java.util.concurrent.ExecutionException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hdfs.protocol.DatanodeInfo;
@@ -57,15 +55,7 @@ public class EnergyBaseDataNodeFilter {
 
             // send username and ip to blackbox
             LOG.info("Got user request, inform blackbox about user's ip");
-            AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-            final String userInfoURI = BLACK_BOX_URI + "setCurrentUser?user=" + username + "&ip=" + remoteAddress;
-            Future<Response> f = asyncHttpClient.preparePut(userInfoURI).execute();
-            Response response = f.get();
-            if (response.getStatusCode() != 250) {
-                LOG.error("could not update ip for user '" + username + "' to '" + remoteAddress + "'");
-            } else {
-                LOG.info("successfully updated ip from user '" + username + "' to '" + remoteAddress + "'");
-            }
+            pushToZabbix(username, remoteAddress);
             orderedBlocks = orderBlocks(username, locatedBlocks);
            
             LOG.info("Got decision request (" + path + ")!");
@@ -77,6 +67,27 @@ public class EnergyBaseDataNodeFilter {
         }
         // TODO: ask blackbox
         return orderedBlocks;
+    }
+
+    /**
+     * TODO implement right
+     *
+     * @param username
+     * @param remoteAddress
+     * @throws InterruptedException
+     * @throws IOException
+     * @throws ExecutionException
+     */
+    public void pushToZabbix(String username, String remoteAddress) throws InterruptedException, IOException, ExecutionException {
+//        AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
+//        final String userInfoURI = BLACK_BOX_URI + "setCurrentUser?user=" + username + "&ip=" + remoteAddress;
+//        Future<Response> f = asyncHttpClient.preparePut(userInfoURI).execute();
+//        Response response = f.get();
+//        if (response.getStatusCode() != 250) {
+//            LOG.error("could not update ip for user '" + username + "' to '" + remoteAddress + "'");
+//        } else {
+//            LOG.info("successfully updated ip from user '" + username + "' to '" + remoteAddress + "'");
+//        }
     }
 
     /**
@@ -112,7 +123,7 @@ public class EnergyBaseDataNodeFilter {
                 }
                 if (cleanLocations.size() > 0) {
                     DatanodeInfo[] locations = block.getLocations();
-                    // TODO replace by override, this will not change anything
+                    // TODO replace by override, this maybe will not change anything
                     locations = (DatanodeInfo[]) cleanLocations.toArray();
                     LOG.info("block location list manipulated");
                 } else {
