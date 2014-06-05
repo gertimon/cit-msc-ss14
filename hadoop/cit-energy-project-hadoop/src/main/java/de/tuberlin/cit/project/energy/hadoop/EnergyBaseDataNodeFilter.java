@@ -4,12 +4,18 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Future;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.hdfs.protocol.DatanodeInfo;
+import org.apache.hadoop.hdfs.protocol.LocatedBlock;
 import org.apache.hadoop.hdfs.protocol.LocatedBlocks;
 import org.apache.hadoop.hdfs.web.JsonUtil;
 import org.mortbay.util.ajax.JSON;
@@ -27,6 +33,13 @@ public class EnergyBaseDataNodeFilter {
     private final int dataNodeSelectorPort;
 
     private final String BLACK_BOX_URI = "TODO" + "/api/v1/";
+    private final Properties ENERGY_USER_PROPERTIES = loadProperties("energy.user.config.properties");
+    private final Properties ENERGY_RACK_PROPERTIES = loadProperties("energy.user.config.properties");
+
+    public enum EnergyMode {
+
+        FAST, CHEAP, NONE
+    }
 
     public EnergyBaseDataNodeFilter(String dataNodeSelectorAddress, int dataNodeSelectorPort) {
         this.dataNodeSelectorAddress = dataNodeSelectorAddress;
@@ -36,7 +49,7 @@ public class EnergyBaseDataNodeFilter {
             + this.dataNodeSelectorAddress + " and port=" + this.dataNodeSelectorPort + ".");
     }
 
-    public LocatedBlocks filterBlockLocations(LocatedBlocks locatedBlocks, String path, String username, String remoteAddress, String nnConfigValue) {
+    public LocatedBlocks filterBlockLocations(LocatedBlocks locatedBlocks, String path, String username, String remoteAddress) {
 
         LocatedBlocks orderedBlocks = null;
 
@@ -53,12 +66,8 @@ public class EnergyBaseDataNodeFilter {
             } else {
                 LOG.info("successfully updated ip from user '" + username + "' to '" + remoteAddress + "'");
             }
-            if (nnConfigValue != null && !nnConfigValue.isEmpty()) {
-                orderedBlocks = orderBlocks(nnConfigValue, locatedBlocks);
-            } else {
-                orderedBlocks = locatedBlocks;
-                LOG.warn("Did not optimize list of blocks for current user '" + username + "'");
-            }
+            orderedBlocks = orderBlocks(username, locatedBlocks);
+           
             LOG.info("Got decision request (" + path + ")!");
             LOG.info("Request: " + toJson(locatedBlocks, path, username, remoteAddress));
         } catch (Exception e) {
@@ -78,20 +87,52 @@ public class EnergyBaseDataNodeFilter {
      * @param locatedBlocks
      * @return
      */
-    private LocatedBlocks orderBlocks(String blockFilterStrategy, LocatedBlocks locatedBlocks) {
-        LocatedBlocks filteredLocatedBlocks = null;
-        Properties properties = loadProperties();
-        // try to recognize filter strategy or return same list
-        if (blockFilterStrategy != null && blockFilterStrategy.equals("CHEAP")) {
-            // remove everything, thats not CHEAP if copy existing
-        } else if (blockFilterStrategy != null && blockFilterStrategy.equals("FAST")) {
+    private LocatedBlocks orderBlocks(String username, LocatedBlocks locatedBlocks) {
 
-        } else {
-            LOG.warn("could not recognize a filter strategy for '" + blockFilterStrategy + "', use 'CHEAP' or 'FAST' instead, return same list of blocks.");
-            filteredLocatedBlocks = locatedBlocks;
+        EnergyMode userMode = setEnergyMode(username, ENERGY_USER_PROPERTIES);
+
+        // create set of racks for each mode given
+        // only take cheap racks
+        Set<String> cheapRacks = new HashSet<String>();
+        for (String propertyName : ENERGY_RACK_PROPERTIES.stringPropertyNames()) {
+            if (ENERGY_RACK_PROPERTIES.getProperty(propertyName).equals(EnergyMode.CHEAP.toString())) {
+                cheapRacks.add(propertyName);
+            }
         }
 
-        return filteredLocatedBlocks;
+        // try to recognize filter strategy or return same list
+        if (EnergyMode.CHEAP == userMode) {
+            for (LocatedBlock block : locatedBlocks.getLocatedBlocks()) {
+                // find first matching
+                List<DatanodeInfo> cleanLocations = new ArrayList<DatanodeInfo>();
+                for (DatanodeInfo location : block.getLocations()) {
+                    if (cheapRacks.contains(location.getNetworkLocation())) {
+                        cleanLocations.add(location);
+                    }
+                }
+                if (cleanLocations.size() > 0) {
+                    DatanodeInfo[] locations = block.getLocations();
+                    // TODO replace by override, this will not change anything
+                    locations = (DatanodeInfo[]) cleanLocations.toArray();
+                    LOG.info("block location list manipulated");
+                } else {
+                    LOG.info("block location list not manipulated");
+                }
+            }
+        } else {
+            LOG.warn("could not recognize a filter strategy for mode '" + userMode + "', use 'CHEAP' or -'FAST'- instead, return same list of blocks.");
+        }
+        // override block list
+        return locatedBlocks;
+    }
+
+    private EnergyMode setEnergyMode(String username, Properties properties) {
+        EnergyMode mode = EnergyMode.NONE;
+        String property = properties.getProperty(username);
+        if (property.equals(EnergyMode.CHEAP.toString())) {
+            mode = EnergyMode.CHEAP;
+        }
+        return mode;
     }
 
     public String toJson(LocatedBlocks locatedBlocks, String path, String username, String remoteAddress) throws IOException {
@@ -108,14 +149,12 @@ public class EnergyBaseDataNodeFilter {
      *
      * @return
      */
-    private Properties loadProperties() {
+    private static Properties loadProperties(String filename) {
 
         Properties prop = new Properties();
         InputStream input = null;
 
         try {
-
-            String filename = "energy.config.properties";
             input = EnergyBaseDataNodeFilter.class.getClassLoader().getResourceAsStream(filename);
             if (input == null) {
                 System.out.println("Sorry, unable to find " + filename);
