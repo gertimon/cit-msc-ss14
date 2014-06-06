@@ -55,7 +55,13 @@ public class FlowTableGetter implements Runnable {
 
             for (FlowInformation inf : dataCouter.values()){
                 System.out.println(inf);
-                sendToZabbix();
+                
+                try {
+					sendToZabbix();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
             }
             System.out.println("-----------------------------------------------------");
 
@@ -70,14 +76,20 @@ public class FlowTableGetter implements Runnable {
 
     }
 
-    private void sendToZabbix() {
+    private void sendToZabbix() throws IOException {
         ProjectTrapper trapper = new ProjectTrapper();
         for (FlowInformation flow : dataCouter.values()){
 
+        	/* Sending data via Zabbix Sender */
             //Send IP
-            trapper.sendMetric("localhost","CitProjectDummy","project.user.ipport.klaus",false,flow.getSrcIp());
+            //trapper.sendMetric("localhost","CitProjectDummy","project.user.ipport.klaus",false,flow.getSrcIp());
             //Send Datasize
-            trapper.sendMetric("localhost","CitProjectDummy","project.user.bandwidth.klaus",true,flow.getDataSize());
+            //trapper.sendMetric("localhost","CitProjectDummy","project.user.bandwidth.klaus",true,flow.getDataSize());
+        	
+        	/* Sending data via JSON */
+        	trapper.sendMetricJson("localhost", "CitProjectDummy", "project.user.ipport.klaus", false, flow.getSrcIp());
+        	
+        	
         }
 
 
@@ -85,14 +97,10 @@ public class FlowTableGetter implements Runnable {
 
     public void getFlows(IFloodlightProviderService floodlightProvider)
     {
-
-
         List<IOFSwitch> switches = getSwitches(floodlightProvider);
-
 
         for( IOFSwitch sw : switches )
         {
-
             List<OFFlowStatisticsReply> flowTable = getSwitchFlowTable(sw, (short)-1);
             for(OFFlowStatisticsReply flow : flowTable)
             {
@@ -123,7 +131,6 @@ public class FlowTableGetter implements Runnable {
                 }
                 deleteFlowEntry(sw, flow);
             }
-
 
             }
 
