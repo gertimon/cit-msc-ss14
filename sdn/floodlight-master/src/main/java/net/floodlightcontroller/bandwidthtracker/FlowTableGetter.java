@@ -87,7 +87,7 @@ public class FlowTableGetter implements Runnable {
             //trapper.sendMetric("localhost","CitProjectDummy","project.user.bandwidth.klaus",true,flow.getDataSize());
         	
         	/* Sending data via JSON */
-        	trapper.sendMetricJson("localhost", "CitProjectDummy", "project.user.ipport.klaus", false, flow.getSrcIp());
+        	trapper.sendMetricJson("192.168.178.28", "CitProjectDummy", "project.user.ipport.klaus", false, flow.getSrcIp());
         	
         	
         }
