@@ -61,6 +61,9 @@ public class FlowInformation {
         this.dstMac = dstMac;
     }
 
+    public double getDataSizeMB() {
+        return sizeMB;
+    }
     public double getDataSize() {
         return dataSize;
     }

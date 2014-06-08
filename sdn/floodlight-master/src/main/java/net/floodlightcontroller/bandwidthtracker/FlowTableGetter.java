@@ -1,31 +1,16 @@
 package net.floodlightcontroller.bandwidthtracker;
 
 import net.floodlightcontroller.core.*;
-import net.floodlightcontroller.devicemanager.IDevice;
-import net.floodlightcontroller.devicemanager.IDeviceService;
-import net.floodlightcontroller.linkdiscovery.LinkInfo;
-import net.floodlightcontroller.packet.Ethernet;
 import net.floodlightcontroller.packet.IPv4;
-import net.floodlightcontroller.staticflowentry.StaticFlowEntryPusher;
-import net.floodlightcontroller.topology.ITopologyService;
-import net.floodlightcontroller.topology.NodePortTuple;
-import net.floodlightcontroller.topology.TopologyInstance;
-import net.floodlightcontroller.topology.TopologyManager;
 import net.floodlightcontroller.zabbix_pusher.ProjectTrapper;
 import org.openflow.protocol.*;
-import org.openflow.protocol.action.OFAction;
 import org.openflow.protocol.statistics.OFFlowStatisticsReply;
 import org.openflow.protocol.statistics.OFFlowStatisticsRequest;
 import org.openflow.protocol.statistics.OFStatistics;
 import org.openflow.protocol.statistics.OFStatisticsType;
-import org.openflow.util.HexString;
 import org.slf4j.Logger;
-import sun.security.krb5.internal.HostAddress;
 
 import java.io.IOException;
-import java.math.BigInteger;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -84,11 +69,16 @@ public class FlowTableGetter implements Runnable {
             //Send IP
             //trapper.sendMetric("localhost","CitProjectDummy","project.user.ipport.klaus",false,flow.getSrcIp());
             //Send Datasize
-            //trapper.sendMetric("localhost","CitProjectDummy","project.user.bandwidth.klaus",true,flow.getDataSize());
-        	
+            if (flow.getSrcIp().equals("10.0.0.1")){
+                int sizeMb = (int)flow.getDataSizeMB();
+
+                trapper.sendMetricJson("192.168.178.28", "CitProjectDummy", "project.user.bandwidth.klaus", true, Integer.toString(sizeMb));
+
         	/* Sending data via JSON */
-        	trapper.sendMetricJson("192.168.178.28", "CitProjectDummy", "project.user.ipport.klaus", false, flow.getSrcIp());
-        	
+                trapper.sendMetricJson("192.168.178.28", "CitProjectDummy", "project.user.ipport.klaus", false, flow.getSrcIp());
+
+            }
+
         	
         }
 
