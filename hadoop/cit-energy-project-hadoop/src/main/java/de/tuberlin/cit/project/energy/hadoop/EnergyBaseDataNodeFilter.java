@@ -1,5 +1,6 @@
 package de.tuberlin.cit.project.energy.hadoop;
 
+import de.tuberlin.cit.project.energy.helper.zabbix.ZabbixHelper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -34,6 +35,8 @@ public class EnergyBaseDataNodeFilter {
     private final Properties ENERGY_USER_PROPERTIES = loadProperties("energy.user.config.properties");
     private final Properties ENERGY_RACK_PROPERTIES = loadProperties("energy.user.config.properties");
 
+    private final ZabbixHelper zabbixHelper;
+
     public enum EnergyMode {
 
         FAST, CHEAP, NONE
@@ -42,6 +45,7 @@ public class EnergyBaseDataNodeFilter {
     public EnergyBaseDataNodeFilter(String dataNodeSelectorAddress, int dataNodeSelectorPort) {
         this.dataNodeSelectorAddress = dataNodeSelectorAddress;
         this.dataNodeSelectorPort = dataNodeSelectorPort;
+        this.zabbixHelper = ZabbixHelper.getZabbixHelper();
 
         LOG.info("New energy data node selector client initialized with address="
             + this.dataNodeSelectorAddress + " and port=" + this.dataNodeSelectorPort + ".");
@@ -55,7 +59,11 @@ public class EnergyBaseDataNodeFilter {
 
             // send username and ip to blackbox
             LOG.info("Got user request, inform blackbox about user's ip");
-            pushToZabbix(username, remoteAddress);
+            zabbixHelper.setIpForUser(remoteAddress, username); // TODO get different ip's for user
+            // TODO push filename, opened files, removed replication locations
+            // datanode send ip+port+user
+
+            // try ordering
             orderedBlocks = orderBlocks(username, locatedBlocks);
            
             LOG.info("Got decision request (" + path + ")!");
