@@ -1,76 +1,48 @@
 package net.floodlightcontroller.bandwidthtracker;
 
 public class FlowInformation {
-    private int flowId;
+    private long startTime;
+    private long endTime;
+    private int switchId;
     private String srcIp;
     private String dstIp;
     private double dataSize;
-    private double sizeMB;
     private String srcMac;
     private String dstMac;
+    private double bandWith;
 
 
 
     private double time;
 
-    public FlowInformation(int id,String src, String dst, long dataSize, double time){
-        flowId = id;
-        srcIp = src;
-        dstIp = dst;
-        this.dataSize = dataSize;
+
+
+    public FlowInformation(int id,long startTime, long endTime, String srcMac, String dstMac, String srcIP, String dstIP, long dataSize, double time){
+        switchId = id;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.srcIp = srcIP;
+        this.dstIp = dstIP;
+        this.srcMac = srcMac;
+        this.dstMac = dstMac;
+        this.dataSize = (dataSize/1000000);
         this.time = time;
+        bandWith = this.dataSize/this.time;
     }
 
-    public int getFlowId() {
-        return flowId;
-    }
 
-    public void setFlowId(int flowId) {
-        this.flowId = flowId;
-    }
 
     public String getSrcIp() {
         return srcIp;
     }
 
-    public void setSrcIp(String srcIp) {
-        this.srcIp = srcIp;
-    }
-
-    public String getDstIp() {
-        return dstIp;
-    }
-
-    public void setDstIp(String dstIp) {
-        this.dstIp = dstIp;
-    }
-
-    public String getSrcMac() {
-        return srcMac;
-    }
-
-    public void setSrcMac(String srcMac) {
-        this.srcMac = srcMac;
-    }
-
-    public String getDstMac() {
-        return dstMac;
-    }
-
-    public void setDstMac(String dstMac) {
-        this.dstMac = dstMac;
-    }
-
-    public double getDataSizeMB() {
-        return sizeMB;
-    }
     public double getDataSize() {
         return dataSize;
     }
 
     public void setDataSize(double dataSize) {
         this.dataSize = dataSize;
-        sizeMB = dataSize/1000000;
+
     }
 
     public double getTime() {
@@ -82,6 +54,16 @@ public class FlowInformation {
     }
 
     public String toString(){
-        return "Flow: " + flowId + ", Src: " + srcIp + ", Dst: " + dstIp + ", Datasize in MB: " + sizeMB + ", DurationTime: " + time +" s";
+        return "Switch: " + switchId + ", MAC_Src: " + srcMac + ", MAC_Dst: " + dstMac + ", IP_Src: " +
+                srcIp + ", IP_Dst: " + dstIp + ", Datasize in MB: " +
+                dataSize + ", DurationTime: " + time +" s" + ", Bandwidth: " + bandWith + " Mb/s";
+    }
+
+    public long getStartTime() {
+        return startTime;
+    }
+
+    public long getEndTime() {
+        return endTime;
     }
 }
