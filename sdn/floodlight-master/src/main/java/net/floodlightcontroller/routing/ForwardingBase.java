@@ -73,10 +73,10 @@ public abstract class ForwardingBase
     protected static int OFMESSAGE_DAMPER_CAPACITY = 10000; // TODO: find sweet spot
     protected static int OFMESSAGE_DAMPER_TIMEOUT = 250; // ms
 
-    public static short FLOWMOD_DEFAULT_IDLE_TIMEOUT = 0; // in seconds
+    public static short FLOWMOD_DEFAULT_IDLE_TIMEOUT = 5; // in seconds
     public static short FLOWMOD_DEFAULT_HARD_TIMEOUT = 0; // infinite
 
-    public static final short FLOWMOD_DEFAULT_IDLE_TIMEOUT_CONSTANT = 0;
+    public static final short FLOWMOD_DEFAULT_IDLE_TIMEOUT_CONSTANT = 10;
     public static final short FLOWMOD_DEFAULT_HARD_TIMEOUT_CONSTANT = 0;
 
     protected IFloodlightProviderService floodlightProvider;
@@ -262,6 +262,7 @@ public abstract class ForwardingBase
                     /**with new flow cache design, we don't need the flow removal message from switch anymore
                     fm.setFlags(OFFlowMod.OFPFF_SEND_FLOW_REM);
                     */
+                    fm.setFlags(OFFlowMod.OFPFF_SEND_FLOW_REM);
                     match.setWildcards(fm.getMatch().getWildcards());
                 }
             }
