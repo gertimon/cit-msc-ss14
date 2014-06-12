@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.ExecutionException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hdfs.protocol.DatanodeInfo;
@@ -31,7 +30,6 @@ public class EnergyBaseDataNodeFilter {
     private final String dataNodeSelectorAddress;
     private final int dataNodeSelectorPort;
 
-    private final String BLACK_BOX_URI = "TODO" + "/api/v1/";
     private final Properties ENERGY_USER_PROPERTIES = loadProperties("energy.user.config.properties");
     private final Properties ENERGY_RACK_PROPERTIES = loadProperties("energy.user.config.properties");
 
@@ -59,12 +57,16 @@ public class EnergyBaseDataNodeFilter {
 
             // send username and ip to blackbox
             LOG.info("Got user request, inform blackbox about user's ip");
-            zabbixHelper.setIpForUser(remoteAddress, username); // TODO get different ip's for user
+
+//            zabbixHelper.setIpForUser(remoteAddress, username); // TODO get different ip's for user
             // TODO push filename, opened files, removed replication locations
             // datanode send ip+port+user
 
+            EnergyMode userMode = getEnergyMode(username, ENERGY_USER_PROPERTIES);
+            Set<String> allowedRacks = getRacks(userMode);
+
             // try ordering
-            orderedBlocks = orderBlocks(username, locatedBlocks);
+            orderedBlocks = reduceRacks(allowedRacks, locatedBlocks);
            
             LOG.info("Got decision request (" + path + ")!");
             LOG.info("Request: " + toJson(locatedBlocks, path, username, remoteAddress));
@@ -78,27 +80,6 @@ public class EnergyBaseDataNodeFilter {
     }
 
     /**
-     * TODO implement right
-     *
-     * @param username
-     * @param remoteAddress
-     * @throws InterruptedException
-     * @throws IOException
-     * @throws ExecutionException
-     */
-    public void pushToZabbix(String username, String remoteAddress) throws InterruptedException, IOException, ExecutionException {
-//        AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-//        final String userInfoURI = BLACK_BOX_URI + "setCurrentUser?user=" + username + "&ip=" + remoteAddress;
-//        Future<Response> f = asyncHttpClient.preparePut(userInfoURI).execute();
-//        Response response = f.get();
-//        if (response.getStatusCode() != 250) {
-//            LOG.error("could not update ip for user '" + username + "' to '" + remoteAddress + "'");
-//        } else {
-//            LOG.info("successfully updated ip from user '" + username + "' to '" + remoteAddress + "'");
-//        }
-    }
-
-    /**
      * removes some blocks that mismatchs a filter strategy iff required packets
      * exist on desired data nodes.
      *
@@ -106,46 +87,75 @@ public class EnergyBaseDataNodeFilter {
      * @param locatedBlocks
      * @return
      */
-    private LocatedBlocks orderBlocks(String username, LocatedBlocks locatedBlocks) {
+    private LocatedBlocks reduceRacks(Set<String> racks, LocatedBlocks locatedBlocks) {
 
-        EnergyMode userMode = setEnergyMode(username, ENERGY_USER_PROPERTIES);
+        try {
+            List<LocatedBlock> filteredLocatedBlocks = new ArrayList<LocatedBlock>();
 
-        // create set of racks for each mode given
-        // only take cheap racks
-        Set<String> cheapRacks = new HashSet<String>();
-        for (String propertyName : ENERGY_RACK_PROPERTIES.stringPropertyNames()) {
-            if (ENERGY_RACK_PROPERTIES.getProperty(propertyName).equals(EnergyMode.CHEAP.toString())) {
-                cheapRacks.add(propertyName);
-            }
-        }
-
-        // try to recognize filter strategy or return same list
-        if (EnergyMode.CHEAP == userMode) {
             for (LocatedBlock block : locatedBlocks.getLocatedBlocks()) {
-                // find first matching
+                // extract locations that match the energy mode
                 List<DatanodeInfo> cleanLocations = new ArrayList<DatanodeInfo>();
                 for (DatanodeInfo location : block.getLocations()) {
-                    if (cheapRacks.contains(location.getNetworkLocation())) {
+                    if (racks.contains(location.getNetworkLocation())) {
                         cleanLocations.add(location);
                     }
                 }
                 if (cleanLocations.size() > 0) {
-                    DatanodeInfo[] locations = block.getLocations();
-                    // TODO replace by override, this maybe will not change anything
-                    locations = (DatanodeInfo[]) cleanLocations.toArray();
+                    // if locations matching energy mode were found
+
+                    LocatedBlock filteredBlock = createLocatedBlock(block, (DatanodeInfo[]) cleanLocations.toArray());
+                    filteredLocatedBlocks.add(filteredBlock);
                     LOG.info("block location list manipulated");
                 } else {
+                    // nothing changed or matched energy mode
+
+                    filteredLocatedBlocks.add(block);
                     LOG.info("block location list not manipulated");
                 }
             }
-        } else {
-            LOG.warn("could not recognize a filter strategy for mode '" + userMode + "', use 'CHEAP' or -'FAST'- instead, return same list of blocks.");
+
+            // empty and override block list
+            LOG.info("Original block: " + JsonUtil.toJsonString(locatedBlocks));
+            locatedBlocks.getLocatedBlocks().clear();
+            locatedBlocks.getLocatedBlocks().addAll(filteredLocatedBlocks);
+            LOG.info("Modified block: " + JsonUtil.toJsonString(locatedBlocks));
+
+            return locatedBlocks;
+
+        } catch (IOException ex) {
+            LOG.error("Exception occured while filtering block locations, return original block list.", ex);
+            return locatedBlocks;
         }
-        // override block list
-        return locatedBlocks;
     }
 
-    private EnergyMode setEnergyMode(String username, Properties properties) {
+    /**
+     * Copies a block while overriding the locations by new values.
+     *
+     */
+    public LocatedBlock createLocatedBlock(LocatedBlock block, DatanodeInfo[] locations) {
+        LocatedBlock filteredBlock = new LocatedBlock(block.getBlock(), locations, block.getStorageIDs(), block.getStorageTypes(), block.getStartOffset(), block.isCorrupt(), block.getCachedLocations());
+        return filteredBlock;
+    }
+
+    /**
+     * filters a rack list for an EnergyMode.
+     *
+     * @param energyMode
+     * @return
+     */
+    public Set<String> getRacks(EnergyMode energyMode) {
+        // create set of racks for each mode given
+        // only take cheap racks
+        Set<String> racks = new HashSet<String>();
+        for (String propertyName : ENERGY_RACK_PROPERTIES.stringPropertyNames()) {
+            if (ENERGY_RACK_PROPERTIES.getProperty(propertyName).equals(energyMode.toString())) {
+                racks.add(propertyName);
+            }
+        }
+        return racks;
+    }
+
+    private EnergyMode getEnergyMode(String username, Properties properties) {
         EnergyMode mode = EnergyMode.NONE;
         String property = properties.getProperty(username);
         if (property.equals(EnergyMode.CHEAP.toString())) {
