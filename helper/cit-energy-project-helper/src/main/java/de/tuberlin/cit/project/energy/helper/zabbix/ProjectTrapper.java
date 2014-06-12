@@ -40,12 +40,12 @@ public class ProjectTrapper {
         boolean isKeyNumeric,
         String value) throws IOException {
 
-        String keyType = isKeyNumeric ? 0 : 4;
-        String sendingJson = jsonForZabbix(hostname, itemKey, value, keyType);
-        byte[] header = sendingHeader(sendingJson.length());
+        String keyType = isKeyNumeric ? "0" : "4";
+        String sendingJson = ProjectTrapper.jsonForZabbix(hostname, itemKey, value, keyType);
+        byte[] header = ProjectTrapper.sendingHeader(sendingJson.length());
 
         try {
-            sendDataToZabbix(zabbixServerIpAdress, header, sendingJson);
+            ProjectTrapper.sendDataToZabbix(zabbixServerIpAdress, header, sendingJson);
         } catch (UnknownHostException e) {
             System.err.println("Error while connecting to server");
         } catch (IOException e) {
@@ -55,7 +55,7 @@ public class ProjectTrapper {
 
     }
 
-    private byte[] sendingHeader(int msglength) {
+    private static byte[] sendingHeader(int msglength) {
         return new byte[]{
             'Z', 'B', 'X', 'D',
             '\1',
@@ -66,7 +66,7 @@ public class ProjectTrapper {
             '\0', '\0', '\0', '\0'};
     }
 
-    private String jsonForZabbix(String hostname, String itemKey, String value, String keyType) {
+    private static String jsonForZabbix(String hostname, String itemKey, String value, String keyType) {
         return "{"
             // + " \"jsonrpc\":\"2.0\",\n"
             + " \"request\":\"sender data\","
@@ -80,7 +80,7 @@ public class ProjectTrapper {
             + " ] }";
     }
 
-    private void sendDataToZabbix(String zabbixServerIpAdress, String header, String sendingJson) throws UnknownHostException, IOException {
+    private static void sendDataToZabbix(String zabbixServerIpAdress, String header, String sendingJson) throws UnknownHostException, IOException {
         Socket clientSocket = new Socket(zabbixServerIpAdress, 10051);
         DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
         outToServer.write(header);
