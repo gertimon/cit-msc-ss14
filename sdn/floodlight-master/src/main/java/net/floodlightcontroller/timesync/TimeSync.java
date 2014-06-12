@@ -35,7 +35,7 @@ public final class TimeSync {
 		
 		NtpV3Packet ntpMessage = info.getMessage();
 		
-		// TODO: Converting Apache's TimeStamp into long to calculate duration time
+		// TODO: Converting Apache's TimeStamp to the right data type to calculate duration time
 		//       Return type for returning a time value back to RemoveMessageListener class
 		
 		TimeStamp refNtpTime = ntpMessage.getReferenceTimeStamp();
