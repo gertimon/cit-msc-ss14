@@ -41,17 +41,11 @@ public class ProjectTrapper {
         String value) throws IOException {
 
         String keyType = isKeyNumeric ? 0 : 4;
-        String sender = jsonForZabbix();
-        byte[] header = sendingHeader(hostname, itemKey, value, keyType);
+        String sendingJson = jsonForZabbix(hostname, itemKey, value, keyType);
+        byte[] header = sendingHeader(sendingJson.length());
 
         try {
-            Socket clientSocket = new Socket(zabbixServerIpAdress, 10051);
-            DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-            outToServer.write(header);
-            outToServer.write(sender.getBytes());
-            outToServer.flush();
-            clientSocket.close();
-            outToServer.close();
+            sendDataToZabbix(zabbixServerIpAdress, header, sendingJson);
         } catch (UnknownHostException e) {
             System.err.println("Error while connecting to server");
         } catch (IOException e) {
@@ -61,10 +55,8 @@ public class ProjectTrapper {
 
     }
 
-    private byte[] sendingHeader() {
-        int msglength = sender.length();
-
-        byte[] header = new byte[]{
+    private byte[] sendingHeader(int msglength) {
+        return new byte[]{
             'Z', 'B', 'X', 'D',
             '\1',
             (byte) (msglength & 0xFF),
@@ -86,5 +78,15 @@ public class ProjectTrapper {
             // + "     \"value_type\":\""+ keyType+ "\""
             + "   }"
             + " ] }";
+    }
+
+    private void sendDataToZabbix(String zabbixServerIpAdress, String header, String sendingJson) throws UnknownHostException, IOException {
+        Socket clientSocket = new Socket(zabbixServerIpAdress, 10051);
+        DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+        outToServer.write(header);
+        outToServer.write(sendingJson.getBytes());
+        outToServer.flush();
+        outToServer.close();
+        clientSocket.close();
     }
 }
