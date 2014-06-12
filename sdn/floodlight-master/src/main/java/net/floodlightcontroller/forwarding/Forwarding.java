@@ -87,7 +87,10 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule {
                     return Command.CONTINUE;
                 case FORWARD_OR_FLOOD:
                 case FORWARD:
-                    doForwardFlow(sw, pi, cntx, false);
+                    /**
+                     * Changed by fubezz, set flow removed message
+                     */
+                    doForwardFlow(sw, pi, cntx, true);
                     return Command.CONTINUE;
                 case MULTICAST:
                     // treat as broadcast
@@ -111,7 +114,10 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule {
                 // For now we treat multicast as broadcast
                 doFlood(sw, pi, cntx);
             } else {
-                doForwardFlow(sw, pi, cntx, false);
+                /**
+                 * Changed by fubezz, set flow removed message
+                 */
+                doForwardFlow(sw, pi, cntx, true);
             }
         }
 

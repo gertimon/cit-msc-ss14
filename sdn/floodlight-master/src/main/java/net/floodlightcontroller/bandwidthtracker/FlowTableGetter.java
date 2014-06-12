@@ -23,11 +23,12 @@ public class FlowTableGetter implements Runnable {
     Logger log;
     HashMap<String, FlowInformation> dataCouter;
    // StaticFlowEntryPusher pusher;
-    int help = 0;
+
     public FlowTableGetter(IFloodlightProviderService floodlightProvider, Logger log){
         provider = floodlightProvider;
-   //     provider.addOFMessageListener(OFType.PACKET_IN,new PacketListener());
+        provider.addOFMessageListener(OFType.FLOW_REMOVED,new RemoveMessageListener());
         dataCouter = new HashMap<String, FlowInformation>();
+
       // pusher = new StaticFlowEntryPusher();
 
     }
@@ -52,7 +53,7 @@ public class FlowTableGetter implements Runnable {
 
             try {
 
-                Thread.sleep(10000);
+                Thread.sleep(2000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -70,12 +71,12 @@ public class FlowTableGetter implements Runnable {
             //trapper.sendMetric("localhost","CitProjectDummy","project.user.ipport.klaus",false,flow.getSrcIp());
             //Send Datasize
             if (flow.getSrcIp().equals("10.0.0.1")){
-                int sizeMb = (int)flow.getDataSizeMB();
+              //  int sizeMb = (int)flow.getDataSizeMB();
 
-                trapper.sendMetricJson("192.168.178.28", "CitProjectDummy", "project.user.bandwidth.klaus", true, Integer.toString(sizeMb));
+               // trapper.sendMetricJson("192.168.178.28", "CitProjectDummy", "project.user.bandwidth.klaus", true, Integer.toString(sizeMb));
 
         	/* Sending data via JSON */
-                trapper.sendMetricJson("192.168.178.28", "CitProjectDummy", "project.user.ipport.klaus", false, flow.getSrcIp());
+                //trapper.sendMetricJson("192.168.178.28", "CitProjectDummy", "project.user.ipport.klaus", false, flow.getSrcIp());
 
             }
 
@@ -114,12 +115,12 @@ public class FlowTableGetter implements Runnable {
                   //  changed = true;
                   //  System.out.println(inf);
                 }else{
-                    FlowInformation counter = new FlowInformation(flow.getTableId(),nw_src,nw_dst,mb,time);
-                    dataCouter.put(key,counter);
+                  //  FlowInformation counter = new FlowInformation(flow.getTableId(),nw_src,nw_dst,mb,time);
+               //     dataCouter.put(key,counter);
                    // changed = true;
                    // System.err.println(counter);
                 }
-                deleteFlowEntry(sw, flow);
+                //deleteFlowEntry(sw, flow);
             }
 
             }
