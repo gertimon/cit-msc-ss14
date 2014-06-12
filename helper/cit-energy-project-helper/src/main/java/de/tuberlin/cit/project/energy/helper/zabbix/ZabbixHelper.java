@@ -110,9 +110,7 @@ public class ZabbixHelper {
      * @param username
      */
     public void setIpForUser(String ip, String username) {
-        throw new NotImplementedException("Not implemented yet, TODO");
-        // TODO implement ProjectTrapper.sendMetricJson(username, username, ip, true, ip);
-
+        ProjectTrapper.sendMetricJson("localhost", "BLAH", username + ".ip", false, ip);
     }
 
     /**
