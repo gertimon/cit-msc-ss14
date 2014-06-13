@@ -44,7 +44,8 @@ public class RemoveMessageListener implements IOFMessageListener {
 	}
 	*/
 	
-    @Override
+    @SuppressWarnings("static-access")
+	@Override
     public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
     	
     	// --- Time Protocol Version (RFC868) --- //
@@ -62,11 +63,8 @@ public class RemoveMessageListener implements IOFMessageListener {
     	System.out.println("Timestamp Local is: " +System.currentTimeMillis());
     	*/
     	
-    	TimeSync timeClient = new TimeSync();
-    	timeClient.getNtpTimestamp();
-    	
-    			
-        long timeStamp = System.currentTimeMillis();
+    	long timeStamp = TimeSync.getNtpTimestamp();
+    	//long timeStamp = System.currentTimeMillis();
 
         OFFlowRemoved flow = (OFFlowRemoved) msg;
         timeStamp = timeStamp - (flow.getIdleTimeout()*1000);
