@@ -31,7 +31,7 @@ import org.apache.commons.net.ntp.TimeStamp;
 public final class TimeSync {
 
 	/* Uses the more accurate and more robust NTP */
-	public static void getNtpTimestamp(TimeInfo info) {
+	public static void sendTimeMessage(TimeInfo info) {
 		
 		NtpV3Packet ntpMessage = info.getMessage();
 		
@@ -39,24 +39,24 @@ public final class TimeSync {
 		//       Return type for returning a time value back to RemoveMessageListener class
 		
 		TimeStamp refNtpTime = ntpMessage.getReferenceTimeStamp();
-        System.out.println(" Reference Timestamp:\t" + refNtpTime + "  " + refNtpTime.toDateString());
+        System.out.println(" Reference Timestamp:\t" + refNtpTime + "  " + refNtpTime.toDateString()+ "   " +refNtpTime.getSeconds());
 
         // Originate Time is time request sent by client (t1)
         TimeStamp origNtpTime = ntpMessage.getOriginateTimeStamp();
-        System.out.println(" Originate Timestamp:\t" + origNtpTime + "  " + origNtpTime.toDateString());
+        System.out.println(" Originate Timestamp:\t" + origNtpTime + "  " + origNtpTime.toDateString()+ "   " +refNtpTime.getSeconds());
 
         long destTime = info.getReturnTime();
         // Receive Time is time request received by server (t2)
         TimeStamp rcvNtpTime = ntpMessage.getReceiveTimeStamp();
-        System.out.println(" Receive Timestamp:\t" + rcvNtpTime + "  " + rcvNtpTime.toDateString());
+        System.out.println(" Receive Timestamp:\t" + rcvNtpTime + "  " + rcvNtpTime.toDateString()+ "   " +refNtpTime.getSeconds());
 
         // Transmit time is time reply sent by server (t3)
         TimeStamp xmitNtpTime = ntpMessage.getTransmitTimeStamp();
-        System.out.println(" Transmit Timestamp:\t" + xmitNtpTime + "  " + xmitNtpTime.toDateString());
+        System.out.println(" Transmit Timestamp:\t" + xmitNtpTime + "  " + xmitNtpTime.toDateString()+ "   " +refNtpTime.getSeconds());
 
         // Destination time is time reply received by client (t4)
         TimeStamp destNtpTime = TimeStamp.getNtpTime(destTime);
-        System.out.println(" Destination Timestamp:\t" + destNtpTime + "  " + destNtpTime.toDateString());
+        System.out.println(" Destination Timestamp:\t" + destNtpTime + "  " + destNtpTime.toDateString()+ "   " +refNtpTime.getSeconds());
 
         info.computeDetails(); // compute offset/delay if not already done
         Long offsetValue = info.getOffset();
@@ -68,7 +68,7 @@ public final class TimeSync {
                 + ", clock offset(ms)=" + offset); // offset in ms
 	}
 	
-	public void connect2NtpServer() {
+	public void getNtpTimestamp() {
 		
 		// --- NTPv3 Version (RFC 1305) --- // 
     	/* http://commons.apache.org/proper/commons-net/javadocs/api-3.3/index.html*/
@@ -84,7 +84,7 @@ public final class TimeSync {
 				TimeInfo info;
 				try {
 					info = timeClient.getTime(hostAddr);
-					getNtpTimestamp(info);
+					sendTimeMessage(info);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

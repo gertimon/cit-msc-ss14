@@ -63,8 +63,7 @@ public class RemoveMessageListener implements IOFMessageListener {
     	*/
     	
     	TimeSync timeClient = new TimeSync();
-    	timeClient.connect2NtpServer();
-    	
+    	timeClient.getNtpTimestamp();
     	
     			
         long timeStamp = System.currentTimeMillis();
