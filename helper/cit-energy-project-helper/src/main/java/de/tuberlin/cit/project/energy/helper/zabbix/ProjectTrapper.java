@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package de.tuberlin.cit.project.energy.helper.zabbix;
 
 /**
@@ -22,9 +16,12 @@ import java.rmi.UnknownHostException;
  * SoSe 2014 CIT TU Berlin)
  */
 public class ProjectTrapper {
+
     /**
      * TODO use AsyncHttpClient instead if Socket directly.
-     * @see https://github.com/AsyncHttpClient/async-http-client (already added to POM)
+     *
+     * @see https://github.com/AsyncHttpClient/async-http-client (already added
+     * to POM)
      *
      * @param zabbixServerIpAdress
      * @param hostname
@@ -41,17 +38,10 @@ public class ProjectTrapper {
         String value) throws IOException {
 
         String keyType = isKeyNumeric ? "0" : "4";
-        String sendingJson = ProjectTrapper.jsonForZabbix(hostname, itemKey, value, keyType);
-        byte[] header = ProjectTrapper.sendingHeader(sendingJson.length());
+        String sendingJson = jsonForZabbix(hostname, itemKey, value, keyType);
+        byte[] header = sendingHeader(sendingJson.length());
 
-        try {
-            ProjectTrapper.sendDataToZabbix(zabbixServerIpAdress, header, sendingJson);
-        } catch (UnknownHostException e) {
-            System.err.println("Error while connecting to server");
-        } catch (IOException e) {
-            System.err.println("Error while sending to Server");
-
-        }
+        sendDataToZabbix(zabbixServerIpAdress, header, sendingJson);
 
     }
 
@@ -80,7 +70,7 @@ public class ProjectTrapper {
             + " ] }";
     }
 
-    private static void sendDataToZabbix(String zabbixServerIpAdress, String header, String sendingJson) throws UnknownHostException, IOException {
+    private static void sendDataToZabbix(String zabbixServerIpAdress, byte[] header, String sendingJson) throws UnknownHostException, IOException {
         Socket clientSocket = new Socket(zabbixServerIpAdress, 10051);
         DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
         outToServer.write(header);
