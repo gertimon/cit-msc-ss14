@@ -1,5 +1,14 @@
-package de.tuberlin.cit.project.energy.helper.zabbix;
+package main.java.de.tuberlin.cit.project.energy.helper.zabbix;
 
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.List;
 
@@ -12,8 +21,11 @@ import java.util.List;
 public class ZabbixHelper {
 
     private final String ZABBIX_API_URI;
+    private final String ZABBIX_Port;
     private final String ZABBIX_USER;
     private final String ZABBIX_PASSWORD;
+    private String AUTH_HASH_VALUE;
+
 
     private static ZabbixHelper zabbixHelper;
 
@@ -22,10 +34,17 @@ public class ZabbixHelper {
      * extract attributes to property-file
      */
     private ZabbixHelper() {
-        ZABBIX_API_URI = "";
-        ZABBIX_USER = "";
-        ZABBIX_PASSWORD = "";
+        ZABBIX_API_URI = "http://10.42.0.2/zabbix/api_jsonrpc.php";
+        ZABBIX_Port = "10051";
+        ZABBIX_USER = "admin";
+        ZABBIX_PASSWORD = "zabbix!";
+        try {
+            userAuthenticate();
+        } catch (IOException e) {
+            System.err.println("Error while authentication to Server");
+        }
     }
+
 
     /**
      * 
@@ -36,6 +55,55 @@ public class ZabbixHelper {
     }
 
     /**
+     * Login to the Zabbix Server and sets the authHash value
+     * @throws IOException
+     */
+    public void userAuthenticate() throws IOException {
+
+        CloseableHttpClient httpclient = HttpClients.createDefault();
+        HttpPost httpPost = new HttpPost(ZABBIX_API_URI);
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\"jsonrpc\":\"2.0\"").
+                append(",\"params\":{").
+                append("\"user\":\"").append(ZABBIX_USER).
+                append("\",\"password\":\"").append(ZABBIX_PASSWORD).
+                append("\"},").
+                append("\"method\":\"user.authenticate\",").
+                append("\"id\":\"2\"}");
+
+        try {
+
+            httpPost.setEntity(new StringEntity(sb.toString()));
+            httpPost.addHeader("Content-Type","application/json");
+            CloseableHttpResponse response = httpclient.execute(httpPost);
+            byte[] respArr = new byte[(int)response.getEntity().getContentLength()];
+            response.getEntity().getContent().read(respArr);
+            String out = new String(respArr);
+            out = parseAuth(out);
+            AUTH_HASH_VALUE = out;
+            response.close();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private String parseAuth(String out) {
+        String res;
+        String parts[] = out.split(":");
+        for(int i = 0; i <parts.length ; i++){
+            if (parts[i].endsWith("result\"")){
+                // System.err.println(parts[i+1]);
+                res = parts[i+1].replace("\"","");
+                //System.err.println(res);
+                return res.split(",")[0];
+            }
+        }
+        return null;
+    }
+
+
+    /**
      * Used from NameNode to send username-IP-connection to zabbix
      *
      * @param ip
@@ -44,6 +112,7 @@ public class ZabbixHelper {
     public void setIpForUser(String ip, String username) {
         throw new NotImplementedException("Not implemented yet, TODO");
         // TODO implement ProjectTrapper.sendMetricJson(username, username, ip, true, ip);
+
     }
 
     /**
@@ -90,3 +159,4 @@ public class ZabbixHelper {
 
 
 }
+
