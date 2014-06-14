@@ -1,8 +1,8 @@
 package de.tuberlin.cit.project.energy.hadoop;
 
+import de.tuberlin.cit.project.energy.helper.fileTools.PropertyLoader;
 import de.tuberlin.cit.project.energy.helper.zabbix.ZabbixHelper;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -32,8 +32,8 @@ public class EnergyBaseDataNodeFilter {
     private final int dataNodeSelectorPort;
 
     private final String BLACK_BOX_URI = "TODO" + "/api/v1/";
-    private final Properties ENERGY_USER_PROPERTIES = loadProperties("energy.user.config.properties");
-    private final Properties ENERGY_RACK_PROPERTIES = loadProperties("energy.user.config.properties");
+    private final Properties ENERGY_USER_PROPERTIES = PropertyLoader.loadProperties("energy.user.config.properties");
+    private final Properties ENERGY_RACK_PROPERTIES = PropertyLoader.loadProperties("energy.user.config.properties");
 
     private final ZabbixHelper zabbixHelper;
 
@@ -65,7 +65,7 @@ public class EnergyBaseDataNodeFilter {
 
             // try ordering
             orderedBlocks = orderBlocks(username, locatedBlocks);
-           
+
             LOG.info("Got decision request (" + path + ")!");
             LOG.info("Request: " + toJson(locatedBlocks, path, username, remoteAddress));
         } catch (Exception e) {
@@ -163,37 +163,4 @@ public class EnergyBaseDataNodeFilter {
         return JSON.toString(m);
     }
 
-    /**
-     * loads file, TODO cache file for specific time te reduce disk io
-     *
-     * @return
-     */
-    private static Properties loadProperties(String filename) {
-
-        Properties prop = new Properties();
-        InputStream input = null;
-
-        try {
-            input = EnergyBaseDataNodeFilter.class.getClassLoader().getResourceAsStream(filename);
-            if (input == null) {
-                System.out.println("Sorry, unable to find " + filename);
-                return null;
-            }
-
-            //load a properties file from class path, inside static method
-            prop.load(input);
-
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        } finally {
-            if (input != null) {
-                try {
-                    input.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return prop;
-    }
 }
