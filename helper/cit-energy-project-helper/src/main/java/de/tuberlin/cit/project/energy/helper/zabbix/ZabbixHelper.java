@@ -156,7 +156,34 @@ public class ZabbixHelper {
 
 
     }
-
+    
+    /**
+     *  Checks whether items for given username exist within Zabbix Configuration
+     *  on given host.
+     * @param username Name of the user for which to check items
+     * @return Boolean, whether items exist
+     */
+    private boolean itemsExistForUser(String username){
+        boolean ret = false;
+        
+        //Building JSON request String
+        String jsonString = "{"+
+            "\"jsonrpc\":\"2.0\""+
+            ",\"method\":\"item.exists\""+
+            ",\"params\": {"+
+            "\"host\":\"CitProjectDummy1\""+
+            ",\"key_\":\"user."+ username +".ip\""+
+            "}"+
+            ",\"auth\":\""+AUTH_HASH_VALUE+"\""+
+            ",\"id\": \"0005\""+
+        "}";
+        //TODO:Sending JSON request
+  
+        //TODO:Parsing Response
+        
+        return ret;
+    }
+    
     /**
      * retrieves the last username known for a given ip address
      *
@@ -164,6 +191,27 @@ public class ZabbixHelper {
      * @return
      */
     public String getUser(String ip) {
+        //Building JSON request String
+        //TODO: timestamp management in time_from and time_till
+        int milli = 0;
+        String jsonString ="{\"id\":" + "\"0006\"" +
+            ",\"method\":" + "\"history.get\"" +
+            ",\"params\":{" + 
+                "\"output\":" + "\"extend\"" +
+                ",\"history\":" + 4 +
+                ",\"time_from\":" + (milli/1000-5) +
+                ",\"time_till\":" + (milli/1000) +					
+                ",\"search\":{" +
+                        "\"value\":" + "\""+ip+";\"" +
+                        "}" +
+                "}" +
+            ",\"jsonrpc\":" + "\"2.0\"" +
+            ",\"auth\":" + "\"" + AUTH_HASH_VALUE + "\"" +
+            "}";
+        //TODO:Sending JSON request
+        
+        //TODO:Parse Response
+        
         return null;
     }
 
