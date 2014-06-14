@@ -6,12 +6,7 @@ import net.floodlightcontroller.packet.IPv4;
 import net.floodlightcontroller.timesync.TimeSync;
 import net.floodlightcontroller.zabbix_pusher.ProjectTrapper;
 
-import org.apache.commons.net.ntp.NTPUDPClient;
-import org.apache.commons.net.ntp.NtpV3Packet;
-import org.apache.commons.net.ntp.TimeInfo;
-import org.apache.commons.net.ntp.TimeStamp;
-import org.apache.commons.net.time.TimeTCPClient;
-import org.apache.commons.net.time.TimeUDPClient;
+
 //import org.apache.commons.codec.binary.Hex;
 import org.openflow.protocol.*;
 import org.openflow.util.HexString;

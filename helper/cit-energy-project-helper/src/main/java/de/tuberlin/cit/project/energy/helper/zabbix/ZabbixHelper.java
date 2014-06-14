@@ -3,6 +3,7 @@ package de.tuberlin.cit.project.energy.helper.zabbix;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -25,8 +26,8 @@ public class ZabbixHelper {
     private final String ZABBIX_PASSWORD;
     private String AUTH_HASH_VALUE;
     private final static Log LOG = LogFactory.getLog(ZabbixHelper.class);
-    private final String userItems[] = {".bandwidth",".daten",".duration",".ip",".port",".storage"};
-    private final boolean userItemsIsNumeric[] = {true,true,true,false,false,true};
+    private final String userItems[] = {".bandwidth", ".daten", ".duration", ".ip", ".port", ".storage"};
+    private final boolean userItemsIsNumeric[] = {true, true, true, false, false, true};
     private static ZabbixHelper zabbixHelper;
 
     /**
@@ -46,7 +47,6 @@ public class ZabbixHelper {
     }
 
     /**
-     *
      * @return singleton instance of ZabbixHelper
      */
     public static synchronized ZabbixHelper getZabbixHelper() {
@@ -58,23 +58,23 @@ public class ZabbixHelper {
      *
      * @throws IOException
      */
-    public void userAuthenticate() throws IOException{
+    public void userAuthenticate() throws IOException {
 
         CloseableHttpClient httpclient = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost(ZABBIX_API_URI);
         StringBuilder sb = new StringBuilder();
         sb.append("{\"jsonrpc\":\"2.0\"").
-            append(",\"params\":{").
-            append("\"user\":\"").append(ZABBIX_USER).
-            append("\",\"password\":\"").append(ZABBIX_PASSWORD).
-            append("\"},").
-            append("\"method\":\"user.authenticate\",").
-            append("\"id\":\"2\"}");
+                append(",\"params\":{").
+                append("\"user\":\"").append(ZABBIX_USER).
+                append("\",\"password\":\"").append(ZABBIX_PASSWORD).
+                append("\"},").
+                append("\"method\":\"user.authenticate\",").
+                append("\"id\":\"2\"}");
 
         httpPost.setEntity(new StringEntity(sb.toString()));
         httpPost.addHeader("Content-Type", "application/json");
         CloseableHttpResponse response = httpclient.execute(httpPost);
-       // System.err.println(response);
+        // System.err.println(response);
         byte[] respArr = new byte[(int) response.getEntity().getContentLength()];
         response.getEntity().getContent().read(respArr);
         String out = new String(respArr);
@@ -110,35 +110,35 @@ public class ZabbixHelper {
     public void setIpForUser(String ip, String username) throws IOException {
 
 
-            CloseableHttpClient httpclient = HttpClients.createDefault();
-            HttpPost httpPost = new HttpPost(ZABBIX_API_URI);
-            StringBuilder sb = new StringBuilder();
-            sb.append("{\"jsonrpc\":\"2.0\"").
-                    append(",\"method\":\"item.create\"").
-                    append(",\"params\":{");
+        CloseableHttpClient httpclient = HttpClients.createDefault();
+        HttpPost httpPost = new HttpPost(ZABBIX_API_URI);
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\"jsonrpc\":\"2.0\"").
+                append(",\"method\":\"item.create\"").
+                append(",\"params\":[");
 
 
-            for (int i = 0; i < 6; i++) {
-                sb.append("[").
-                        append("\"name\":\"").append(username + " of " + userItems[i].replace(".", "")).
-                        append("\",\"key_\":\"").append("user." + username + userItems[i]).
-                        append("\",\"hostid\":\"").append("10109\"").
-                        append(",\"type\":2");
-                if (userItemsIsNumeric[i]) {
-                    sb.append(",\"value_type\":3");
-                } else sb.append(",\"value_type\":1");
+        for (int i = 0; i < 6; i++) {
+            sb.append("{").
+                    append("\"name\":\"").append(username + " of " + userItems[i].replace(".", "")).
+                    append("\",\"key_\":\"").append("user." + username + userItems[i]).
+                    append("\",\"hostid\":\"").append("10109\"").
+                    append(",\"type\":2");
+            if (userItemsIsNumeric[i]) {
+                sb.append(",\"value_type\":3");
+            } else sb.append(",\"value_type\":1");
 
-                if (i < 5) sb.append("],");
-                else sb.append("]");
-            }
-            sb.append("}").
-                    append(",\"id\":\"2\"").
-                    append(",\"auth\":\""+AUTH_HASH_VALUE+"\"}");
+            if (i < 5) sb.append("},");
+            else sb.append("}");
+        }
+        sb.append("]").
+                append(",\"id\":\"2\"").
+                append(",\"auth\":\"" + AUTH_HASH_VALUE + "\"}");
 
         httpPost.setEntity(new StringEntity(sb.toString()));
         httpPost.addHeader("Content-Type", "application/json");
         CloseableHttpResponse response = httpclient.execute(httpPost);
-         System.err.println(response);
+        System.err.println(response);
         System.err.println("----------------------------------");
         byte[] respArr = new byte[(int) response.getEntity().getContentLength()];
 
