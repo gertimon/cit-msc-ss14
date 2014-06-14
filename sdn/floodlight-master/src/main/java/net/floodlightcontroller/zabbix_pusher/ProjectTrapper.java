@@ -45,8 +45,8 @@ public class ProjectTrapper{
             msgBuilder.append("{" +
                     "\"host\":\""+ hostname +"\"," +
                     "\"key\":\""+ keys[i] + "\"," +
-                    "\"value\":\""+ vals[i] +"\"," +
-                    "\"clock\": "+ time +
+                    "\"value\":\""+ vals[i] +"\"" +
+                  //  "\"clock\": "+ time +
                     "}") ;
             if (i != keys.length-1) msgBuilder.append(",");
         }

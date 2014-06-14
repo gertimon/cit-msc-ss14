@@ -66,4 +66,9 @@ public class FlowInformation {
     public long getEndTime() {
         return endTime;
     }
+
+    public double getBandWith() {
+        if (bandWith >0) return bandWith;
+        else return 0;
+    }
 }

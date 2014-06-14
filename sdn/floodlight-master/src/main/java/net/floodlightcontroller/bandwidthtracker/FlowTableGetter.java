@@ -8,6 +8,7 @@ import org.openflow.protocol.statistics.OFFlowStatisticsReply;
 import org.openflow.protocol.statistics.OFFlowStatisticsRequest;
 import org.openflow.protocol.statistics.OFStatistics;
 import org.openflow.protocol.statistics.OFStatisticsType;
+import org.openflow.util.HexString;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -21,13 +22,13 @@ import java.util.concurrent.TimeUnit;
 public class FlowTableGetter implements Runnable {
     IFloodlightProviderService provider;
     Logger log;
-    HashMap<String, FlowInformation> dataCouter;
+  //  HashMap<String, FlowInformation> dataCouter;
    // StaticFlowEntryPusher pusher;
 
     public FlowTableGetter(IFloodlightProviderService floodlightProvider, Logger log){
         provider = floodlightProvider;
-        provider.addOFMessageListener(OFType.FLOW_REMOVED,new RemoveMessageListener());
-        dataCouter = new HashMap<String, FlowInformation>();
+    //    provider.addOFMessageListener(OFType.FLOW_REMOVED,new RemoveMessageListener());
+     //   dataCouter = new HashMap<String, FlowInformation>();
 
       // pusher = new StaticFlowEntryPusher();
 
@@ -39,21 +40,9 @@ public class FlowTableGetter implements Runnable {
         while(true){
             getFlows(provider);
 
-            for (FlowInformation inf : dataCouter.values()){
-                System.out.println(inf);
-                
-                try {
-					sendToZabbix();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-            }
-            System.out.println("-----------------------------------------------------");
-
             try {
 
-                Thread.sleep(2000);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -62,29 +51,6 @@ public class FlowTableGetter implements Runnable {
 
     }
 
-    private void sendToZabbix() throws IOException {
-        ProjectTrapper trapper = new ProjectTrapper();
-        for (FlowInformation flow : dataCouter.values()){
-
-        	/* Sending data via Zabbix Sender */
-            //Send IP
-            //trapper.sendMetric("localhost","CitProjectDummy","project.user.ipport.klaus",false,flow.getSrcIp());
-            //Send Datasize
-            if (flow.getSrcIp().equals("10.0.0.1")){
-              //  int sizeMb = (int)flow.getDataSizeMB();
-
-               // trapper.sendMetricJson("192.168.178.28", "CitProjectDummy", "project.user.bandwidth.klaus", true, Integer.toString(sizeMb));
-
-        	/* Sending data via JSON */
-                //trapper.sendMetricJson("192.168.178.28", "CitProjectDummy", "project.user.ipport.klaus", false, flow.getSrcIp());
-
-            }
-
-        	
-        }
-
-
-    }
 
     public void getFlows(IFloodlightProviderService floodlightProvider)
     {
@@ -95,35 +61,64 @@ public class FlowTableGetter implements Runnable {
             List<OFFlowStatisticsReply> flowTable = getSwitchFlowTable(sw, (short)-1);
             for(OFFlowStatisticsReply flow : flowTable)
             {
-
-              //  System.err.println(String.valueOf(flow));
-
-                String nw_src =IPv4.fromIPv4Address(flow.getMatch().getNetworkSource());
+                String nw_src = IPv4.fromIPv4Address(flow.getMatch().getNetworkSource());
                 String nw_dst = IPv4.fromIPv4Address(flow.getMatch().getNetworkDestination());
-                long switchId = sw.getId();
+                String dl_src = HexString.toHexString(flow.getMatch().getDataLayerSource());
+                String dl_dst = HexString.toHexString(flow.getMatch().getDataLayerDestination());
+
+                int switchId = (int)sw.getId();
 
                 long count = flow.getByteCount();
-                int time = flow.getDurationSeconds();
-                long mb = (count);
-                String key = nw_src;
-                boolean changed = false;
-                FlowInformation inf = dataCouter.get(key);
-                if (dataCouter.containsKey(key)){
-                    double size = inf.getDataSize();
-                    inf.setDataSize((long)size + mb);
-                    inf.setTime(inf.getTime()+time);
-                  //  changed = true;
-                  //  System.out.println(inf);
-                }else{
-                  //  FlowInformation counter = new FlowInformation(flow.getTableId(),nw_src,nw_dst,mb,time);
-               //     dataCouter.put(key,counter);
-                   // changed = true;
-                   // System.err.println(counter);
+                long r = flow.getPacketCount();
+                int time = flow.getDurationSeconds() - flow.getIdleTimeout();
+              //  long startTime = timeStamp - (time*1000);
+                //long mb = (count);
+                FlowInformation flowInf = new FlowInformation(switchId,0,0, dl_src, dl_dst, nw_src, nw_dst, count, time);
+              //  System.err.println(String.valueOf(flow));
+
+                String account = "klaus";
+                if (flowInf.getDataSize() >0) {
+                    System.out.println("Sende: " + flowInf);
+                    System.out.println(Double.toString(flowInf.getBandWith()));
+                    String keys[] = new String[]{"user." + account + ".ip", "user." + account + ".daten", "user." + account + ".bandwidth"};
+                    String vals[] = new String[]{flowInf.getSrcIp(), Integer.toString((int) flowInf.getDataSize()), Integer.toString((int) flowInf.getBandWith())};
+                    try {
+
+                        sendToZabbix(flowInf, keys, vals, flowInf.getStartTime(), flowInf.getEndTime());
+
+
+                    } catch (IOException e) {
+                        System.err.println("Unable to push to Zabbix");
+                    }
+
+
                 }
-                //deleteFlowEntry(sw, flow);
             }
 
             }
+
+    }
+
+
+    private void sendToZabbix(FlowInformation flow,String[] keys, String[] vals, long startTime, long endTime) throws IOException {
+        ProjectTrapper trapper = new ProjectTrapper();
+
+        // for (int i = 0; i < keys.length; i++){
+        if (flow.getSrcIp().equals("10.0.0.1")){
+
+            trapper.sendMetricJson("localhost", "CitProjectDummy1", keys, vals, startTime, false);
+
+            for (int i = 0; i < keys.length; i++){
+                vals[i] = "0";
+            }
+            trapper.sendMetricJson("localhost","CitProjectDummy1",keys,vals,System.currentTimeMillis(),false);
+        	/* Sending data via JSON */
+            // trapper.sendMetricJson("localhost", "CitProjectDummy1", keys, vals, endTime, true);
+
+
+        }
+        //}
+
 
     }
 

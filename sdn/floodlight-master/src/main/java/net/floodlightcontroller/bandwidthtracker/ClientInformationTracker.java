@@ -63,7 +63,8 @@ public class ClientInformationTracker implements IFloodlightModule{
     @Override
     public void startUp(FloodlightModuleContext context) throws FloodlightModuleException {
 
-            //new Thread(new FlowTableGetter(provider,log)).start();
+            Thread thread = new Thread(new FlowTableGetter(provider,log));
+            thread.start();
             provider.addOFMessageListener(OFType.FLOW_REMOVED,new RemoveMessageListener());
 
     }
