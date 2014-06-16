@@ -3,21 +3,63 @@ package net.floodlightcontroller.bandwidthtracker;
 import net.floodlightcontroller.core.*;
 import net.floodlightcontroller.packet.Ethernet;
 import net.floodlightcontroller.packet.IPv4;
+import net.floodlightcontroller.timesync.TimeSync;
 import net.floodlightcontroller.zabbix_pusher.ProjectTrapper;
-import org.apache.commons.codec.binary.Hex;
+
+
+//import org.apache.commons.codec.binary.Hex;
 import org.openflow.protocol.*;
 import org.openflow.util.HexString;
 
 import java.io.IOException;
-import java.util.List;
+
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.Date;
 
 /**
  * Created by fubezz on 11.06.14.
  */
 public class RemoveMessageListener implements IOFMessageListener {
-    @Override
+	
+	/* Uses Time Protocol (RFC868) for simplicity. */
+	/*
+	public static final long getCurrentSyncedTime(String host) throws IOException {
+		
+		TimeTCPClient timeClient = new TimeTCPClient();
+		long currentTimeStamp = 0;
+		
+		timeClient.setDefaultTimeout(2000); // 2 sec
+		timeClient.connect(host);
+		//System.out.println(timeClient.getDate(InetAddress.getByName(host)));
+		currentTimeStamp = timeClient.getTime();
+        timeClient.disconnect();
+        return currentTimeStamp;	
+	}
+	*/
+	
+    @SuppressWarnings("static-access")
+	@Override
     public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
-        long timeStamp = System.currentTimeMillis();
+    	
+    	// --- Time Protocol Version (RFC868) --- //
+    	//     http://commons.apache.org/proper/commons-net/javadocs/api-3.3/index.html
+    	
+    	/*long currentTimeStamp = 0;
+    	
+    	try {
+			currentTimeStamp = getCurrentSyncedTime("time.nist.gov"); //
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+    	System.out.println("Timestamp Server is: " +currentTimeStamp);
+    	System.out.println("Timestamp Local is: " +System.currentTimeMillis());
+    	*/
+    	
+    	long timeStamp = TimeSync.getNtpTimestamp();
+    	//long timeStamp = System.currentTimeMillis();
 
         OFFlowRemoved flow = (OFFlowRemoved) msg;
         timeStamp = timeStamp - (flow.getIdleTimeout()*1000);

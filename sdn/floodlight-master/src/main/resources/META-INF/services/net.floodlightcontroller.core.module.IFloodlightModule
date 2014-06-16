@@ -1,5 +1,5 @@
-net.floodlightcontroller.jython.JythonDebugInterface
 net.floodlightcontroller.core.module.ApplicationLoader
+net.floodlightcontroller.jython.JythonDebugInterface
 net.floodlightcontroller.core.internal.FloodlightProvider
 net.floodlightcontroller.storage.memory.MemoryStorageSource
 net.floodlightcontroller.devicemanager.internal.DeviceManagerImpl
