@@ -22,7 +22,8 @@ public class ZabbixSender implements Runnable {
 	
 	public static final String POWER_CONSUMPTION_KEY = "datanode.power";
 	public static final String USER_CLIENT_MAPPING_DUMMY_HOST = "UserClientMappingDummy";
-	public static final String USER_CLIENT_MAPPING_KEY = "user.%s.lastIP";
+	public static final String USER_IP_MAPPING_KEY = "user.%s.ip";
+	public static final String USER_PORT_MAPPING_KEY = "user.%s.port";
 	public static final String USER_BANDWIDTH_KEY = "user.%s.bandwidth";
 	public static final String USER_DURATION_KEY = "user.%s.duration";
 
@@ -66,7 +67,9 @@ public class ZabbixSender implements Runnable {
 		System.out.println("New zabbix sender with hostname " + this.zabbixHostname + " started.");
 		while(!Thread.interrupted()) {
 			try {
-				sendDataToZabbix(valuesQueue.take());
+				HostKeyValueTriple data = valuesQueue.take();
+//				System.out.println("Sending: " + data);
+				sendDataToZabbix(data);
 			} catch (UnknownHostException e) {
 				break;
 			} catch (IOException e) {
@@ -134,7 +137,11 @@ public class ZabbixSender implements Runnable {
     }
     
     public void sendLastUserIP(String username, String lastIP) {
-    	valuesQueue.add(new HostKeyValueTriple(USER_CLIENT_MAPPING_DUMMY_HOST, String.format(USER_CLIENT_MAPPING_KEY, username), lastIP));
+    	valuesQueue.add(new HostKeyValueTriple(USER_CLIENT_MAPPING_DUMMY_HOST, String.format(USER_IP_MAPPING_KEY, username), lastIP));
     }
 
+    public void sendLastUserIPAndPort(String username, String lastIP, int lastPort) {
+    	sendLastUserIP(username, lastIP);
+    	valuesQueue.add(new HostKeyValueTriple(USER_CLIENT_MAPPING_DUMMY_HOST, String.format(USER_PORT_MAPPING_KEY, username), Integer.toBinaryString(lastPort)));
+    }
 }
