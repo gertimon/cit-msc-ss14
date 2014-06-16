@@ -1,6 +1,5 @@
 package de.tuberlin.cit.project.energy.hadoop;
 
-import de.tuberlin.cit.project.energy.helper.zabbix.ZabbixHelper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -10,7 +9,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.ExecutionException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hdfs.protocol.DatanodeInfo;
@@ -19,11 +18,13 @@ import org.apache.hadoop.hdfs.protocol.LocatedBlocks;
 import org.apache.hadoop.hdfs.web.JsonUtil;
 import org.mortbay.util.ajax.JSON;
 
+import de.tuberlin.cit.project.energy.zabbix.ZabbixSender;
+
 /**
  * This class acts as interface between the energy based data node selection and
  * the name node.
  *
- * @author Sascha Wolke
+ * @author Tobias und Sascha
  */
 public class EnergyBaseDataNodeFilter {
 
@@ -31,21 +32,17 @@ public class EnergyBaseDataNodeFilter {
     private final String dataNodeSelectorAddress;
     private final int dataNodeSelectorPort;
 
-    private final String BLACK_BOX_URI = "TODO" + "/api/v1/";
     private final Properties ENERGY_USER_PROPERTIES = loadProperties("energy.user.config.properties");
     private final Properties ENERGY_RACK_PROPERTIES = loadProperties("energy.user.config.properties");
 
-    private final ZabbixHelper zabbixHelper;
+    private final ZabbixSender zabbixSender;
 
-    public enum EnergyMode {
-
-        FAST, CHEAP, NONE
-    }
+    public enum EnergyMode { FAST, CHEAP, NONE }
 
     public EnergyBaseDataNodeFilter(String dataNodeSelectorAddress, int dataNodeSelectorPort) {
         this.dataNodeSelectorAddress = dataNodeSelectorAddress;
         this.dataNodeSelectorPort = dataNodeSelectorPort;
-        this.zabbixHelper = ZabbixHelper.getZabbixHelper();
+        this.zabbixSender = new ZabbixSender();
 
         LOG.info("New energy data node selector client initialized with address="
             + this.dataNodeSelectorAddress + " and port=" + this.dataNodeSelectorPort + ".");
@@ -56,50 +53,29 @@ public class EnergyBaseDataNodeFilter {
         LocatedBlocks orderedBlocks = null;
 
         try {
-
-            // send username and ip to blackbox
-            LOG.info("Got user request, inform blackbox about user's ip");
-            zabbixHelper.setIpForUser(remoteAddress, username); // TODO get different ip's for user
+            LOG.info("Got decision request (" + path + "), loggin user's ip into zabbix.");
+            zabbixSender.sendLastUserIP(username, remoteAddress);
             // TODO push filename, opened files, removed replication locations
             // datanode send ip+port+user
 
+            LOG.info("Input: " + toJson(locatedBlocks, path, username, remoteAddress));
+
             // try ordering
             orderedBlocks = orderBlocks(username, locatedBlocks);
-           
-            LOG.info("Got decision request (" + path + ")!");
-            LOG.info("Request: " + toJson(locatedBlocks, path, username, remoteAddress));
+
+            LOG.info("Located blocks output: " + JsonUtil.toJsonString(locatedBlocks));
+
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
             LOG.fatal(e);
         }
-        // TODO: ask blackbox
+        
         return orderedBlocks;
     }
 
     /**
-     * TODO implement right
-     *
-     * @param username
-     * @param remoteAddress
-     * @throws InterruptedException
-     * @throws IOException
-     * @throws ExecutionException
-     */
-    public void pushToZabbix(String username, String remoteAddress) throws InterruptedException, IOException, ExecutionException {
-//        AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-//        final String userInfoURI = BLACK_BOX_URI + "setCurrentUser?user=" + username + "&ip=" + remoteAddress;
-//        Future<Response> f = asyncHttpClient.preparePut(userInfoURI).execute();
-//        Response response = f.get();
-//        if (response.getStatusCode() != 250) {
-//            LOG.error("could not update ip for user '" + username + "' to '" + remoteAddress + "'");
-//        } else {
-//            LOG.info("successfully updated ip from user '" + username + "' to '" + remoteAddress + "'");
-//        }
-    }
-
-    /**
-     * removes some blocks that mismatchs a filter strategy iff required packets
+     * removes some blocks that mismatchs a filter strategy if required packets
      * exist on desired data nodes.
      *
      * @param blockFilterStrategy recognises CHEAP, FAST, null
@@ -141,7 +117,7 @@ public class EnergyBaseDataNodeFilter {
         } else {
             LOG.warn("could not recognize a filter strategy for mode '" + userMode + "', use 'CHEAP' or -'FAST'- instead, return same list of blocks.");
         }
-        // override block list
+        
         return locatedBlocks;
     }
 
