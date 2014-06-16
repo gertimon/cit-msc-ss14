@@ -33,7 +33,7 @@ public class EnergyBaseDataNodeFilter {
     private final int dataNodeSelectorPort;
 
     private final Properties ENERGY_USER_PROPERTIES = loadProperties("energy.user.config.properties");
-    private final Properties ENERGY_RACK_PROPERTIES = loadProperties("energy.user.config.properties");
+    private final Properties ENERGY_RACK_PROPERTIES = loadProperties("energy.rack.config.properties");
 
     private final ZabbixSender zabbixSender;
 
