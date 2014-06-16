@@ -23,6 +23,8 @@ public class ZabbixSender implements Runnable {
 	public static final String POWER_CONSUMPTION_KEY = "datanode.power";
 	public static final String USER_CLIENT_MAPPING_DUMMY_HOST = "UserClientMappingDummy";
 	public static final String USER_CLIENT_MAPPING_KEY = "user.%s.lastIP";
+	public static final String USER_BANDWIDTH_KEY = "user.%s.bandwidth";
+	public static final String USER_DURATION_KEY = "user.%s.duration";
 
 	private final String zabbixHostname;
 	private final int zabbixPort;
@@ -120,11 +122,15 @@ public class ZabbixSender implements Runnable {
     }
     
     public void sendBandwidthUsage(String hostname, String username, double bandwidthConsumed) {
-    	
+    	valuesQueue.add(new HostKeyValueTriple(hostname, String.format(USER_BANDWIDTH_KEY, username), Double.toString(bandwidthConsumed)));
     }
 
-    public void sendBandwidthUsageByIp(String hostname, String username, double bandwidthConsumed) {
-    	
+    public void sendDuration(String hostname, String username, double duration) {
+    	valuesQueue.add(new HostKeyValueTriple(hostname, String.format(USER_DURATION_KEY, username), Double.toString(duration)));
+    }
+
+    public void sendBandwidthUsageByIp(String hostname, String ip, double bandwidthConsumed) {
+    	throw new RuntimeException("Not implemented");
     }
     
     public void sendLastUserIP(String username, String lastIP) {
