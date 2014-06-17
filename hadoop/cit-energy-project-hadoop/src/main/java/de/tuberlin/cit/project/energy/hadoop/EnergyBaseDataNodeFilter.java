@@ -121,13 +121,9 @@ public class EnergyBaseDataNodeFilter {
         return locatedBlocks;
     }
 
-    private EnergyMode setEnergyMode(String username, Properties properties) {
-        EnergyMode mode = EnergyMode.NONE;
-        String property = properties.getProperty(username);
-        if (property.equals(EnergyMode.CHEAP.toString())) {
-            mode = EnergyMode.CHEAP;
-        }
-        return mode;
+    private EnergyMode getEnergyMode(String username, Properties properties) {
+        return EnergyMode.valueOf(
+        		properties.getProperty(username, EnergyMode.NONE.toString()));
     }
 
     public String toJson(LocatedBlocks locatedBlocks, String path, String username, String remoteAddress) throws IOException {
