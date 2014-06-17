@@ -32,8 +32,8 @@ public class EnergyBaseDataNodeFilter {
     private final String dataNodeSelectorAddress;
     private final int dataNodeSelectorPort;
 
-    private final Properties ENERGY_USER_PROPERTIES = loadProperties("energy.user.config.properties");
-    private final Properties ENERGY_RACK_PROPERTIES = loadProperties("energy.rack.config.properties");
+    private final Properties energyUserProperties = loadProperties("energy.user.config.properties");
+    private final Properties energyRackProperties = loadProperties("energy.rack.config.properties");
 
     private final ZabbixSender zabbixSender;
 
@@ -84,13 +84,13 @@ public class EnergyBaseDataNodeFilter {
      */
     private LocatedBlocks orderBlocks(String username, LocatedBlocks locatedBlocks) {
 
-        EnergyMode userMode = setEnergyMode(username, ENERGY_USER_PROPERTIES);
+        EnergyMode userMode = getEnergyMode(username, energyUserProperties);
 
         // create set of racks for each mode given
         // only take cheap racks
         Set<String> cheapRacks = new HashSet<String>();
-        for (String propertyName : ENERGY_RACK_PROPERTIES.stringPropertyNames()) {
-            if (ENERGY_RACK_PROPERTIES.getProperty(propertyName).equals(EnergyMode.CHEAP.toString())) {
+        for (String propertyName : energyRackProperties.stringPropertyNames()) {
+            if (energyRackProperties.getProperty(propertyName).equals(EnergyMode.CHEAP.toString())) {
                 cheapRacks.add(propertyName);
             }
         }
