@@ -51,6 +51,8 @@ public class ZabbixAPIClient {
 		this.zabbixUsername = zabbixUsername;
 		this.zabbixPassword = zabbixPassword;
 		this.httpClient = new AsyncHttpClient(config);
+
+		log.info("New ZabbixAPIClient initialized with endpoint " + this.zabbixURL + " and username " + this.zabbixUsername + ".");
 	}
 
 	public ZabbixAPIClient(String zabbixURL, String zabbixUsername, String zabbixPassword) throws KeyManagementException, NoSuchAlgorithmException {
@@ -60,6 +62,8 @@ public class ZabbixAPIClient {
 		AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder();
 		configBuilder.setSSLContext(LooseTrustManager.getSSLContext());
 		this.httpClient = new AsyncHttpClient(configBuilder.build());
+
+		log.info("New ZabbixAPIClient initialized with endpoint " + this.zabbixURL + " and username " + this.zabbixUsername + ".");
 	}
 
 	public ZabbixAPIClient(String zabbixURL, String zabbixUsername, String zabbixPassword, String httpAuthUsername, String httpAuthPassword) throws NoSuchAlgorithmException, KeyManagementException {
@@ -77,6 +81,8 @@ public class ZabbixAPIClient {
 			.build()
 		);
 		this.httpClient = new AsyncHttpClient(configBuilder.build());
+
+		log.info("New ZabbixAPIClient initialized with endpoint " + this.zabbixURL + " and username " + this.zabbixUsername + ".");
 	}
 
 	public ZabbixAPIClient() throws NoSuchAlgorithmException, KeyManagementException {
@@ -99,7 +105,6 @@ public class ZabbixAPIClient {
 
 				if (jsonResponse.hasNonNull("result") && !jsonResponse.get("result").asText().isEmpty()) {
 	                this.authToken = jsonResponse.get("result").asText();
-	                log.debug("Got authentication token: " + this.authToken);
 	            	
 	        	} else if(jsonResponse.has("error")) {
 	        		throw new AuthenticationException(jsonResponse.get("error").asText());

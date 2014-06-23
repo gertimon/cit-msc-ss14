@@ -7,6 +7,9 @@ import java.rmi.UnknownHostException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -19,7 +22,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * java ... -Dzabbix.hostname=localhost -Dzabbix.port=10051
  */
 public class ZabbixSender implements Runnable {
-	
+	private static final Log log = LogFactory.getLog(ZabbixSender.class);
 
 	private final String zabbixHostname;
 	private final int zabbixPort;
@@ -34,6 +37,8 @@ public class ZabbixSender implements Runnable {
 		this.objectMapper = new ObjectMapper();
 		this.senderThread = new Thread(this, "ZabbixSender");
 		this.senderThread.start();
+
+		log.info("New ZabbixSender initialized with zabbix hostname " + this.zabbixHostname + " and port " + this.zabbixPort + ".");
 	}
 
 	public ZabbixSender() {
