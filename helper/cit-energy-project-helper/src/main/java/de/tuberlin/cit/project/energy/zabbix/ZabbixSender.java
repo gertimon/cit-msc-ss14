@@ -7,6 +7,9 @@ import java.rmi.UnknownHostException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 /**
  * Simple asynchron zabbix sender.
  * 
@@ -17,64 +20,39 @@ import java.util.concurrent.BlockingQueue;
  */
 public class ZabbixSender implements Runnable {
 	
-	public static final String DEFAULT_ZABBIX_HOST = "mpjss14.cit.tu-berlin.de";
-	public static final String DEFAULT_ZABBIX_PORT = "10051";
-	
-	public static final String POWER_CONSUMPTION_KEY = "datanode.power";
-	public static final String USER_CLIENT_MAPPING_DUMMY_HOST = "UserClientMappingDummy";
-	public static final String USER_IP_MAPPING_KEY = "user.%s.ip";
-	public static final String USER_PORT_MAPPING_KEY = "user.%s.port";
-	public static final String USER_BANDWIDTH_KEY = "user.%s.bandwidth";
-	public static final String USER_DURATION_KEY = "user.%s.duration";
 
 	private final String zabbixHostname;
 	private final int zabbixPort;
-	private final BlockingQueue<HostKeyValueTriple> valuesQueue;
+	private final BlockingQueue<ObjectNode[]> valuesQueue;
 	private final Thread senderThread;
-	
-	private class HostKeyValueTriple {
-		// TODO: add timestamp
-		public final String host;
-		public final String key;
-		public final String value;
-		
-		public HostKeyValueTriple(String host, String key, String value) {
-			this.host = host;
-			this.key = key;
-			this.value = value;
-		}
-		
-		@Override
-		public String toString() {
-			return "(" + host + ", " + key + ", " + value + ")";
-		}
-	}
+	private final ObjectMapper objectMapper;
 	
 	public ZabbixSender(String zabbixHostname, int zabbixPort) {
 		this.zabbixHostname = zabbixHostname;
 		this.zabbixPort = zabbixPort;
-		this.valuesQueue = new ArrayBlockingQueue<HostKeyValueTriple>(10);
+		this.valuesQueue = new ArrayBlockingQueue<ObjectNode[]>(10);
+		this.objectMapper = new ObjectMapper();
 		this.senderThread = new Thread(this, "ZabbixSender");
 		this.senderThread.start();
 	}
 
 	public ZabbixSender() {
-		this(System.getProperty("zabbix.hostname", DEFAULT_ZABBIX_HOST),
-				Integer.parseInt(System.getProperty("zabbix.port", DEFAULT_ZABBIX_PORT)));
+		this(System.getProperty("zabbix.hostname", ZabbixParams.DEFAULT_ZABBIX_HOST),
+				Integer.parseInt(System.getProperty("zabbix.port", ZabbixParams.DEFAULT_ZABBIX_PORT)));
 	}
 	
 	public void run() {
-		System.out.println("New zabbix sender with hostname " + this.zabbixHostname + " started.");
 		while(!Thread.interrupted()) {
 			try {
-				HostKeyValueTriple data = valuesQueue.take();
-//				System.out.println("Sending: " + data);
+				ObjectNode data[] = valuesQueue.take();
 				sendDataToZabbix(data);
 			} catch (UnknownHostException e) {
+				System.err.println("Can't find zabbix host: " + e);
 				break;
 			} catch (IOException e) {
 				// do nothing, just drop the current (failed) value
 				System.err.println("Failed to send values to zabbix!");
+				e.printStackTrace();
 			} catch (InterruptedException e) {
 			}
 		}
@@ -94,54 +72,58 @@ public class ZabbixSender implements Runnable {
             (byte) ((msglength >> 24) & 0x000000FF),
             '\0', '\0', '\0', '\0'};
     }
-
-    private String toJson(HostKeyValueTriple data) {
-        return "{"
-            + " \"request\":\"sender data\","
-            + " \"data\":["
-            + "   {"
-            + "     \"host\":\"" + data.host + "\","
-            + "     \"key\":\"" + data.key + "\","
-            + "     \"value\":\"" + data.value + "\""
-            + "   }"
-            + " ] }";
+    
+    private ObjectNode createDataNode(String host, String key, String value) {
+    	ObjectNode data = this.objectMapper.createObjectNode();
+    	data.put("host", host);
+    	data.put("key", key);
+    	data.put("value", value);
+    	return data;
     }
-
-    private void sendDataToZabbix(HostKeyValueTriple data) throws UnknownHostException, IOException {
-    	String json = toJson(data);
-        byte[] header = calculateHeader(json.length());
+    
+    private void sendDataToZabbix(ObjectNode data[]) throws UnknownHostException, IOException {
+    	ObjectNode request = this.objectMapper.createObjectNode();
+    	request.put("request", "sender data");
+    	for(ObjectNode node : data)
+    		request.withArray("data").add(node);
+    	String jsonRequest = request.toString();
+        byte[] header = calculateHeader(jsonRequest.length());
         
         Socket clientSocket = new Socket(this.zabbixHostname, this.zabbixPort);
         DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
         outToServer.write(header);
-        outToServer.write(json.getBytes());
+        outToServer.write(jsonRequest.getBytes());
         outToServer.flush();
         outToServer.close();
         clientSocket.close();
     }
     
     public void sendPowerConsumption(String hostname, double powerConsumed) {
-    	valuesQueue.add(new HostKeyValueTriple(hostname, POWER_CONSUMPTION_KEY, Double.toString(powerConsumed)));
+    	valuesQueue.add(new ObjectNode[] {
+			createDataNode(hostname, ZabbixParams.POWER_CONSUMPTION_KEY, Double.toString(powerConsumed))
+		});
     }
     
-    public void sendBandwidthUsage(String hostname, String username, double bandwidthConsumed) {
-    	valuesQueue.add(new HostKeyValueTriple(hostname, String.format(USER_BANDWIDTH_KEY, username), Double.toString(bandwidthConsumed)));
+    public void sendBandwidthUsage(String serverName, String username, double bandwidthConsumed) {
+    	valuesQueue.add(new ObjectNode[] {
+			createDataNode(serverName, String.format(ZabbixParams.USER_BANDWIDTH_KEY, username), Double.toString(bandwidthConsumed))
+		});
     }
 
-    public void sendDuration(String hostname, String username, double duration) {
-    	valuesQueue.add(new HostKeyValueTriple(hostname, String.format(USER_DURATION_KEY, username), Double.toString(duration)));
+    public void sendDuration(String serverName, String username, double duration) {
+    	valuesQueue.add(new ObjectNode[] {
+			createDataNode(serverName, String.format(ZabbixParams.USER_DURATION_KEY, username), Double.toString(duration))
+    	});
     }
 
-    public void sendBandwidthUsageByIp(String hostname, String ip, double bandwidthConsumed) {
-    	throw new RuntimeException("Not implemented");
+    public void sendUserDataNodeConnection(String dataNodeServerName, String username, String ip, int port) {
+    	valuesQueue.add(new ObjectNode[] {
+			createDataNode(dataNodeServerName, String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, username), ip+":"+port)
+    	});
     }
     
-    public void sendLastUserIP(String username, String lastIP) {
-    	valuesQueue.add(new HostKeyValueTriple(USER_CLIENT_MAPPING_DUMMY_HOST, String.format(USER_IP_MAPPING_KEY, username), lastIP));
-    }
-
-    public void sendLastUserIPAndPort(String username, String lastIP, int lastPort) {
-    	sendLastUserIP(username, lastIP);
-    	valuesQueue.add(new HostKeyValueTriple(USER_CLIENT_MAPPING_DUMMY_HOST, String.format(USER_PORT_MAPPING_KEY, username), Integer.toBinaryString(lastPort)));
+    @Deprecated
+    public void sendBandwidthUsageByConnection(String serverName, String clientIP, String clientPort, double bandwidthConsumed) {
+    	throw new RuntimeException("Not implemented here! Implement in floodlight controller and cache user/ip+port mapping.");
     }
 }
