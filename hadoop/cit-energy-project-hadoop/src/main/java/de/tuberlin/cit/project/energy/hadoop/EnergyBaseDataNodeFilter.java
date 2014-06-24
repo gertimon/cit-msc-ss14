@@ -1,14 +1,15 @@
 package de.tuberlin.cit.project.energy.hadoop;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
-import java.util.TreeMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -16,8 +17,8 @@ import org.apache.hadoop.hdfs.protocol.DatanodeInfo;
 import org.apache.hadoop.hdfs.protocol.LocatedBlock;
 import org.apache.hadoop.hdfs.protocol.LocatedBlocks;
 import org.apache.hadoop.hdfs.web.JsonUtil;
-import org.mortbay.util.ajax.JSON;
 
+import de.tuberlin.cit.project.energy.zabbix.ZabbixAPIClient;
 import de.tuberlin.cit.project.energy.zabbix.ZabbixSender;
 
 /**
@@ -27,145 +28,130 @@ import de.tuberlin.cit.project.energy.zabbix.ZabbixSender;
  * @author Tobias und Sascha
  */
 public class EnergyBaseDataNodeFilter {
-
     private final static Log LOG = LogFactory.getLog(EnergyBaseDataNodeFilter.class);
-    private final String dataNodeSelectorAddress;
-    private final int dataNodeSelectorPort;
 
-    private final Properties energyUserProperties = loadProperties("energy.user.config.properties");
-    private final Properties energyRackProperties = loadProperties("energy.rack.config.properties");
+    public static final String RACK_MAPPING_FILENAME = "de/tuberlin/cit/project/energy/hadoop/energy.rack.config.properties";
+    public static final String USER_MAPPING_FILENAME = "de/tuberlin/cit/project/energy/hadoop/energy.user.config.properties";
+    private final Map<String, EnergyMode> rackEnergyMapping;
+    private final Map<String, EnergyMode> userEnergyMapping;
 
-    private final ZabbixSender zabbixSender;
+    private final String zabbixHostname;
+    private final int zabbixPort;
+    private final String zabbixRestUrl;
+    private final String zabbixRestUsername;
+    private final String zabbixRestPassword;
 
-    public enum EnergyMode { FAST, CHEAP, NONE }
+    private ZabbixSender zabbixSender;
+    private ZabbixAPIClient zabbixApiClient;
 
-    public EnergyBaseDataNodeFilter(String dataNodeSelectorAddress, int dataNodeSelectorPort) {
-        this.dataNodeSelectorAddress = dataNodeSelectorAddress;
-        this.dataNodeSelectorPort = dataNodeSelectorPort;
-        this.zabbixSender = new ZabbixSender();
+    public enum EnergyMode { DEFAULT, FAST, CHEAP }
 
-        LOG.info("New energy data node selector client initialized with address="
-            + this.dataNodeSelectorAddress + " and port=" + this.dataNodeSelectorPort + ".");
+    public EnergyBaseDataNodeFilter(String zabbixHostname, int zabbixPort, 
+    		String zabbixRestUrl, String zabbixRestUsername, String zabbixRestPassword) {
+        this.zabbixHostname = zabbixHostname;
+        this.zabbixPort = zabbixPort;
+        this.zabbixRestUrl = zabbixRestUrl;
+        this.zabbixRestUsername = zabbixRestUsername;
+        this.zabbixRestPassword = zabbixRestPassword;
+        
+        this.zabbixSender = new ZabbixSender(zabbixHostname, zabbixPort);
+        
+        try {
+        	this.zabbixApiClient = new ZabbixAPIClient(zabbixRestUrl, zabbixRestUsername, zabbixRestPassword);
+        } catch(NoSuchAlgorithmException e) {
+        	e.printStackTrace();
+        	throw new RuntimeException("Can't initialize zabbixAPIClient: " + e.getMessage());
+        } catch(KeyManagementException e) {
+        	e.printStackTrace();
+        	throw new RuntimeException("Can't initialize zabbixAPIClient: " + e.getMessage());
+        }
+        
+        this.rackEnergyMapping = loadEnergyMapping(RACK_MAPPING_FILENAME);
+        this.userEnergyMapping = loadEnergyMapping(USER_MAPPING_FILENAME);
+
+        LOG.info("New filter initialized.");
     }
 
     public LocatedBlocks filterBlockLocations(LocatedBlocks locatedBlocks, String path, String username, String remoteAddress) {
-
-        LocatedBlocks orderedBlocks = null;
-
         try {
-            LOG.info("Got decision request (" + path + "), loggin user's ip into zabbix.");
-            zabbixSender.sendLastUserIP(username, remoteAddress);
-            // TODO push filename, opened files, removed replication locations
-            // datanode send ip+port+user
+            EnergyMode energyMode = this.userEnergyMapping.get(username);
+            if (energyMode == null)
+            	energyMode = EnergyMode.DEFAULT;
 
-            LOG.info("Input: " + toJson(locatedBlocks, path, username, remoteAddress));
-
-            // try ordering
-            orderedBlocks = orderBlocks(username, locatedBlocks);
-
-            LOG.info("Located blocks output: " + JsonUtil.toJsonString(locatedBlocks));
-
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
+            LOG.info("New filter request: path="+path+", username="+username+", remoteAddress="+remoteAddress+", energyMode=" + energyMode + ", locatedBlocks=" + JsonUtil.toJsonString(locatedBlocks));
+            LocatedBlocks filteredBlockLocations = filterBlocks(username, path, energyMode, locatedBlocks);
+            LOG.info("Returning filtered block locations: " + JsonUtil.toJsonString(filteredBlockLocations));
+        	return filteredBlockLocations;
+            
+        } catch (IOException e) {
+            LOG.fatal("Failure while filtering block locations, falling back to original locations: " + e.getMessage());
             e.printStackTrace();
-            LOG.fatal(e);
+            return locatedBlocks;
         }
-        
-        return orderedBlocks;
     }
 
     /**
-     * removes some blocks that mismatchs a filter strategy if required packets
-     * exist on desired data nodes.
+     * Remove all block locations except locations matching given strategy.
      *
-     * @param blockFilterStrategy recognises CHEAP, FAST, null
-     * @param locatedBlocks
-     * @return
+     * @param blockFilterStrategy keep locations with this strategy
      */
-    private LocatedBlocks orderBlocks(String username, LocatedBlocks locatedBlocks) {
-
-        EnergyMode userMode = getEnergyMode(username, energyUserProperties);
-
-        // create set of racks for each mode given
-        // only take cheap racks
-        Set<String> cheapRacks = new HashSet<String>();
-        for (String propertyName : energyRackProperties.stringPropertyNames()) {
-            if (energyRackProperties.getProperty(propertyName).equals(EnergyMode.CHEAP.toString())) {
-                cheapRacks.add(propertyName);
-            }
-        }
-
-        // try to recognize filter strategy or return same list
-        if (EnergyMode.CHEAP == userMode) {
-            for (LocatedBlock block : locatedBlocks.getLocatedBlocks()) {
-                // find first matching
-                List<DatanodeInfo> cleanLocations = new ArrayList<DatanodeInfo>();
-                for (DatanodeInfo location : block.getLocations()) {
-                    if (cheapRacks.contains(location.getNetworkLocation())) {
-                        cleanLocations.add(location);
-                    }
-                }
-                if (cleanLocations.size() > 0) {
-                    DatanodeInfo[] locations = block.getLocations();
-                    // TODO replace by override, this maybe will not change anything
-                    locations = (DatanodeInfo[]) cleanLocations.toArray();
-                    LOG.info("block location list manipulated");
-                } else {
-                    LOG.info("block location list not manipulated");
-                }
-            }
-        } else {
-            LOG.warn("could not recognize a filter strategy for mode '" + userMode + "', use 'CHEAP' or -'FAST'- instead, return same list of blocks.");
-        }
+    private LocatedBlocks filterBlocks(String username, String path, EnergyMode blockFilterStrategy, LocatedBlocks locatedBlocks) {
+    	// TODO: fix this...
+//        if (EnergyMode.CHEAP == userMode) {
+//            for (LocatedBlock block : locatedBlocks.getLocatedBlocks()) {
+//                // find first matching
+//                List<DatanodeInfo> cleanLocations = new ArrayList<DatanodeInfo>();
+//                for (DatanodeInfo location : block.getLocations()) {
+//                    if (cheapRacks.contains(location.getNetworkLocation())) {
+//                        cleanLocations.add(location);
+//                    }
+//                }
+//                if (cleanLocations.size() > 0) {
+//                    DatanodeInfo[] locations = block.getLocations();
+//                    // TODO replace by override, this maybe will not change anything
+//                    locations = (DatanodeInfo[]) cleanLocations.toArray();
+//                    LOG.info("block location list manipulated");
+//                } else {
+//                    LOG.info("block location list not manipulated");
+//                }
+//            }
+//        } else {
+//            LOG.warn("could not recognize a filter strategy for mode '" + userMode + "', use 'CHEAP' or -'FAST'- instead, return same list of blocks.");
+//        }
         
         return locatedBlocks;
     }
 
-    private EnergyMode getEnergyMode(String username, Properties properties) {
-        return EnergyMode.valueOf(
-        		properties.getProperty(username, EnergyMode.NONE.toString()));
-    }
-
-    public String toJson(LocatedBlocks locatedBlocks, String path, String username, String remoteAddress) throws IOException {
-        final Map<String, Object> m = new TreeMap<String, Object>();
-        m.put("locatedBlocks", JsonUtil.toJsonString(locatedBlocks));
-        m.put("path", path);
-        m.put("username", username);
-        m.put("remoteAddress", remoteAddress);
-        return JSON.toString(m);
+    private Map<String, EnergyMode> loadEnergyMapping(String resourceName) {
+        HashMap<String, EnergyMode> mapping = new HashMap<String, EnergyMode>();
+        
+    	try {
+	    	Properties properties = loadProperties(resourceName);
+	        for (String key : properties.stringPropertyNames()) {
+	        	EnergyMode value = EnergyMode.valueOf(properties.getProperty(key));
+	        	mapping.put(key, value);
+	        }
+    	} catch(IOException e) {
+    		LOG.warn("Can't load " + resourceName + " ( " + e.getMessage() + ")! Using default values.");
+    		e.printStackTrace();
+    	}
+    	
+        return mapping;
     }
 
     /**
-     * loads file, TODO cache file for specific time te reduce disk io
-     *
-     * @return
+     * Load given filename via class loader.
      */
-    private static Properties loadProperties(String filename) {
-
+    public Properties loadProperties(String filename) throws IOException, FileNotFoundException {
         Properties prop = new Properties();
-        InputStream input = null;
-
-        try {
-            input = EnergyBaseDataNodeFilter.class.getClassLoader().getResourceAsStream(filename);
-            if (input == null) {
-                System.out.println("Sorry, unable to find " + filename);
-                return null;
-            }
-
-            //load a properties file from class path, inside static method
-            prop.load(input);
-
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        } finally {
-            if (input != null) {
-                try {
-                    input.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+        InputStream input = EnergyBaseDataNodeFilter.class.getClassLoader().getResourceAsStream(filename);
+        if (input == null) {
+        	throw new FileNotFoundException(filename);
         }
+        
+        prop.load(input);
+        input.close();
+
         return prop;
     }
 }
