@@ -97,15 +97,25 @@ public class ZabbixSender implements Runnable {
     /**
      * Create JSON data nodes with given values.
      * @param hostname known by Zabbix
+     * @param clock timestamp in seconds since January 1st 1970
      */
-    private ObjectNode createDataNode(String hostname, String key, String value) {
+    private ObjectNode createDataNode(String hostname, String key, String value, long clock) {
     	ObjectNode data = this.objectMapper.createObjectNode();
     	data.put("host", hostname);
     	data.put("key", key);
     	data.put("value", value);
+    	data.put("clock", clock);
     	return data;
     }
-    
+
+    /**
+     * Create JSON data nodes with given values and current time.
+     * @param hostname known by Zabbix
+     */
+    private ObjectNode createDataNode(String hostname, String key, String value) {
+    	return createDataNode(hostname, key, value, System.currentTimeMillis() / 1000);
+    }
+
     /**
      * Opens a connection and send given data objects.
      * @param data JSON objects produced by {@link #createDataNode()}
@@ -115,6 +125,8 @@ public class ZabbixSender implements Runnable {
     	request.put("request", "sender data");
     	for(ObjectNode node : data)
     		request.withArray("data").add(node);
+    	request.put("clock", System.currentTimeMillis()/1000);
+    	
     	String jsonRequest = request.toString();
         byte[] header = calculateHeader(jsonRequest.length());
         
@@ -136,7 +148,18 @@ public class ZabbixSender implements Runnable {
 			createDataNode(dataNodeName, ZabbixParams.POWER_CONSUMPTION_KEY, Double.toString(powerConsumed))
 		});
     }
-    
+
+    /**
+     * @param dataNodeName as hostname
+     * @param powerConsumed in watt
+     * @param clock timestamp in seconds since January 1st 1970
+     */
+    public void sendPowerConsumption(String dataNodeName, double powerConsumed, long clock) {
+    	valuesQueue.add(new ObjectNode[] {
+			createDataNode(dataNodeName, ZabbixParams.POWER_CONSUMPTION_KEY, Double.toString(powerConsumed), clock)
+		});
+    }
+
     /**
      * @param dataNodeName as hostname
      * @param username
@@ -151,11 +174,35 @@ public class ZabbixSender implements Runnable {
     /**
      * @param dataNodeName as hostname
      * @param username
+     * @param bandwidthConsumed in KByte/second
+     * @param clock timestamp in seconds since January 1st 1970
+     */
+    public void sendBandwidthUsage(String dataNodeName, String username, double bandwidthConsumed, long clock) {
+    	valuesQueue.add(new ObjectNode[] {
+			createDataNode(dataNodeName, String.format(ZabbixParams.USER_BANDWIDTH_KEY, username), Double.toString(bandwidthConsumed), clock)
+		});
+    }
+
+    /**
+     * @param dataNodeName as hostname
+     * @param username
      * @param duration in seconds
      */
     public void sendDuration(String dataNodeName, String username, double duration) {
     	valuesQueue.add(new ObjectNode[] {
 			createDataNode(dataNodeName, String.format(ZabbixParams.USER_DURATION_KEY, username), Double.toString(duration))
+    	});
+    }
+
+    /**
+     * @param dataNodeName as hostname
+     * @param username
+     * @param duration in seconds
+     * @param clock timestamp in seconds since January 1st 1970
+     */
+    public void sendDuration(String dataNodeName, String username, double duration, long clock) {
+    	valuesQueue.add(new ObjectNode[] {
+			createDataNode(dataNodeName, String.format(ZabbixParams.USER_DURATION_KEY, username), Double.toString(duration), clock)
     	});
     }
 

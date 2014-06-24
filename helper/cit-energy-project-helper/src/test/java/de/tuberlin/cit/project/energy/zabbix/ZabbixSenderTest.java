@@ -33,14 +33,36 @@ public class ZabbixSenderTest {
 		this.zabbixSender.quit();
 	}
 
+	public void checkJsonFields(String receivedMessage, String hostname, String key, String value) {
+		assertTrue("Contains hostname", receivedMessage.matches(".*\"data\":.*\\{.*\"host\":\"" + hostname + "\".*\\}.*"));
+		assertTrue("Contains key", receivedMessage.matches(".*\"data\":.*\\{.*\"key\":\"" + key + "\".*\\}.*"));
+		assertTrue("Contains value", receivedMessage.matches(".*\"data\":.*\\{.*\"value\":\"" + value + "\".*\\}.*"));
+		assertTrue("Contains data clock field", receivedMessage.matches(".*\"data\":.*\\{.*\"clock\":[0-9]+.*\\}.*"));
+		assertTrue("Contains request clock field", receivedMessage.matches(".*\"data\":.*\\{.*\\}.*\"clock\":[0-9]+.*"));
+	}
+
+	public void checkJsonFields(String receivedMessage, String hostname, String key, String value, long clock) {
+		assertTrue("Contains hostname", receivedMessage.matches(".*\"data\":.*\\{.*\"host\":\"" + hostname + "\".*\\}.*"));
+		assertTrue("Contains key", receivedMessage.matches(".*\"data\":.*\\{.*\"key\":\"" + key + "\".*\\}.*"));
+		assertTrue("Contains value", receivedMessage.matches(".*\"data\":.*\\{.*\"value\":\"" + value + "\".*\\}.*"));
+		assertTrue("Contains data clock field", receivedMessage.matches(".*\"data\":.*\\{.*\"clock\":" + clock +".*\\}.*"));
+		assertTrue("Contains request clock field", receivedMessage.matches(".*\"data\":.*\\{.*\\}.*\"clock\":[0-9]+.*"));
+	}
+
 	@Test
 	public void testSendPowerConsumption() throws InterruptedException {
 		testServer.resetLastReceivedAgentMessage();
 		this.zabbixSender.sendPowerConsumption("testHostname", 123.45);
 		String receivedMessage = testServer.waitForNextMessage(10000);
-		assertTrue("Contains hostname", receivedMessage.matches(".*\"data\":.*\\{.*\"host\":\"testHostname\".*\\}.*"));
-		assertTrue("Contains power key", receivedMessage.matches(".*\"data\":.*\\{.*\"key\":\"datanode.power\".*\\}.*"));
-		assertTrue("Contains value", receivedMessage.matches(".*\"data\":.*\\{.*\"value\":\"123.45\".*\\}.*"));
+		checkJsonFields(receivedMessage, "testHostname", "datanode.power", "123.45");
+	}
+
+	@Test
+	public void testSendPowerConsumptionWithTimestamp() throws InterruptedException {
+		testServer.resetLastReceivedAgentMessage();
+		this.zabbixSender.sendPowerConsumption("testHostname", 123.45, 678);
+		String receivedMessage = testServer.waitForNextMessage(10000);
+		checkJsonFields(receivedMessage, "testHostname", "datanode.power", "123.45", 678);
 	}
 
 	@Test
@@ -48,9 +70,15 @@ public class ZabbixSenderTest {
 		testServer.resetLastReceivedAgentMessage();
 		this.zabbixSender.sendBandwidthUsage("testHostname", "testUsername", 123.45);
 		String receivedMessage = testServer.waitForNextMessage(10000);
-		assertTrue("Contains hostname", receivedMessage.matches(".*\"data\":.*\\{.*\"host\":\"testHostname\".*\\}.*"));
-		assertTrue("Contains bandwidth key", receivedMessage.matches(".*\"data\":.*\\{.*\"key\":\"user.testUsername.bandwidth\".*\\}.*"));
-		assertTrue("Contains value", receivedMessage.matches(".*\"data\":.*\\{.*\"value\":\"123.45\".*\\}.*"));
+		checkJsonFields(receivedMessage, "testHostname", "user.testUsername.bandwidth", "123.45");
+	}
+
+	@Test
+	public void testSendBandwidthUsageWithTimestamp() throws InterruptedException {
+		testServer.resetLastReceivedAgentMessage();
+		this.zabbixSender.sendBandwidthUsage("testHostname", "testUsername", 123.45, 678);
+		String receivedMessage = testServer.waitForNextMessage(10000);
+		checkJsonFields(receivedMessage, "testHostname", "user.testUsername.bandwidth", "123.45", 678);
 	}
 
 	@Test
@@ -58,18 +86,30 @@ public class ZabbixSenderTest {
 		testServer.resetLastReceivedAgentMessage();
 		this.zabbixSender.sendDuration("testHostname", "testUsername", 123.45);
 		String receivedMessage = testServer.waitForNextMessage(10000);
-		assertTrue("Contains hostname", receivedMessage.matches(".*\"data\":.*\\{.*\"host\":\"testHostname\".*\\}.*"));
-		assertTrue("Contains duration key", receivedMessage.matches(".*\"data\":.*\\{.*\"key\":\"user.testUsername.duration\".*\\}.*"));
-		assertTrue("Contains value", receivedMessage.matches(".*\"data\":.*\\{.*\"value\":\"123.45\".*\\}.*"));
+		checkJsonFields(receivedMessage, "testHostname", "user.testUsername.duration", "123.45");
+	}
+
+	@Test
+	public void testSendDurationWithTimestamp() throws InterruptedException {
+		testServer.resetLastReceivedAgentMessage();
+		this.zabbixSender.sendDuration("testHostname", "testUsername", 123.45, 678);
+		String receivedMessage = testServer.waitForNextMessage(10000);
+		checkJsonFields(receivedMessage, "testHostname", "user.testUsername.duration", "123.45", 678);
 	}
 
 	@Test
 	public void testSendUserDataNodeConnection() throws InterruptedException {
 		testServer.resetLastReceivedAgentMessage();
-		this.zabbixSender.sendUserDataNodeConnection("dataNodeTestHostname", "testUsername", "testIP:4567");
+		this.zabbixSender.sendUserDataNodeConnection("testHostname", "testUsername", "testIP:4567");
 		String receivedMessage = testServer.waitForNextMessage(10000);
-		assertTrue("Contains hostname", receivedMessage.matches(".*\"data\":.*\\{.*\"host\":\"dataNodeTestHostname\".*\\}.*"));
-		assertTrue("Contains last addr key", receivedMessage.matches(".*\"data\":.*\\{.*\"key\":\"user.testUsername.lastAddress\".*\\}.*"));
-		assertTrue("Contains ip:port as value", receivedMessage.matches(".*\"data\":.*\\{.*\"value\":\"testIP:4567\"\\}.*"));
+		checkJsonFields(receivedMessage, "testHostname", "user.testUsername.lastAddress", "testIP:4567");
+	}
+
+	@Test
+	public void testSendUserDataNodeConnectionIpAndPort() throws InterruptedException {
+		testServer.resetLastReceivedAgentMessage();
+		this.zabbixSender.sendUserDataNodeConnection("testHostname", "testUsername", "testIP", 4567);
+		String receivedMessage = testServer.waitForNextMessage(10000);
+		checkJsonFields(receivedMessage, "testHostname", "user.testUsername.lastAddress", "testIP:4567");
 	}
 }
