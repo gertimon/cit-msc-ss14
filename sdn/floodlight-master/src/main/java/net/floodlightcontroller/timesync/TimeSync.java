@@ -31,32 +31,34 @@ import org.apache.commons.net.ntp.TimeStamp;
 public final class TimeSync {
 
 	/* Uses the more accurate and more robust NTP */
-	public static void sendTimeMessage(TimeInfo info) {
+	public static long sendTimeMessage(TimeInfo info) {
 		
 		NtpV3Packet ntpMessage = info.getMessage();
+		long returnTimeStamp = 0;
 		
 		// TODO: Converting Apache's TimeStamp to the right data type to calculate duration time
 		//       Return type for returning a time value back to RemoveMessageListener class
 		
 		TimeStamp refNtpTime = ntpMessage.getReferenceTimeStamp();
-        System.out.println(" Reference Timestamp:\t" + refNtpTime + "  " + refNtpTime.toDateString()+ "   " +refNtpTime.getSeconds());
+        System.out.println(" Reference Timestamp:\t" + refNtpTime + "  " + refNtpTime.toDateString()+ "   " +refNtpTime.getSeconds()+ "   " +refNtpTime.ntpValue());
 
         // Originate Time is time request sent by client (t1)
         TimeStamp origNtpTime = ntpMessage.getOriginateTimeStamp();
-        System.out.println(" Originate Timestamp:\t" + origNtpTime + "  " + origNtpTime.toDateString()+ "   " +refNtpTime.getSeconds());
+        System.out.println(" Originate Timestamp:\t" + origNtpTime + "  " + origNtpTime.toDateString()+ "   " +origNtpTime.getSeconds()+ "   " +origNtpTime.ntpValue());
+        returnTimeStamp = origNtpTime.getSeconds();
 
         long destTime = info.getReturnTime();
         // Receive Time is time request received by server (t2)
         TimeStamp rcvNtpTime = ntpMessage.getReceiveTimeStamp();
-        System.out.println(" Receive Timestamp:\t" + rcvNtpTime + "  " + rcvNtpTime.toDateString()+ "   " +refNtpTime.getSeconds());
+        System.out.println(" Receive Timestamp:\t" + rcvNtpTime + "  " + rcvNtpTime.toDateString()+ "   " +rcvNtpTime.getSeconds()+ "   " +rcvNtpTime.ntpValue());
 
         // Transmit time is time reply sent by server (t3)
         TimeStamp xmitNtpTime = ntpMessage.getTransmitTimeStamp();
-        System.out.println(" Transmit Timestamp:\t" + xmitNtpTime + "  " + xmitNtpTime.toDateString()+ "   " +refNtpTime.getSeconds());
+        System.out.println(" Transmit Timestamp:\t" + xmitNtpTime + "  " + xmitNtpTime.toDateString()+ "   " +xmitNtpTime.getSeconds()+ "   " +xmitNtpTime.ntpValue());
 
         // Destination time is time reply received by client (t4)
         TimeStamp destNtpTime = TimeStamp.getNtpTime(destTime);
-        System.out.println(" Destination Timestamp:\t" + destNtpTime + "  " + destNtpTime.toDateString()+ "   " +refNtpTime.getSeconds());
+        System.out.println(" Destination Timestamp:\t" + destNtpTime + "  " + destNtpTime.toDateString()+ "   " +destNtpTime.getSeconds()+ "   " +destNtpTime.ntpValue());
 
         info.computeDetails(); // compute offset/delay if not already done
         Long offsetValue = info.getOffset();
@@ -66,25 +68,26 @@ public final class TimeSync {
 
         System.out.println(" Roundtrip delay(ms)=" + delay
                 + ", clock offset(ms)=" + offset); // offset in ms
+        return returnTimeStamp;
 	}
 	
-	public void getNtpTimestamp() {
+	public static long getNtpTimestamp() {
 		
 		// --- NTPv3 Version (RFC 1305) --- // 
-    	/* http://commons.apache.org/proper/commons-net/javadocs/api-3.3/index.html*/
+    	// http://commons.apache.org/proper/commons-net/javadocs/api-3.3/index.html
+		long returnTimeStamp = 0;
     	NTPUDPClient timeClient = new NTPUDPClient();
     	timeClient.setDefaultTimeout(5000); // 5 sec
     	
     	try {
 			timeClient.open();
 			try {
-				// was es nicht alles von der TU-Berlin gibt: 
-				// https://www.eecs.tu-berlin.de/irb/v-menu/dienstleistungen/ntp/
+				// see: https://www.eecs.tu-berlin.de/irb/v-menu/dienstleistungen/ntp/
 				InetAddress hostAddr = InetAddress.getByName("ntps1-1.eecsit.tu-berlin.de");
 				TimeInfo info;
 				try {
 					info = timeClient.getTime(hostAddr);
-					sendTimeMessage(info);
+					returnTimeStamp = sendTimeMessage(info);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -98,6 +101,8 @@ public final class TimeSync {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+    	
+    	return returnTimeStamp;
 		
 	}
 
