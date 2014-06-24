@@ -66,7 +66,7 @@ public class ZabbixSenderTest {
 	@Test
 	public void testSendUserDataNodeConnection() throws InterruptedException {
 		testServer.resetLastReceivedAgentMessage();
-		this.zabbixSender.sendUserDataNodeConnection("dataNodeTestHostname", "testUsername", "testIP", 4567);
+		this.zabbixSender.sendUserDataNodeConnection("dataNodeTestHostname", "testUsername", "testIP:4567");
 		String receivedMessage = testServer.waitForNextMessage(10000);
 		assertTrue("Contains hostname", receivedMessage.matches(".*\"data\":.*\\{.*\"host\":\"dataNodeTestHostname\".*\\}.*"));
 		assertTrue("Contains last addr key", receivedMessage.matches(".*\"data\":.*\\{.*\"key\":\"user.testUsername.lastAddress\".*\\}.*"));

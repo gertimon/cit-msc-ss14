@@ -121,12 +121,27 @@ public class ZabbixSender implements Runnable {
     	});
     }
 
-    public void sendUserDataNodeConnection(String dataNodeServerName, String username, String ip, int port) {
+    /**
+     * @param dataNodeServerName as ip or name
+     * @param username
+     * @param address in form ip-address:port
+     */
+    public void sendUserDataNodeConnection(String dataNodeServerName, String username, String clientAddress) {
     	valuesQueue.add(new ObjectNode[] {
-			createDataNode(dataNodeServerName, String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, username), ip+":"+port)
+			createDataNode(dataNodeServerName, String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, username), clientAddress)
     	});
     }
     
+    /**
+     * @param dataNodeServerName as IP or name
+     * @param username
+     * @param ip client IP
+     * @param port client port
+     */
+    public void sendUserDataNodeConnection(String dataNodeServerName, String username, String ip, int port) {
+    	sendUserDataNodeConnection(dataNodeServerName, username, ip+":"+port);
+    }    
+
     @Deprecated
     public void sendBandwidthUsageByConnection(String serverName, String clientIP, String clientPort, double bandwidthConsumed) {
     	throw new RuntimeException("Not implemented here! Implement in floodlight controller and cache user/ip+port mapping.");

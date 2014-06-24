@@ -149,7 +149,7 @@ public class ZabbixAPIClient {
         return r;
 	}
 
-	public String getUsernameByDataNodeConnection(String dataNode, String userIP, String userPort)
+	public String getUsernameByDataNodeConnection(String dataNode, String clientAddress)
 			throws IllegalArgumentException, InterruptedException, ExecutionException, IOException,
 			AuthenticationException, UserNotFoundException, InternalErrorException {
 		
@@ -166,7 +166,6 @@ public class ZabbixAPIClient {
 	    Response response = this.executeRPC("item.get", params);
 	    
 	    if (response.getStatusCode() == 200) {
-	    	String userIPAndPort = userIP + ":" + userPort;
 	    	String usernameKey = null;
 	    	long lastclock = Long.MIN_VALUE;
 	    	
@@ -174,7 +173,7 @@ public class ZabbixAPIClient {
 
 	    	if (jsonResponse.get("result").isArray()) {
 	    		for (JsonNode item : jsonResponse.get("result")) {
-	    			if (item.get("key_").asText().endsWith(".lastAddress") && item.get("lastvalue").asText().equals(userIPAndPort)) {
+	    			if (item.get("key_").asText().endsWith(".lastAddress") && item.get("lastvalue").asText().equals(clientAddress)) {
 	    				long currentLastclock = item.get("lastclock").asLong();
 	    				if (usernameKey == null || currentLastclock > lastclock) {
 	    					usernameKey = item.get("key_").asText();

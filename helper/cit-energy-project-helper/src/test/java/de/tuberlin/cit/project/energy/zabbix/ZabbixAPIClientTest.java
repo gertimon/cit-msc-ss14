@@ -45,7 +45,7 @@ public class ZabbixAPIClientTest {
 				+ "{\"key_\":\"user.peterLast.lastAddress\",\"lastvalue\":\"22.22.22.22:2222\",\"lastclock\":\"" + (lastclock - 20) + "\"},"
 				+ "{\"key_\":\"user.emil.lastAddress\",\"lastvalue\":\"33.33.33.33:3333\",\"lastclock\":\"" + lastclock + "\"}"
 				+ "]}");
-		String result = apiClient.getUsernameByDataNodeConnection("testDataNode", "22.22.22.22", "2222");
+		String result = apiClient.getUsernameByDataNodeConnection("testDataNode", "22.22.22.22:2222");
 		String request = testServer.getLastRequest();
 		assertTrue("Request contains get.item method", request.matches(".*\"method\":\"item.get\".*"));
 		assertTrue("Request contains user.*.lastAddress as key filter", request.matches(".*\"search\":\\{.*\"key_\":\"user\\.\\*\\.lastAddress\".*\\}.*"));
