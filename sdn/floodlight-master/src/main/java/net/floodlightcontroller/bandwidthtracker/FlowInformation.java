@@ -5,32 +5,45 @@ public class FlowInformation {
     private long endTime;
     private int switchId;
     private String srcIp;
+    private String inputPort;
+
+
+
     private String dstIp;
     private double dataSize;
     private String srcMac;
     private String dstMac;
     private double bandWith;
-
-
-
     private double time;
 
 
 
-    public FlowInformation(int id,long startTime, long endTime, String srcMac, String dstMac, String srcIP, String dstIP, long dataSize, double time){
+
+    public FlowInformation(int id,long startTime, long endTime, String srcMac, String dstMac, String srcIP, String inPort, String dstIP, long dataSize, double time){
         switchId = id;
         this.startTime = startTime;
         this.endTime = endTime;
         this.srcIp = srcIP;
         this.dstIp = dstIP;
         this.srcMac = srcMac;
+        this.inputPort = inPort;
         this.dstMac = dstMac;
         this.dataSize = (dataSize/1000000);
         this.time = time;
         bandWith = this.dataSize/this.time;
     }
 
+    public double getBandWith() {
+        return bandWith;
+    }
 
+    public String getDstIp() {
+        return dstIp;
+    }
+
+    public String getInputPort() {
+        return inputPort;
+    }
 
     public String getSrcIp() {
         return srcIp;
@@ -59,11 +72,11 @@ public class FlowInformation {
                 dataSize + ", DurationTime: " + time +" s" + ", Bandwidth: " + bandWith + " Mb/s";
     }
 
-    public long getStartTime() {
-        return startTime;
-    }
+//    public long getStartTime() {
+//        return startTime;
+//    }
 
-    public long getEndTime() {
-        return endTime;
-    }
+//    public long getEndTime() {
+//        return endTime;
+//    }
 }
