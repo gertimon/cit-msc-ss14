@@ -91,6 +91,9 @@ public class ZabbixAPIClient {
 				System.getProperty("zabbix.password", ZabbixParams.DEFAULT_ZABBIX_PASSWORD));
 	}
 	
+	/**
+	 * Authenticate against Zabbix if no authentication token and cache token.
+	 */
 	public void authenticate() throws IllegalArgumentException, InterruptedException, ExecutionException, IOException,
 			AuthenticationException, InternalErrorException {
 
@@ -121,21 +124,33 @@ public class ZabbixAPIClient {
 	public void setAuthToken(String authToken) { this.authToken = authToken; }
 	public String getAuthToken() { return authToken; }
 
-	public String getRPCBody(String method, ObjectNode params) {
+	/**
+	 * Construct a JSON RPC body around given parameters with given method name.
+	 * Adds authentication token if present.
+	 * @see #authenticate()
+	 * 
+	 * @param method
+	 * @param parameters params block in request
+	 * @return JSON request
+	 */
+	public String getRPCBody(String method, ObjectNode parameters) {
         final ObjectNode m = this.objectMapper.createObjectNode();
         m.put("jsonrpc", "2.0");
 		if (this.authToken != null)
 			m.put("auth", this.authToken);
         m.put("method", method);
-        if (params != null)
-        	m.with("params").setAll(params);
+        if (parameters != null)
+        	m.with("params").setAll(parameters);
         else
-        	m.putArray("params");
+        	m.putArray("params"); // empty array, required by zabbix
         m.put("id", 1);
 
         return this.objectMapper.valueToTree(m).toString();
 	}
 
+	/**
+	 * Initiates a synchrony JSON RPC call to Zabbix REST API.
+	 */
 	public Response executeRPC(String method, ObjectNode params) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
         String rpcBody = getRPCBody(method, params);
         log.debug("Running json rpc with body: " + rpcBody);
@@ -149,14 +164,20 @@ public class ZabbixAPIClient {
         return r;
 	}
 
-	public String getUsernameByDataNodeConnection(String dataNode, String clientAddress)
+	/**
+	 * Try to find username with given ip:port connected to given hostname.
+	 * 
+	 * @param dataNodeName as hostname
+	 * @param clientAddress as ip:port
+	 */
+	public String getUsernameByDataNodeConnection(String dataNodeName, String clientAddress)
 			throws IllegalArgumentException, InterruptedException, ExecutionException, IOException,
 			AuthenticationException, UserNotFoundException, InternalErrorException {
 		
 		this.authenticate();
 		
 		ObjectNode params = this.objectMapper.createObjectNode();
-		params.put("host", dataNode);
+		params.put("host", dataNodeName);
 		params.with("search").put("key_", String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, "*"));
 	    params.put("searchWildcardsEnabled", true);
 	    params.withArray("output").add("key_");
@@ -193,6 +214,11 @@ public class ZabbixAPIClient {
 	    	throw new InternalErrorException();
 	}
 	
+	/**
+	 * Fetches the DataNode template id from Zabbix and caches it.
+	 * 
+	 * @return Cached or fetched template id from Zabbix.
+	 */
 	public int getDataNodeTemplateID() 
 			throws IllegalArgumentException, InterruptedException, ExecutionException, IOException, 
 			AuthenticationException, TemplateNotFoundException, InternalErrorException {
@@ -220,10 +246,16 @@ public class ZabbixAPIClient {
 		}
 	}
 	
+	/**
+	 * Set cached template id manual. Used in tests.
+	 */
 	public void setDataNodeTemplateID(int dataNodeTemplateID) {
 		this.dataNodeTemplateID = dataNodeTemplateID;
 	}
 	
+	/**
+	 * Checks if given username has a last address mapping key in DataNode template.
+	 */
 	public boolean doesUserExistsInDataNodeTemplate(String username) 
 			throws IllegalArgumentException, InterruptedException, ExecutionException, IOException, 
 			AuthenticationException, InternalErrorException {
@@ -242,6 +274,9 @@ public class ZabbixAPIClient {
 			throw new InternalErrorException();
 	}
 	
+	/**
+	 * Creates all user items in DataNode template.
+	 */
 	public void createUserInDataNodeTemplate(String username)
 			throws IllegalArgumentException, InterruptedException, ExecutionException, IOException,
 			AuthenticationException, InternalErrorException, TemplateNotFoundException {
@@ -261,6 +296,9 @@ public class ZabbixAPIClient {
 		// TODO: add more here
 	}
 	
+	/**
+	 * Kills all connections and stops HTTP client threads.
+	 */
 	public void quit() {
 		this.httpClient.close();
 	}

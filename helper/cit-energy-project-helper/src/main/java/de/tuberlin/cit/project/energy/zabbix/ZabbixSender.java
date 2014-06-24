@@ -14,7 +14,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * Simple asynchron zabbix sender.
+ * Simple asynchrony zabbix sender.
+ * 
+ * New data gets collected within a queue and send via an additional thread.
  * 
  * @author CIT VS Energy Project Team
  * 
@@ -46,6 +48,12 @@ public class ZabbixSender implements Runnable {
 				Integer.parseInt(System.getProperty("zabbix.port", ZabbixParams.DEFAULT_ZABBIX_PORT)));
 	}
 	
+	/**
+	 * Sender thread.
+	 * 
+	 * Fetches data from queue and send them to zabbix. 
+	 */
+	@Override
 	public void run() {
 		while(!Thread.interrupted()) {
 			try {
@@ -63,10 +71,18 @@ public class ZabbixSender implements Runnable {
 		}
 	}
 	
+	/**
+	 * Stops sender thread.
+	 */
 	public void quit() {
 		this.senderThread.interrupt();
 	}
 
+	/**
+	 * Calculate special Zabbix agent protocol header (part before data as JSON).
+	 * @param msglength length of JSON part
+	 * @return Zabbix agent protocol header as bytes
+	 */
     private byte[] calculateHeader(int msglength) {
         return new byte[]{
             'Z', 'B', 'X', 'D',
@@ -78,14 +94,22 @@ public class ZabbixSender implements Runnable {
             '\0', '\0', '\0', '\0'};
     }
     
-    private ObjectNode createDataNode(String host, String key, String value) {
+    /**
+     * Create JSON data nodes with given values.
+     * @param hostname known by Zabbix
+     */
+    private ObjectNode createDataNode(String hostname, String key, String value) {
     	ObjectNode data = this.objectMapper.createObjectNode();
-    	data.put("host", host);
+    	data.put("host", hostname);
     	data.put("key", key);
     	data.put("value", value);
     	return data;
     }
     
+    /**
+     * Opens a connection and send given data objects.
+     * @param data JSON objects produced by {@link #createDataNode()}
+     */
     private void sendDataToZabbix(ObjectNode data[]) throws UnknownHostException, IOException {
     	ObjectNode request = this.objectMapper.createObjectNode();
     	request.put("request", "sender data");
@@ -103,43 +127,57 @@ public class ZabbixSender implements Runnable {
         clientSocket.close();
     }
     
-    public void sendPowerConsumption(String hostname, double powerConsumed) {
+    /**
+     * @param dataNodeName as hostname
+     * @param powerConsumed in watt
+     */
+    public void sendPowerConsumption(String dataNodeName, double powerConsumed) {
     	valuesQueue.add(new ObjectNode[] {
-			createDataNode(hostname, ZabbixParams.POWER_CONSUMPTION_KEY, Double.toString(powerConsumed))
+			createDataNode(dataNodeName, ZabbixParams.POWER_CONSUMPTION_KEY, Double.toString(powerConsumed))
 		});
     }
     
-    public void sendBandwidthUsage(String serverName, String username, double bandwidthConsumed) {
+    /**
+     * @param dataNodeName as hostname
+     * @param username
+     * @param bandwidthConsumed in KByte/second
+     */
+    public void sendBandwidthUsage(String dataNodeName, String username, double bandwidthConsumed) {
     	valuesQueue.add(new ObjectNode[] {
-			createDataNode(serverName, String.format(ZabbixParams.USER_BANDWIDTH_KEY, username), Double.toString(bandwidthConsumed))
+			createDataNode(dataNodeName, String.format(ZabbixParams.USER_BANDWIDTH_KEY, username), Double.toString(bandwidthConsumed))
 		});
     }
 
-    public void sendDuration(String serverName, String username, double duration) {
+    /**
+     * @param dataNodeName as hostname
+     * @param username
+     * @param duration in seconds
+     */
+    public void sendDuration(String dataNodeName, String username, double duration) {
     	valuesQueue.add(new ObjectNode[] {
-			createDataNode(serverName, String.format(ZabbixParams.USER_DURATION_KEY, username), Double.toString(duration))
+			createDataNode(dataNodeName, String.format(ZabbixParams.USER_DURATION_KEY, username), Double.toString(duration))
     	});
     }
 
     /**
-     * @param dataNodeServerName as ip or name
+     * @param dataNodeName as hostname
      * @param username
-     * @param address in form ip-address:port
+     * @param clientAddress as ip:port
      */
-    public void sendUserDataNodeConnection(String dataNodeServerName, String username, String clientAddress) {
+    public void sendUserDataNodeConnection(String dataNodeName, String username, String clientAddress) {
     	valuesQueue.add(new ObjectNode[] {
-			createDataNode(dataNodeServerName, String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, username), clientAddress)
+			createDataNode(dataNodeName, String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, username), clientAddress)
     	});
     }
     
     /**
-     * @param dataNodeServerName as IP or name
+     * @param dataNodeName as hostname
      * @param username
-     * @param ip client IP
-     * @param port client port
+     * @param clientIp client ip
+     * @param clientPort client port
      */
-    public void sendUserDataNodeConnection(String dataNodeServerName, String username, String ip, int port) {
-    	sendUserDataNodeConnection(dataNodeServerName, username, ip+":"+port);
+    public void sendUserDataNodeConnection(String dataNodeName, String username, String clientIp, int clientPort) {
+    	sendUserDataNodeConnection(dataNodeName, username, clientIp+":"+clientPort);
     }    
 
     @Deprecated
