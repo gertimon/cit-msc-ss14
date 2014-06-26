@@ -41,8 +41,9 @@ public class EnergyBaseDataNodeFilter {
     private final String zabbixRestUsername;
     private final String zabbixRestPassword;
 
-    private ZabbixSender zabbixSender;
-    private ZabbixAPIClient zabbixApiClient;
+    private final ZabbixSender zabbixSender;
+    private final ZabbixAPIClient zabbixApiClient;
+    private final WebFrontEnd webFrontEnd;
 
     public enum EnergyMode { DEFAULT, FAST, CHEAP }
 
@@ -68,6 +69,8 @@ public class EnergyBaseDataNodeFilter {
         
         this.rackEnergyMapping = loadEnergyMapping(RACK_MAPPING_FILENAME);
         this.userEnergyMapping = loadEnergyMapping(USER_MAPPING_FILENAME);
+
+        this.webFrontEnd = new WebFrontEnd(this);
 
         LOG.info("New filter initialized.");
     }
@@ -120,6 +123,10 @@ public class EnergyBaseDataNodeFilter {
 //        }
         
         return locatedBlocks;
+    }
+
+    public Map<String, EnergyMode> getUserEnergyMapping() {
+        return userEnergyMapping;
     }
 
     private Map<String, EnergyMode> loadEnergyMapping(String resourceName) {
