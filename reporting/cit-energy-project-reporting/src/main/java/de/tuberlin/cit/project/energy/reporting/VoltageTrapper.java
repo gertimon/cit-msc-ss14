@@ -1,4 +1,4 @@
-package de.tuberlin.cit.project.energy.monitoring.cit;
+package de.tuberlin.cit.project.energy.reporting;
 
 import java.util.Random;
 
