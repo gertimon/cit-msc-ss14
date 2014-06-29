@@ -13,6 +13,8 @@ import org.openflow.util.HexString;
 
 import javax.naming.AuthenticationException;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ExecutionException;
@@ -70,38 +72,49 @@ public class RemoveMessageListener implements IOFMessageListener {
 
         FlowInformation flowInf = new FlowInformation(switchId,startTime,timeStamp, dl_src, srcPort, dl_dst, nw_src, nw_dst, count, time);
         String dataNode = getDataNodeByIP(flowInf.getDstIp());
+        if (dataNode != null){
+            try {
+                String user = client.getUsernameByDataNodeConnection(dataNode,flowInf.getSrcIp());
+                //Start pushing stuff
+
+                sender.sendBandwidthUsage(dataNode,user,flowInf.getBandWith());
+                sender.sendDuration(dataNode,user,flowInf.getTime());
+                sender.run();
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (InternalErrorException e) {
+                e.printStackTrace();
+            } catch (AuthenticationException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (UserNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
         System.err.println(flowInf);
         // klaus = getUserNameByIP
-        try {
-            String user = client.getUsernameByDataNodeConnection(dataNode,flowInf.getSrcIp());
-            //Start pushing stuff
 
-            sender.sendBandwidthUsage(dataNode,user,flowInf.getBandWith());
-            sender.sendDuration(dataNode,user,flowInf.getTime());
-            sender.run();
 
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InternalErrorException e) {
-            e.printStackTrace();
-        } catch (AuthenticationException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (UserNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        String keys[] = new String[]{"project.user.ipport.klaus","project.user.bandwidth.klaus"};
-        String vals[] = new String[]{flowInf.getSrcIp(),Integer.toString((int) flowInf.getDataSize())};
+//        String keys[] = new String[]{"project.user.ipport.klaus","project.user.bandwidth.klaus"};
+//        String vals[] = new String[]{flowInf.getSrcIp(),Integer.toString((int) flowInf.getDataSize())};
 
         return Command.CONTINUE;
     }
     //TODO: Mapping from targetIp to Hostname
     private String getDataNodeByIP(String dstIp) {
-        return null;
+        try {
+            InetAddress addr = InetAddress.getByName(dstIp);
+            String host = addr.getHostName();
+            return host;
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }finally {
+            return null;
+        }
     }
 
 
