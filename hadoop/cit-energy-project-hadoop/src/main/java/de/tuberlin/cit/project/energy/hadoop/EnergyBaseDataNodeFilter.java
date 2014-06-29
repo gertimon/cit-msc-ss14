@@ -7,9 +7,11 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -99,30 +101,82 @@ public class EnergyBaseDataNodeFilter {
      * @param blockFilterStrategy keep locations with this strategy
      */
     private LocatedBlocks filterBlocks(String username, String path, EnergyMode blockFilterStrategy, LocatedBlocks locatedBlocks) {
-    	// TODO: fix this...
-//        if (EnergyMode.CHEAP == userMode) {
-//            for (LocatedBlock block : locatedBlocks.getLocatedBlocks()) {
-//                // find first matching
-//                List<DatanodeInfo> cleanLocations = new ArrayList<DatanodeInfo>();
-//                for (DatanodeInfo location : block.getLocations()) {
-//                    if (cheapRacks.contains(location.getNetworkLocation())) {
-//                        cleanLocations.add(location);
-//                    }
-//                }
-//                if (cleanLocations.size() > 0) {
-//                    DatanodeInfo[] locations = block.getLocations();
-//                    // TODO replace by override, this maybe will not change anything
-//                    locations = (DatanodeInfo[]) cleanLocations.toArray();
-//                    LOG.info("block location list manipulated");
-//                } else {
-//                    LOG.info("block location list not manipulated");
-//                }
-//            }
-//        } else {
-//            LOG.warn("could not recognize a filter strategy for mode '" + userMode + "', use 'CHEAP' or -'FAST'- instead, return same list of blocks.");
-//        }
-        
-        return locatedBlocks;
+        // TODO: test this...
+        Set<String> allowedRacks = getRacks(blockFilterStrategy);
+        return reduceRacks(allowedRacks, locatedBlocks);
+    }
+
+    /**
+     * removes some blocks that mismatchs a filter strategy iff required packets
+     * exist on desired data nodes.
+     *
+     * @param blockFilterStrategy recognises CHEAP, FAST, null
+     * @param locatedBlocks
+     * @return
+     */
+    private LocatedBlocks reduceRacks(Set<String> racks, LocatedBlocks locatedBlocks) {
+
+        try {
+            List<LocatedBlock> filteredLocatedBlocks = new ArrayList<LocatedBlock>();
+
+            for (LocatedBlock block : locatedBlocks.getLocatedBlocks()) {
+                // extract locations that match the energy mode
+                List<DatanodeInfo> cleanLocations = new ArrayList<DatanodeInfo>();
+                for (DatanodeInfo location : block.getLocations()) {
+                    if (racks.contains(location.getNetworkLocation())) {
+                        cleanLocations.add(location);
+                    }
+                }
+                if (cleanLocations.size() > 0) {
+                    // if locations matching energy mode were found
+
+                    LocatedBlock filteredBlock = createLocatedBlock(block, (DatanodeInfo[]) cleanLocations.toArray());
+                    filteredLocatedBlocks.add(filteredBlock);
+                    LOG.info("block location list manipulated");
+                } else {
+                    // nothing changed or matched energy mode
+
+                    filteredLocatedBlocks.add(block);
+                    LOG.info("block location list not manipulated");
+                }
+            }
+
+            // empty and override block list
+            LOG.info("Original block: " + JsonUtil.toJsonString(locatedBlocks));
+            locatedBlocks.getLocatedBlocks().clear();
+            locatedBlocks.getLocatedBlocks().addAll(filteredLocatedBlocks);
+            LOG.info("Modified block: " + JsonUtil.toJsonString(locatedBlocks));
+
+            return locatedBlocks;
+
+        } catch (IOException ex) {
+            LOG.error("Exception occured while filtering block locations, return original block list.", ex);
+            return locatedBlocks;
+        }
+    }
+
+    /**
+     * Copies a block while overriding the locations by new values.
+     *
+     */
+    public LocatedBlock createLocatedBlock(LocatedBlock block, DatanodeInfo[] locations) {
+        LocatedBlock filteredBlock = new LocatedBlock(block.getBlock(), locations, block.getStorageIDs(), block.getStorageTypes(), block.getStartOffset(), block.isCorrupt(), block.getCachedLocations());
+        return filteredBlock;
+    }
+
+    /**
+     * filters a rack list for an EnergyMode.
+     *
+     * @param energyMode
+     * @return list of with rack names, matching given energy mode
+     */
+    public Set<String> getRacks(EnergyMode energyMode) {
+        Set<String> racks = new HashSet<String>();
+        for (String rackName : this.rackEnergyMapping.keySet()) {
+            if (this.rackEnergyMapping.get(rackName) == energyMode)
+                racks.add(rackName);
+        }
+        return racks;
     }
 
     public Map<String, EnergyMode> getUserEnergyMapping() {
