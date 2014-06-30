@@ -31,7 +31,7 @@ public class RemoveMessageListener implements IOFMessageListener {
         Thread sender = new Thread(new ZabbixSender());
         sender.start();
         try {
-            client = new ZabbixAPIClient();
+            client = new ZabbixAPIClient("https://mpjss14.cit.tu-berlin.de/zabbix/api_jsonrpc.php","admin","zabbix!","fubezz","0605AFbe58");
             client.authenticate();
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
@@ -57,8 +57,12 @@ public class RemoveMessageListener implements IOFMessageListener {
     	//long timeStamp = System.currentTimeMillis();
 
         OFFlowRemoved flow = (OFFlowRemoved) msg;
+        int tcpSrc = 0xFFFF & flow.getMatch().getTransportSource();
+        int tcpDst = 0xFFFF & flow.getMatch().getTransportDestination();
+
         timeStamp = timeStamp - (flow.getIdleTimeout()*1000);
-        String srcPort = Integer.toString(flow.getMatch().getInputPort());
+        String srcPort = Integer.toString(tcpSrc);
+        String dstPort = Integer.toString(tcpDst);
         String nw_src = IPv4.fromIPv4Address(flow.getMatch().getNetworkSource());
         String nw_dst = IPv4.fromIPv4Address(flow.getMatch().getNetworkDestination());
         String dl_src = HexString.toHexString(flow.getMatch().getDataLayerSource());
@@ -70,31 +74,31 @@ public class RemoveMessageListener implements IOFMessageListener {
         long startTime = timeStamp - (time*1000);
         //long mb = (count);
 
-        FlowInformation flowInf = new FlowInformation(switchId,startTime,timeStamp, dl_src, srcPort, dl_dst, nw_src, nw_dst, count, time);
-        String dataNode = getDataNodeByIP(flowInf.getDstIp());
-        if (dataNode != null){
-            try {
-                String user = client.getUsernameByDataNodeConnection(dataNode,flowInf.getSrcIp());
-                //Start pushing stuff
-
-                sender.sendBandwidthUsage(dataNode,user,flowInf.getBandWith());
-                sender.sendDuration(dataNode,user,flowInf.getTime());
-                sender.run();
-
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            } catch (InternalErrorException e) {
-                e.printStackTrace();
-            } catch (AuthenticationException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (UserNotFoundException e) {
-                e.printStackTrace();
-            }
-        }
+        FlowInformation flowInf = new FlowInformation(switchId,startTime,timeStamp, dl_src, dl_dst, nw_src, nw_dst, srcPort, dstPort, count, time);
+//        String dataNode = getDataNodeByIP(flowInf.getDstIp());
+//        if (dataNode != null){
+//            try {
+//                String user = client.getUsernameByDataNodeConnection(dataNode,flowInf.getSrcIp());
+//                //Start pushing stuff
+//
+//                sender.sendBandwidthUsage(dataNode,user,flowInf.getBandWith());
+//                sender.sendDuration(dataNode,user,flowInf.getTime());
+//                sender.run();
+//
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            } catch (ExecutionException e) {
+//                e.printStackTrace();
+//            } catch (InternalErrorException e) {
+//                e.printStackTrace();
+//            } catch (AuthenticationException e) {
+//                e.printStackTrace();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            } catch (UserNotFoundException e) {
+//                e.printStackTrace();
+//            }
+//        }
         System.err.println(flowInf);
         // klaus = getUserNameByIP
 

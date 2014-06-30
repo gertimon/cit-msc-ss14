@@ -40,25 +40,25 @@ public final class TimeSync {
 		//       Return type for returning a time value back to RemoveMessageListener class
 		
 		TimeStamp refNtpTime = ntpMessage.getReferenceTimeStamp();
-        System.out.println(" Reference Timestamp:\t" + refNtpTime + "  " + refNtpTime.toDateString()+ "   " +refNtpTime.getSeconds()+ "   " +refNtpTime.ntpValue());
+//        System.out.println(" Reference Timestamp:\t" + refNtpTime + "  " + refNtpTime.toDateString()+ "   " +refNtpTime.getSeconds()+ "   " +refNtpTime.ntpValue());
 
         // Originate Time is time request sent by client (t1)
         TimeStamp origNtpTime = ntpMessage.getOriginateTimeStamp();
-        System.out.println(" Originate Timestamp:\t" + origNtpTime + "  " + origNtpTime.toDateString()+ "   " +origNtpTime.getSeconds()+ "   " +origNtpTime.ntpValue());
+//        System.out.println(" Originate Timestamp:\t" + origNtpTime + "  " + origNtpTime.toDateString()+ "   " +origNtpTime.getSeconds()+ "   " +origNtpTime.ntpValue());
         returnTimeStamp = origNtpTime.getSeconds();
 
         long destTime = info.getReturnTime();
         // Receive Time is time request received by server (t2)
         TimeStamp rcvNtpTime = ntpMessage.getReceiveTimeStamp();
-        System.out.println(" Receive Timestamp:\t" + rcvNtpTime + "  " + rcvNtpTime.toDateString()+ "   " +rcvNtpTime.getSeconds()+ "   " +rcvNtpTime.ntpValue());
+//        System.out.println(" Receive Timestamp:\t" + rcvNtpTime + "  " + rcvNtpTime.toDateString()+ "   " +rcvNtpTime.getSeconds()+ "   " +rcvNtpTime.ntpValue());
 
         // Transmit time is time reply sent by server (t3)
         TimeStamp xmitNtpTime = ntpMessage.getTransmitTimeStamp();
-        System.out.println(" Transmit Timestamp:\t" + xmitNtpTime + "  " + xmitNtpTime.toDateString()+ "   " +xmitNtpTime.getSeconds()+ "   " +xmitNtpTime.ntpValue());
+//        System.out.println(" Transmit Timestamp:\t" + xmitNtpTime + "  " + xmitNtpTime.toDateString()+ "   " +xmitNtpTime.getSeconds()+ "   " +xmitNtpTime.ntpValue());
 
         // Destination time is time reply received by client (t4)
         TimeStamp destNtpTime = TimeStamp.getNtpTime(destTime);
-        System.out.println(" Destination Timestamp:\t" + destNtpTime + "  " + destNtpTime.toDateString()+ "   " +destNtpTime.getSeconds()+ "   " +destNtpTime.ntpValue());
+//        System.out.println(" Destination Timestamp:\t" + destNtpTime + "  " + destNtpTime.toDateString()+ "   " +destNtpTime.getSeconds()+ "   " +destNtpTime.ntpValue());
 
         info.computeDetails(); // compute offset/delay if not already done
         Long offsetValue = info.getOffset();
@@ -66,8 +66,8 @@ public final class TimeSync {
         String delay = (delayValue == null) ? "N/A" : delayValue.toString();
         String offset = (offsetValue == null) ? "N/A" : offsetValue.toString();
 
-        System.out.println(" Roundtrip delay(ms)=" + delay
-                + ", clock offset(ms)=" + offset); // offset in ms
+//        System.out.println(" Roundtrip delay(ms)=" + delay
+//                + ", clock offset(ms)=" + offset); // offset in ms
         return returnTimeStamp;
 	}
 	
