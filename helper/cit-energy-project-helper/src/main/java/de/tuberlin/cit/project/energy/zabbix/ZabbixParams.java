@@ -11,6 +11,7 @@ public class ZabbixParams {
     public static final String USER_LAST_ADDRESS_MAPPING_KEY = "user.%s.lastAddress";
     public static final String USER_BANDWIDTH_KEY = "user.%s.bandwidth";
     public static final String USER_DURATION_KEY = "user.%s.duration";
+    public static final String USER_DATAAMOUNT_KEY = "user.%s.daten";
 
     public static final String DATANODE_TEMPLATE_NAME = "CIT DataNode";
 

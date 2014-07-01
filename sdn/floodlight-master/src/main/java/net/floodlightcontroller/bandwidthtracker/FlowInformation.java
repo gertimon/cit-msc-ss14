@@ -27,7 +27,7 @@ public class FlowInformation {
         this.srcPort = srcPort;
         this.dstPort = dstPort;
         this.dstMac = dstMac;
-        this.dataSize = (dataSize/1000000);
+        this.dataSize = (dataSize/1000);
         this.time = time;
         bandWith = this.dataSize/this.time;
     }
@@ -72,7 +72,7 @@ public class FlowInformation {
     public String toString(){
         return "Switch: " + switchId + ", MAC_Src: " + srcMac + ", IP_Src: " +
                 srcIp + ", SrcPort:" + srcPort + ", MAC_Dst: " + dstMac + ", IP_Dst: " + dstIp + ", DstPort: "+ dstPort + ", Datasize in MB: " +
-                dataSize + ", DurationTime: " + time +" s" + ", Bandwidth: " + bandWith + " Mb/s";
+                dataSize + ", DurationTime: " + time +" s" + ", Bandwidth: " + bandWith + " kB/s";
     }
 
 }

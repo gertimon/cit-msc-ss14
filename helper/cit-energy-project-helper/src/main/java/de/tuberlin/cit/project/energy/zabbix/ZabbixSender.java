@@ -172,6 +172,18 @@ public class ZabbixSender implements Runnable {
     }
 
     /**
+     *
+     * @param dataNodeName as hostname
+     * @param username
+     * @param dataAmount in bytes
+     */
+    public void sendDataAmountUsage(String dataNodeName, String username, double dataAmount){
+        valuesQueue.add(new ObjectNode[]{
+                createDataNode(dataNodeName, String.format(ZabbixParams.USER_DATAAMOUNT_KEY,username),Double.toString(dataAmount))
+        });
+    }
+
+    /**
      * @param dataNodeName as hostname
      * @param username
      * @param bandwidthConsumed in KByte/second
