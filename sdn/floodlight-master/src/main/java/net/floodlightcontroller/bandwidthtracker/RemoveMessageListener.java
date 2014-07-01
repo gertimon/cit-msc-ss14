@@ -6,7 +6,6 @@ import de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException;
 import de.tuberlin.cit.project.energy.zabbix.exception.UserNotFoundException;
 import net.floodlightcontroller.core.*;
 import net.floodlightcontroller.packet.IPv4;
-import net.floodlightcontroller.timesync.TimeSync;
 import net.floodlightcontroller.zabbix_pusher.ProjectTrapper;
 import org.openflow.protocol.*;
 import org.openflow.util.HexString;
@@ -50,8 +49,7 @@ public class RemoveMessageListener implements IOFMessageListener {
 	@Override
     public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
 
-    	long timeStamp = TimeSync.getNtpTimestamp();
-    	//long timeStamp = System.currentTimeMillis();
+        long timeStamp = System.currentTimeMillis();
 
         OFFlowRemoved flow = (OFFlowRemoved) msg;
         int tcpSrc = 0xFFFF & flow.getMatch().getTransportSource();
