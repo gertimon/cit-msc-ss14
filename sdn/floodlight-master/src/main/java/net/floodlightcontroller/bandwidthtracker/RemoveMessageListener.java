@@ -25,13 +25,10 @@ import java.util.concurrent.ExecutionException;
  */
 public class RemoveMessageListener implements IOFMessageListener {
     ZabbixAPIClient client;
-    ZabbixSender sender;
 
     public RemoveMessageListener(){
-        Thread sender = new Thread(new ZabbixSender());
-        sender.start();
         try {
-            client = new ZabbixAPIClient("https://mpjss14.cit.tu-berlin.de/zabbix/api_jsonrpc.php","admin","zabbix!","fubezz","0605AFbe58");
+            client = new ZabbixAPIClient();
             client.authenticate();
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
@@ -75,39 +72,42 @@ public class RemoveMessageListener implements IOFMessageListener {
         //long mb = (count);
 
         FlowInformation flowInf = new FlowInformation(switchId,startTime,timeStamp, dl_src, dl_dst, nw_src, nw_dst, srcPort, dstPort, count, time);
-//        String dataNode = getDataNodeByIP(flowInf.getDstIp());
-//        if (dataNode != null){
-//            try {
-//                String user = client.getUsernameByDataNodeConnection(dataNode,flowInf.getSrcIp());
-//                //Start pushing stuff
-//
-//                sender.sendBandwidthUsage(dataNode,user,flowInf.getBandWith());
-//                sender.sendDuration(dataNode,user,flowInf.getTime());
-//                sender.run();
-//
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            } catch (ExecutionException e) {
-//                e.printStackTrace();
-//            } catch (InternalErrorException e) {
-//                e.printStackTrace();
-//            } catch (AuthenticationException e) {
-//                e.printStackTrace();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            } catch (UserNotFoundException e) {
-//                e.printStackTrace();
-//            }
-//        }
+        String dataNode = "";
+        String user = "";
         System.err.println(flowInf);
-        // klaus = getUserNameByIP
+        try {
+            if ((nw_src + ":" + srcPort).equals("10.0.42.1:50010") || (nw_src + ":" + srcPort).equals("10.0.42.2:50010")) {
+                dataNode = getDataNodeByIP(nw_src);
+                user = client.getUsernameByDataNodeConnection(dataNode, nw_dst + ":" + dstPort);
 
+            } else if ((nw_dst + ":" + dstPort).equals("10.0.42.1:50010") || (nw_dst + ":" + dstPort).equals("10.0.42.2:50010")) {
+                dataNode = getDataNodeByIP(nw_dst);
+                user = client.getUsernameByDataNodeConnection(dataNode, nw_src + ":" + srcPort);
+            }
+            if (!dataNode.isEmpty() && !user.isEmpty()) sendDataToZabbix(flowInf,dataNode,user);
 
-//        String keys[] = new String[]{"project.user.ipport.klaus","project.user.bandwidth.klaus"};
-//        String vals[] = new String[]{flowInf.getSrcIp(),Integer.toString((int) flowInf.getDataSize())};
-
+        }catch (InterruptedException e) {
+            e.printStackTrace();
+        }catch (ExecutionException e) {
+            e.printStackTrace();
+        }catch (InternalErrorException e) {
+            e.printStackTrace();
+        }catch (AuthenticationException e) {
+            e.printStackTrace();
+        }catch (IOException e) {
+            e.printStackTrace();
+        }catch (UserNotFoundException e) {
+            e.printStackTrace();
+        }
         return Command.CONTINUE;
     }
+
+    private void sendDataToZabbix(FlowInformation flowInf, String dataNode, String user) {
+        ZabbixSender zabbixSender = new ZabbixSender();
+        zabbixSender.sendBandwidthUsage(dataNode,user,flowInf.getBandWith());
+        zabbixSender.sendDuration(dataNode,user,flowInf.getTime());
+    }
+
     //TODO: Mapping from targetIp to Hostname
     private String getDataNodeByIP(String dstIp) {
         try {
