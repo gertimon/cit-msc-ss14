@@ -64,21 +64,23 @@
         <dependency groupId="ch.qos.logback"
             artifactId="logback-core" version="1.0.0"/>
         <dependency groupId="com.fasterxml.jackson.core"
-            artifactId="jackson-core" version="2.1.4"/>
+            artifactId="jackson-core" version="2.4.1"/>
         <dependency groupId="com.fasterxml.jackson.core"
-            artifactId="jackson-annotations" version="2.1.4"/>
+            artifactId="jackson-annotations" version="2.4.1"/>
         <dependency groupId="com.fasterxml.jackson.core"
-            artifactId="jackson-databind" version="2.1.4"/>
+            artifactId="jackson-databind" version="2.4.1"/>
         <dependency groupId="com.fasterxml.jackson.dataformat"
-            artifactId="jackson-dataformat-smile" version="2.1.4"/>
+            artifactId="jackson-dataformat-smile" version="2.4.1"/>
         <dependency groupId="com.fasterxml.jackson.dataformat"
-            artifactId="jackson-dataformat-xml" version="2.1.4"/>
+            artifactId="jackson-dataformat-xml" version="2.4.1"/>
         <dependency groupId="com.fasterxml.jackson.dataformat"
-            artifactId="jackson-dataformat-xml" version="2.1.4"/>
+            artifactId="jackson-dataformat-xml" version="2.4.1"/>
         <dependency groupId="com.fasterxml.jackson.dataformat"
-            artifactId="jackson-dataformat-csv" version="2.1.4"/>
+            artifactId="jackson-dataformat-csv" version="2.4.1"/>
         <dependency groupId="de.tuberlin.cit.project.energy.helper"
-            artifactId="cit-energy-project-helper" version="1.1-SNAPSHOT"/>
+            artifactId="cit-energy-project-helper" version="1.1-SNAPSHOT">
+            <exclusion groupId="org.slf4j" artifactId="slf4j-log4j12"/> <!-- already included in logback-classic... -->
+        </dependency>
         <dependency groupId="org.slf4j"
             artifactId="slf4j-api" version="1.6.4"/>
         <remoteRepository refid="maven-restlet" />
@@ -92,8 +94,8 @@
             artifactId="org.restlet.ext.slf4j" version="2.2-M3"/>
         <dependency groupId="org.simpleframework"
             artifactId="simple" version="5.1.1"/>
-        <dependency groupId="org.jboss.netty"
-            artifactId="netty" version="3.2.6.Final"/>
+        <dependency groupId="io.netty"
+            artifactId="netty" version="3.9.1.Final"/>
         <dependency groupId="args4j"
             artifactId="args4j" version="2.0.16"/>
         <dependency groupId="com.googlecode.concurrentlinkedhashmap"
