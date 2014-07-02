@@ -1,36 +1,50 @@
 package net.floodlightcontroller.bandwidthtracker;
 
-import net.floodlightcontroller.core.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import net.floodlightcontroller.core.IFloodlightProviderService;
+import net.floodlightcontroller.core.IOFSwitch;
 import net.floodlightcontroller.packet.IPv4;
-import net.floodlightcontroller.zabbix_pusher.ProjectTrapper;
-import org.openflow.protocol.*;
+
+import org.openflow.protocol.OFFlowMod;
+import org.openflow.protocol.OFMatch;
+import org.openflow.protocol.OFStatisticsRequest;
+import org.openflow.protocol.OFType;
+import org.openflow.protocol.Wildcards;
 import org.openflow.protocol.statistics.OFFlowStatisticsReply;
 import org.openflow.protocol.statistics.OFFlowStatisticsRequest;
 import org.openflow.protocol.statistics.OFStatistics;
 import org.openflow.protocol.statistics.OFStatisticsType;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import de.tuberlin.cit.project.energy.zabbix.ZabbixSender;
 
 /**
  * Created by fubezz on 18.05.14.
  */
 public class FlowTableGetter implements Runnable {
-    IFloodlightProviderService provider;
-    Logger log;
-    HashMap<String, FlowInformation> dataCouter;
+    private final static Logger log = LoggerFactory.getLogger(FlowTableGetter.class);
+
+    private final IFloodlightProviderService provider;
+    private final HashMap<String, FlowInformation> dataCouter;
    // StaticFlowEntryPusher pusher;
+    private final ZabbixSender zabbixSender;
 
-    public FlowTableGetter(IFloodlightProviderService floodlightProvider, Logger log){
-        provider = floodlightProvider;
-        provider.addOFMessageListener(OFType.FLOW_REMOVED,new RemoveMessageListener());
-        dataCouter = new HashMap<String, FlowInformation>();
+    public FlowTableGetter(IFloodlightProviderService floodlightProvider) {
+        this.provider = floodlightProvider;
+        this.dataCouter = new HashMap<String, FlowInformation>();
+        this.zabbixSender = new ZabbixSender(); // TODO: provide zabbix server address via config file
 
-      // pusher = new StaticFlowEntryPusher();
-
+        // what? this.provider.addOFMessageListener(OFType.FLOW_REMOVED, new RemoveMessageListener());
+        // pusher = new StaticFlowEntryPusher();
     }
 
     @Override
@@ -63,8 +77,7 @@ public class FlowTableGetter implements Runnable {
     }
 
     private void sendToZabbix() throws IOException {
-        ProjectTrapper trapper = new ProjectTrapper();
-        for (FlowInformation flow : dataCouter.values()){
+        for (FlowInformation flow : dataCouter.values()){ // don't do this again...
 
         	/* Sending data via Zabbix Sender */
             //Send IP

@@ -6,7 +6,6 @@ import de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException;
 import de.tuberlin.cit.project.energy.zabbix.exception.UserNotFoundException;
 import net.floodlightcontroller.core.*;
 import net.floodlightcontroller.packet.IPv4;
-import net.floodlightcontroller.zabbix_pusher.ProjectTrapper;
 import org.openflow.protocol.*;
 import org.openflow.util.HexString;
 
@@ -23,29 +22,15 @@ import java.util.concurrent.ExecutionException;
  * Created by fubezz on 11.06.14.
  */
 public class RemoveMessageListener implements IOFMessageListener {
-    ZabbixAPIClient client;
+    private final ZabbixAPIClient zabbixApiClient;
+    private final ZabbixSender zabbixSender;
 
-    public RemoveMessageListener(){
-        try {
-            client = new ZabbixAPIClient();
-            client.authenticate();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (KeyManagementException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InternalErrorException e) {
-            e.printStackTrace();
-        } catch (AuthenticationException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public RemoveMessageListener() throws KeyManagementException, NoSuchAlgorithmException {
+        // TODO: provide zabbix credentials from config file
+        this.zabbixApiClient = new ZabbixAPIClient();
+        this.zabbixSender = new ZabbixSender();
     }
-    @SuppressWarnings("static-access")
+
 	@Override
     public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
 
@@ -70,55 +55,46 @@ public class RemoveMessageListener implements IOFMessageListener {
         //long mb = (count);
 
         FlowInformation flowInf = new FlowInformation(switchId,startTime,timeStamp, dl_src, dl_dst, nw_src, nw_dst, srcPort, dstPort, count, time);
-        String dataNode = "";
-        String user = "";
         System.err.println(flowInf);
+
         try {
             if ((nw_src + ":" + srcPort).equals("10.0.42.1:50010") || (nw_src + ":" + srcPort).equals("10.0.42.2:50010")) {
-                dataNode = getDataNodeByIP(nw_src);
-                user = client.getUsernameByDataNodeConnection(dataNode, nw_dst + ":" + dstPort);
+                String dataNode = getDataNodeByIP(nw_src);
+                String user = zabbixApiClient.getUsernameByDataNodeConnection(dataNode, nw_dst + ":" + dstPort);
+                sendDataToZabbix(flowInf,dataNode,user);
 
             } else if ((nw_dst + ":" + dstPort).equals("10.0.42.1:50010") || (nw_dst + ":" + dstPort).equals("10.0.42.2:50010")) {
-                dataNode = getDataNodeByIP(nw_dst);
-                user = client.getUsernameByDataNodeConnection(dataNode, nw_src + ":" + srcPort);
+                String dataNode = getDataNodeByIP(nw_dst);
+                String user = zabbixApiClient.getUsernameByDataNodeConnection(dataNode, nw_src + ":" + srcPort);
+                sendDataToZabbix(flowInf,dataNode,user);
             }
-            if (!dataNode.isEmpty() && !user.isEmpty()) sendDataToZabbix(flowInf,dataNode,user);
 
-        }catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
-        }catch (ExecutionException e) {
+        } catch (ExecutionException e) {
             e.printStackTrace();
-        }catch (InternalErrorException e) {
+        } catch (InternalErrorException e) {
             e.printStackTrace();
-        }catch (AuthenticationException e) {
+        } catch (AuthenticationException e) {
             e.printStackTrace();
-        }catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
-        }catch (UserNotFoundException e) {
+        } catch (UserNotFoundException e) {
             e.printStackTrace();
         }
+
         return Command.CONTINUE;
     }
 
     private void sendDataToZabbix(FlowInformation flowInf, String dataNode, String user) {
-        ZabbixSender zabbixSender = new ZabbixSender();
-        zabbixSender.sendBandwidthUsage(dataNode,user,flowInf.getBandWith());
-        zabbixSender.sendDuration(dataNode,user,flowInf.getTime());
+        this.zabbixSender.sendBandwidthUsage(dataNode,user,flowInf.getBandWith());
+        this.zabbixSender.sendDuration(dataNode,user,flowInf.getTime());
     }
 
     //TODO: Mapping from targetIp to Hostname
-    private String getDataNodeByIP(String dstIp) {
-        try {
-            InetAddress addr = InetAddress.getByName(dstIp);
-            String host = addr.getHostName();
-            return host;
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }finally {
-            return null;
-        }
+    private String getDataNodeByIP(String dstIp) throws UnknownHostException {
+        return InetAddress.getByName(dstIp).getHostName();
     }
-
 
     @Override
     public String getName() {
