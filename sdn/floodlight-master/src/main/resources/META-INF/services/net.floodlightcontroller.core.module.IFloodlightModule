@@ -1,4 +1,3 @@
-net.floodlightcontroller.jython.JythonDebugInterface
 net.floodlightcontroller.core.module.ApplicationLoader
 net.floodlightcontroller.core.internal.FloodlightProvider
 net.floodlightcontroller.storage.memory.MemoryStorageSource
