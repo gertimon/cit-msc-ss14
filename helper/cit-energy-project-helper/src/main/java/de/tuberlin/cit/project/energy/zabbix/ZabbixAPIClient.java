@@ -3,6 +3,8 @@ package de.tuberlin.cit.project.energy.zabbix;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import javax.naming.AuthenticationException;
@@ -23,6 +25,8 @@ import de.tuberlin.cit.project.energy.zabbix.asynchttpclient.LooseTrustManager;
 import de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException;
 import de.tuberlin.cit.project.energy.zabbix.exception.TemplateNotFoundException;
 import de.tuberlin.cit.project.energy.zabbix.exception.UserNotFoundException;
+import de.tuberlin.cit.project.energy.zabbix.model.ZabbixHistoryObject;
+import de.tuberlin.cit.project.energy.zabbix.model.ZabbixItem;
 
 /**
  * Access zabbix config via REST API.
@@ -89,6 +93,10 @@ public class ZabbixAPIClient {
         this(System.getProperty("zabbix.restURL", ZabbixParams.DEFAULT_ZABBIX_REST_URL),
                 System.getProperty("zabbix.username", ZabbixParams.DEFAULT_ZABBIX_USERNAME),
                 System.getProperty("zabbix.password", ZabbixParams.DEFAULT_ZABBIX_PASSWORD));
+    }
+
+    public ObjectMapper getObjectMapper() {
+        return objectMapper;
     }
 
     /**
@@ -294,6 +302,68 @@ public class ZabbixAPIClient {
             throw new InternalErrorException();
 
         // TODO: add more here
+    }
+
+    /**
+     * Implements item.get from Zabbix API.
+     * @param jsonFilter e.g. search, itemids, limit, time_from, time_till
+     * @see https://www.zabbix.com/documentation/2.2/manual/api/reference/item/get
+     * @return List with values or empty list if no items match
+     */
+    public List<ZabbixItem> getItems(ObjectNode filterParams) throws AuthenticationException, IllegalArgumentException, InterruptedException, ExecutionException, IOException, InternalErrorException {
+        this.authenticate();
+
+        if(!filterParams.has("output"))
+            filterParams.put("output", "extend");
+
+        Response response = this.executeRPC("item.get", filterParams);
+
+        if (response.getStatusCode() == 200) {
+            JsonNode jsonResponse = objectMapper.readTree(response.getResponseBody());
+
+            if (jsonResponse.get("result").isArray() && jsonResponse.get("result").size() > 0) {
+                List<ZabbixItem> resultList = new ArrayList<ZabbixItem>(jsonResponse.get("result").size());
+
+                for (JsonNode item : jsonResponse.get("result"))
+                    resultList.add(this.objectMapper.readValue(item.traverse(), ZabbixItem.class));
+
+                return resultList;
+            } else
+                return new ArrayList<ZabbixItem>(0);
+        } else
+            throw new InternalErrorException();
+    }
+
+    /**
+     * Implements history.get from Zabbix API.
+     * @param jsonFilter e.g. search, itemids, limit, time_from, time_till
+     * @see https://www.zabbix.com/documentation/2.2/manual/api/reference/history/get
+     * @return List with values or empty list if no items match
+     */
+    public List<ZabbixHistoryObject> getHistory(ObjectNode filterParams) throws AuthenticationException, IllegalArgumentException, InterruptedException, ExecutionException, IOException, InternalErrorException {
+        this.authenticate();
+
+        if(!filterParams.has("output"))
+            filterParams.put("output", "extend");
+        if(!filterParams.has("history"))
+            filterParams.put("history", "4"); // 4 = text
+
+        Response response = this.executeRPC("history.get", filterParams);
+
+        if (response.getStatusCode() == 200) {
+            JsonNode jsonResponse = objectMapper.readTree(response.getResponseBody());
+
+            if (jsonResponse.get("result").isArray() && jsonResponse.get("result").size() > 0) {
+                List<ZabbixHistoryObject> resultList = new ArrayList<ZabbixHistoryObject>(jsonResponse.get("result").size());
+
+                for (JsonNode item : jsonResponse.get("result"))
+                    resultList.add(this.objectMapper.readValue(item.traverse(), ZabbixHistoryObject.class));
+
+                return resultList;
+            } else
+                return new ArrayList<ZabbixHistoryObject>(0);
+        } else
+            throw new InternalErrorException();
     }
 
     /**
