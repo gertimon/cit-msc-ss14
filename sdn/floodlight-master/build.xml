@@ -26,7 +26,7 @@
     generated code.
 -->
 
-<project default="dist" name="floodlight">
+<project default="dist" name="floodlight" xmlns:artifact="antlib:org.apache.maven.artifact.ant">
     <property name="target" location="target"/>
     <property name="build" location="${target}/bin"/>
     <property name="build-test" location="${target}/bin-test"/>
@@ -50,73 +50,103 @@
     <property name="findbugs.results" value="findbugs-results" />
     <property name="lib" location="lib"/>
 
-    <patternset id="lib">
-        <include name="logback-classic-1.0.0.jar"/>
-        <include name="logback-core-1.0.0.jar"/>
-        <include name="jackson-core-2.1.4.jar"/>
-        <include name="jackson-annotations-2.1.4.jar"/>
-        <include name="jackson-databind-2.1.4.jar"/>
-        <include name="jackson-dataformat-smile-2.1.4.jar"/>
-        <include name="jackson-dataformat-xml-2.1.4.jar"/>
-        <include name="jackson-dataformat-yaml-2.1.4.jar"/>
-        <include name="jackson-dataformat-csv-2.1.4.jar"/>
-        <include name="slf4j-api-1.6.4.jar"/>
-        <include name="org.restlet-2.2M3.jar"/>
-        <include name="org.restlet.ext.jackson-2.2M3.jar"/>
-        <include name="org.restlet.ext.simple-2.2M3.jar"/>
-        <include name="org.restlet.ext.slf4j-2.2M3.jar"/>
-        <include name="simple-5.1.1.jar"/>
-        <include name="netty-3.2.6.Final.jar"/>
-        <include name="args4j-2.0.16.jar"/>
-        <include name="concurrentlinkedhashmap-lru-1.2.jar"/>
-        <include name="jython-2.5.2.jar"/>
-        <include name="libthrift-0.9.0.jar"/>
-        <include name="guava-13.0.1.jar" />
-        <include name="findbugs-annotations-2.0.1.jar" />
-        <include name="findbugs-jsr305-2.0.1.jar" />
-        <include name="derby-10.9.1.0.jar"/>
-    </patternset>
+    <path id="maven-ant-tasks.classpath" path="lib/maven-ant-tasks-2.1.3.jar" />
+    <typedef resource="org/apache/maven/artifact/ant/antlib.xml"
+        uri="antlib:org.apache.maven.artifact.ant"
+        classpathref="maven-ant-tasks.classpath" />
 
-    <path id="classpath">
-        <fileset dir="${lib}">
-            <patternset refid="lib"/>
-        </fileset>
-    </path>
+    <artifact:remoteRepository id="maven-restlet"
+        url="http://maven.restlet.com" />
 
-    <patternset id="lib-package">
-        <include name="jdeb-1.0.1.jar"/>
-    </patternset>
-    <path id="package-classpath">
-        <fileset dir="${lib}">
-            <patternset refid="lib-package"/>
-        </fileset>
-    </path>
+    <artifact:dependencies pathId="classpath" filesetId="lib">
+        <dependency groupId="ch.qos.logback"
+            artifactId="logback-classic" version="1.0.0"/>
+        <dependency groupId="ch.qos.logback"
+            artifactId="logback-core" version="1.0.0"/>
+        <dependency groupId="com.fasterxml.jackson.core"
+            artifactId="jackson-core" version="2.4.1"/>
+        <dependency groupId="com.fasterxml.jackson.core"
+            artifactId="jackson-annotations" version="2.4.1"/>
+        <dependency groupId="com.fasterxml.jackson.core"
+            artifactId="jackson-databind" version="2.4.1"/>
+        <dependency groupId="com.fasterxml.jackson.dataformat"
+            artifactId="jackson-dataformat-smile" version="2.4.1"/>
+        <dependency groupId="com.fasterxml.jackson.dataformat"
+            artifactId="jackson-dataformat-xml" version="2.4.1"/>
+        <dependency groupId="com.fasterxml.jackson.dataformat"
+            artifactId="jackson-dataformat-xml" version="2.4.1"/>
+        <dependency groupId="com.fasterxml.jackson.dataformat"
+            artifactId="jackson-dataformat-csv" version="2.4.1"/>
+        <dependency groupId="de.tuberlin.cit.project.energy.helper"
+            artifactId="cit-energy-project-helper" version="1.1-SNAPSHOT">
+            <exclusion groupId="org.slf4j" artifactId="slf4j-log4j12"/> <!-- already included in logback-classic... -->
+        </dependency>
+        <dependency groupId="org.slf4j"
+            artifactId="slf4j-api" version="1.6.4"/>
+        <remoteRepository refid="maven-restlet" />
+        <dependency groupId="org.restlet.jse"
+            artifactId="org.restlet" version="2.2-M3"/>
+        <dependency groupId="org.restlet.jse"
+            artifactId="org.restlet.ext.jackson" version="2.2-M3"/>
+        <dependency groupId="org.restlet.jse"
+            artifactId="org.restlet.ext.simple" version="2.2-M3"/>
+        <dependency groupId="org.restlet.jse"
+            artifactId="org.restlet.ext.slf4j" version="2.2-M3"/>
+        <dependency groupId="org.simpleframework"
+            artifactId="simple" version="5.1.1"/>
+        <dependency groupId="io.netty"
+            artifactId="netty" version="3.9.1.Final"/>
+        <dependency groupId="args4j"
+            artifactId="args4j" version="2.0.16"/>
+        <dependency groupId="com.googlecode.concurrentlinkedhashmap"
+            artifactId="concurrentlinkedhashmap-lru" version="1.2"/>
+        <dependency groupId="org.python"
+            artifactId="jython-standalone" version="2.5.2"/>
+        <dependency groupId="org.apache.thrift"
+            artifactId="libthrift" version="0.9.0"/>
+        <dependency groupId="com.google.guava"
+            artifactId="guava" version="13.0.1"/>
+        <dependency groupId="com.google.code.findbugs"
+            artifactId="annotations" version="2.0.1"/>
+        <dependency groupId="com.google.code.findbugs"
+            artifactId="jsr305" version="2.0.1"/>
+        <dependency groupId="org.apache.derby"
+            artifactId="derby" version="10.9.1.0"/>
+        <dependency groupId="commons-net"
+            artifactId="commons-net" version="3.3"/>
+    </artifact:dependencies>
 
-    <patternset id="lib-cobertura">
-        <include name="cobertura-1.9.4.1.jar"/>
-        <include name="asm-3.0.jar"/>
-        <include name="asm-tree-3.0.jar"/>
-        <include name="oro/jakarta-oro-2.0.8.jar"/>
-        <include name="log4j-1.2.9.jar"/>
-    </patternset>
+    <artifact:dependencies pathId="package-classpath" filesetId="lib-package">
+        <dependency groupId="org.vafer"
+            artifactId="jdeb" version="1.0.1"/>
+    </artifact:dependencies>
+
+    <artifact:dependencies filesetId="lib-cobertura">
+        <dependency groupId="net.sourceforge.cobertura"
+            artifactId="cobertura" version="1.9.4.1"/>
+        <dependency groupId="asm"
+            artifactId="asm" version="3.0"/>
+        <dependency groupId="asm"
+            artifactId="asm-tree" version="3.0"/>
+        <dependency groupId="oro"
+            artifactId="oro" version="2.0.8"/>
+        <dependency groupId="log4j"
+            artifactId="log4j" version="1.2.17"/>
+    </artifact:dependencies>
     <path id="classpath-cobertura">
-        <fileset dir="${lib}">
-            <patternset refid="lib-cobertura"/>
-    </fileset>
+        <fileset refid="lib-cobertura" />
     </path>
 
-    <patternset id="lib-test">
-        <include name="junit-4.8.2.jar"/>
-        <include name="org.easymock-3.1.jar"/>
-        <include name="objenesis-1.2.jar"/>  <!-- required by easymock to mock classes -->
-        <include name="cglib-nodep-2.2.2.jar"/>    <!-- required by easymock to mock classes -->
-    </patternset>
+    <artifact:dependencies filesetId="lib-test">
+        <dependency groupId="junit"
+            artifactId="junit" version="4.8.2"/>
+        <dependency groupId="org.easymock"
+            artifactId="easymock" version="3.1"/>
+    </artifact:dependencies>
     <path id="classpath-test">
-        <fileset dir="${lib}">
-            <patternset refid="lib-test"/>
-            <patternset refid="lib-cobertura"/>
-            <patternset refid="lib"/>
-        </fileset>
+        <fileset refid="lib" />
+        <fileset refid="lib-test" />
+        <fileset refid="lib-cobertura" />
     </path>
 
     <target name="init">
@@ -141,7 +171,7 @@
 
     <target name="compile-tests" depends="compile-test"/>
     <target name="compile-test" depends="compile">
-        <javac includeAntRuntime="false" debug="true" 
+        <javac includeAntRuntime="false" debug="true"
            srcdir="${source-test}"
            classpath="${build}"
            classpathref="classpath-test"
@@ -248,9 +278,7 @@
             <fileset dir="${python-src}">
                 <include name="**/*.py"/>
             </fileset>
-            <zipgroupfileset dir="${lib}">
-                <patternset refid="lib"/>
-            </zipgroupfileset>
+            <zipgroupfileset refid="lib" />
         </jar>
         <jar destfile="${floodlight-test-jar}" filesetmanifest="mergewithoutmain">
             <manifest>
@@ -258,10 +286,8 @@
             </manifest>
             <fileset dir="${build-test}"/>
             <fileset dir="${test-resources}"/>
-            <zipgroupfileset dir="${lib}">
-                <patternset refid="lib-test"/>
-                <patternset refid="lib-cobertura"/>
-            </zipgroupfileset>
+            <zipgroupfileset refid="lib-test" />
+            <zipgroupfileset refid="lib-cobertura" />
         </jar>
     </target>
 
@@ -328,10 +354,8 @@
     <target name="eclipse" depends="init">
         <pathconvert property="eclipse-lib">
             <map from="${basedir}/" to=""/>
-            <fileset dir="${lib}">
-                <patternset refid="lib"/>
-                <patternset refid="lib-test"/>
-            </fileset>
+            <fileset refid="lib" />
+            <fileset refid="lib-test" />
         </pathconvert>
         <exec executable="${basedir}/setup-eclipse.sh">
             <arg value="${main-class}"/>
