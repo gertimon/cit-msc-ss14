@@ -180,6 +180,8 @@ public class ZabbixAPIClient {
         params.put("host", dataNodeName);
         params.with("search").put("key_", String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, "*"));
         params.put("searchWildcardsEnabled", true);
+        params.with("filter").put("value", clientAddress);
+
         params.withArray("output").add("key_");
         params.withArray("output").add("lastvalue");
         params.withArray("output").add("lastclock");
@@ -194,15 +196,12 @@ public class ZabbixAPIClient {
 
             if (jsonResponse.get("result").isArray()) {
                 for (JsonNode item : jsonResponse.get("result")) {
-                    if (item.get("key_").asText().endsWith(".lastAddress") && item.get("lastvalue").asText().equals(clientAddress)) {
-                        long currentLastclock = item.get("lastclock").asLong();
-                        if (usernameKey == null || currentLastclock > lastclock) {
-                            usernameKey = item.get("key_").asText();
-                            lastclock = currentLastclock;
-                        }
+                    long currentLastclock = item.get("lastclock").asLong();
+                    if (usernameKey == null || currentLastclock > lastclock) {
+                        usernameKey = item.get("key_").asText();
+                        lastclock = currentLastclock;
                     }
                 }
-
             }
 
             if (usernameKey != null && System.currentTimeMillis()/1000 - ZabbixParams.MAX_USER_IP_MAPPING_AGE < lastclock) {
