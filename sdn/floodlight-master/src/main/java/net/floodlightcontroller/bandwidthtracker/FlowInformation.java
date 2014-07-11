@@ -3,7 +3,6 @@ package net.floodlightcontroller.bandwidthtracker;
 public class FlowInformation {
     private long startTime;
     private long endTime;
-    private int switchId;
     private String srcIp;
     private String dstIp;
     private String srcPort;
@@ -17,8 +16,7 @@ public class FlowInformation {
 
 
 
-    public FlowInformation(int id,long startTime, long endTime, String srcMac, String dstMac, String srcIP, String dstIP, String srcPort,String dstPort, long dataSize, double time){
-        switchId = id;
+    public FlowInformation(long startTime, long endTime, String srcMac, String dstMac, String srcIP, String dstIP, String srcPort,String dstPort, long dataSize, double time){
         this.startTime = startTime;
         this.endTime = endTime;
         this.srcIp = srcIP;
@@ -70,7 +68,7 @@ public class FlowInformation {
     }
 
     public String toString(){
-        return "Switch: " + switchId + ", MAC_Src: " + srcMac + ", IP_Src: " +
+        return  "MAC_Src: " + srcMac + ", IP_Src: " +
                 srcIp + ", SrcPort:" + srcPort + ", MAC_Dst: " + dstMac + ", IP_Dst: " + dstIp + ", DstPort: "+ dstPort + ", Datasize in MB: " +
                 dataSize + ", DurationTime: " + time +" s" + ", Bandwidth: " + bandWith + " kB/s";
     }

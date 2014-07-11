@@ -21,9 +21,15 @@ import java.util.concurrent.ExecutionException;
 /**
  * Created by fubezz on 11.06.14.
  */
+
+
 public class RemoveMessageListener implements IOFMessageListener {
     private final ZabbixAPIClient zabbixApiClient;
     private final ZabbixSender zabbixSender;
+    private final String searchedIpdataNode1 = "10.42.0.1";
+    private final String searchedIpdataNode2 = "10.42.0.2";
+    private final String dataNodePort = "50010";
+
 
     public RemoveMessageListener() throws KeyManagementException, NoSuchAlgorithmException {
         // TODO: provide zabbix credentials from config file
@@ -31,42 +37,22 @@ public class RemoveMessageListener implements IOFMessageListener {
         this.zabbixSender = new ZabbixSender();
     }
 
-	@Override
+    @Override
     public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
 
-        long timeStamp = System.currentTimeMillis();
-
         OFFlowRemoved flow = (OFFlowRemoved) msg;
-        int tcpSrc = 0xFFFF & flow.getMatch().getTransportSource();
-        int tcpDst = 0xFFFF & flow.getMatch().getTransportDestination();
-
-        timeStamp = timeStamp - (flow.getIdleTimeout()*1000);
-        String srcPort = Integer.toString(tcpSrc);
-        String dstPort = Integer.toString(tcpDst);
-        String nw_src = IPv4.fromIPv4Address(flow.getMatch().getNetworkSource());
-        String nw_dst = IPv4.fromIPv4Address(flow.getMatch().getNetworkDestination());
-        String dl_src = HexString.toHexString(flow.getMatch().getDataLayerSource());
-        String dl_dst = HexString.toHexString(flow.getMatch().getDataLayerDestination());
-
-        int switchId = (int)sw.getId();
-        long count = flow.getByteCount();
-        int time = flow.getDurationSeconds() - flow.getIdleTimeout();
-        long startTime = timeStamp - (time*1000);
-        //long mb = (count);
-
-        FlowInformation flowInf = new FlowInformation(switchId,startTime,timeStamp, dl_src, dl_dst, nw_src, nw_dst, srcPort, dstPort, count, time);
+        FlowInformation flowInf = createFlowInformation(flow);
         System.err.println(flowInf);
-
         try {
-            if ((nw_src + ":" + srcPort).equals("10.0.42.1:50010") || (nw_src + ":" + srcPort).equals("10.0.42.2:50010")) {
-                String dataNode = getDataNodeByIP(nw_src);
-                String user = zabbixApiClient.getUsernameByDataNodeConnection(dataNode, nw_dst + ":" + dstPort);
-                sendDataToZabbix(flowInf,dataNode,user);
+            if (isSearchedFlow(flowInf.getSrcIp(), flowInf.getSrcPort())) {
+                String dataNode = getDataNodeByIP(flowInf.getSrcIp());
+                String user = zabbixApiClient.getUsernameByDataNodeConnection(dataNode, flowInf.getDstIp() + ":" + flowInf.getDstPort());
+                sendDataToZabbix(flowInf, dataNode, user);
 
-            } else if ((nw_dst + ":" + dstPort).equals("10.0.42.1:50010") || (nw_dst + ":" + dstPort).equals("10.0.42.2:50010")) {
-                String dataNode = getDataNodeByIP(nw_dst);
-                String user = zabbixApiClient.getUsernameByDataNodeConnection(dataNode, nw_src + ":" + srcPort);
-                sendDataToZabbix(flowInf,dataNode,user);
+            } else if (isSearchedFlow(flowInf.getDstIp(), flowInf.getDstPort())) {
+                String dataNode = getDataNodeByIP(flowInf.getDstIp());
+                String user = zabbixApiClient.getUsernameByDataNodeConnection(dataNode, flowInf.getSrcIp() + ":" + flowInf.getSrcPort());
+                sendDataToZabbix(flowInf, dataNode, user);
             }
 
         } catch (InterruptedException e) {
@@ -86,9 +72,38 @@ public class RemoveMessageListener implements IOFMessageListener {
         return Command.CONTINUE;
     }
 
+    private boolean isSearchedFlow(String ip, String port) {
+        if (ip.equals(searchedIpdataNode1) && port.equals(dataNodePort)) {
+            return true;
+        } else if (ip.equals(searchedIpdataNode2) && port.equals(dataNodePort)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private FlowInformation createFlowInformation(OFFlowRemoved flow) {
+        long timeStamp = System.currentTimeMillis();
+        int tcpSrcPort = 0xFFFF & flow.getMatch().getTransportSource();
+        int tcpDstPort = 0xFFFF & flow.getMatch().getTransportDestination();
+        timeStamp = timeStamp - (flow.getIdleTimeout() * 1000);
+        String srcPort = Integer.toString(tcpSrcPort);
+        String dstPort = Integer.toString(tcpDstPort);
+        String nw_src = IPv4.fromIPv4Address(flow.getMatch().getNetworkSource());
+        String nw_dst = IPv4.fromIPv4Address(flow.getMatch().getNetworkDestination());
+        String dl_src = HexString.toHexString(flow.getMatch().getDataLayerSource());
+        String dl_dst = HexString.toHexString(flow.getMatch().getDataLayerDestination());
+        long count = flow.getByteCount();
+        int time = flow.getDurationSeconds() - flow.getIdleTimeout();
+        long startTime = timeStamp - (time * 1000);
+        FlowInformation flowInf = new FlowInformation(startTime, timeStamp, dl_src, dl_dst, nw_src, nw_dst, srcPort, dstPort, count, time);
+        return flowInf;
+    }
+
     private void sendDataToZabbix(FlowInformation flowInf, String dataNode, String user) {
-        this.zabbixSender.sendBandwidthUsage(dataNode,user,flowInf.getBandWith());
-        this.zabbixSender.sendDuration(dataNode,user,flowInf.getTime());
+        this.zabbixSender.sendDataAmountUsage(dataNode, user, flowInf.getDataSize());
+        this.zabbixSender.sendBandwidthUsage(dataNode, user, flowInf.getBandWith());
+        this.zabbixSender.sendDuration(dataNode, user, flowInf.getTime());
     }
 
     //TODO: Mapping from targetIp to Hostname
