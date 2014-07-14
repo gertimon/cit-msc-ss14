@@ -1,68 +1,84 @@
 package net.floodlightcontroller.bandwidthtracker;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import de.tuberlin.cit.project.energy.zabbix.ZabbixAPIClient;
+import de.tuberlin.cit.project.energy.zabbix.ZabbixSender;
+import de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException;
+import de.tuberlin.cit.project.energy.zabbix.exception.UserNotFoundException;
 import net.floodlightcontroller.core.IFloodlightProviderService;
 import net.floodlightcontroller.core.IOFSwitch;
 import net.floodlightcontroller.packet.IPv4;
 
-import org.openflow.protocol.OFFlowMod;
-import org.openflow.protocol.OFMatch;
-import org.openflow.protocol.OFStatisticsRequest;
-import org.openflow.protocol.OFType;
-import org.openflow.protocol.Wildcards;
+import org.openflow.protocol.*;
 import org.openflow.protocol.statistics.OFFlowStatisticsReply;
 import org.openflow.protocol.statistics.OFFlowStatisticsRequest;
 import org.openflow.protocol.statistics.OFStatistics;
 import org.openflow.protocol.statistics.OFStatisticsType;
+import org.openflow.util.HexString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.tuberlin.cit.project.energy.zabbix.ZabbixSender;
+import javax.naming.AuthenticationException;
 
 /**
  * Created by fubezz on 18.05.14.
  */
 public class FlowTableGetter implements Runnable {
     private final static Logger log = LoggerFactory.getLogger(FlowTableGetter.class);
-
     private final IFloodlightProviderService provider;
-    private final HashMap<String, FlowInformation> dataCouter;
-   // StaticFlowEntryPusher pusher;
-    private final ZabbixSender zabbixSender;
+    final String searchedIpdataNode1 = "10.42.0.1";
+    final String searchedIpdataNode2 = "10.42.0.2";
+    final String dataNodePort = "50010";
+     HashMap<String, FlowInformation> flowMap;
+     HashMap<String, ConnectionInfos> conInfMap;
+    private  ZabbixAPIClient zabbixApiClient;
+    private  ZabbixSender zabbixSender;
+
 
     public FlowTableGetter(IFloodlightProviderService floodlightProvider) {
         this.provider = floodlightProvider;
-        this.dataCouter = new HashMap<String, FlowInformation>();
-        this.zabbixSender = new ZabbixSender(); // TODO: provide zabbix server address via config file
-
-        // what? this.provider.addOFMessageListener(OFType.FLOW_REMOVED, new RemoveMessageListener());
-        // pusher = new StaticFlowEntryPusher();
+        this.flowMap = new HashMap<String, FlowInformation>();
+        this.conInfMap = new HashMap<String, ConnectionInfos>();
+        try {
+            this.zabbixApiClient = new ZabbixAPIClient();
+            zabbixSender = new ZabbixSender();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (KeyManagementException e) {
+            e.printStackTrace();
+        }
     }
+
+    public class ConnectionInfos {
+        String user;
+        String dataNode;
+
+        private ConnectionInfos(String user, String dataNode) {
+            this.user = user;
+            this.dataNode = dataNode;
+        }
+    }
+
 
     @Override
     public void run() {
 
-        while(true){
-            getFlows(provider);
+        while (true) {
 
-            for (FlowInformation inf : dataCouter.values()){
-                System.out.println(inf);
-                
-                try {
-					sendToZabbix();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-            }
+            handleFlows(provider);
             System.out.println("-----------------------------------------------------");
 
             try {
@@ -76,97 +92,130 @@ public class FlowTableGetter implements Runnable {
 
     }
 
-    private void sendToZabbix() throws IOException {
-        for (FlowInformation flow : dataCouter.values()){ // don't do this again...
-
-        	/* Sending data via Zabbix Sender */
-            //Send IP
-            //trapper.sendMetric("localhost","CitProjectDummy","project.user.ipport.klaus",false,flow.getSrcIp());
-            //Send Datasize
-            if (flow.getSrcIp().equals("10.0.0.1")){
-              //  int sizeMb = (int)flow.getDataSizeMB();
-
-               // trapper.sendMetricJson("192.168.178.28", "CitProjectDummy", "project.user.bandwidth.klaus", true, Integer.toString(sizeMb));
-
-        	/* Sending data via JSON */
-                //trapper.sendMetricJson("192.168.178.28", "CitProjectDummy", "project.user.ipport.klaus", false, flow.getSrcIp());
-
-            }
-
-        	
-        }
 
 
-    }
-
-    public void getFlows(IFloodlightProviderService floodlightProvider)
-    {
+    public void handleFlows(IFloodlightProviderService floodlightProvider) {
         List<IOFSwitch> switches = getSwitches(floodlightProvider);
 
-        for( IOFSwitch sw : switches )
-        {
-            List<OFFlowStatisticsReply> flowTable = getSwitchFlowTable(sw, (short)-1);
-            for(OFFlowStatisticsReply flow : flowTable)
-            {
+        for (IOFSwitch sw : switches) {
+            List<OFFlowStatisticsReply> flowTable = getSwitchFlowTable(sw, (short) -1);
+            for (OFFlowStatisticsReply flow : flowTable) {
 
-              //  System.err.println(String.valueOf(flow));
+                FlowInformation flowInf = createFlowInformation(flow);
+                String hashKey = flowInf.getHashKey();
+                if (flowMap.containsKey(hashKey) && conInfMap.containsKey(hashKey)){
+                    FlowInformation oldFlow = flowMap.get(hashKey);
+                    ConnectionInfos conInf = conInfMap.get(hashKey);
+                    FlowInformation modFlow = modifyFlow(flowInf,oldFlow);
+                    System.err.println(modFlow);
+                  //  sendDataToZabbix(modFlow, conInf.dataNode, conInf.user);
+                    flowMap.remove(hashKey);
+                    flowMap.put(hashKey, flowInf);
+                }else {
+                    ConnectionInfos conInf = getConnectionInfos(flowInf.getSrcIp(), flowInf.getSrcPort(), flowInf.getDstIp(), flowInf.getDstPort());
 
-                String nw_src =IPv4.fromIPv4Address(flow.getMatch().getNetworkSource());
-                String nw_dst = IPv4.fromIPv4Address(flow.getMatch().getNetworkDestination());
-                long switchId = sw.getId();
+                    if (conInf != null) {
 
-                long count = flow.getByteCount();
-                int time = flow.getDurationSeconds();
-                long mb = (count);
-                String key = nw_src;
-                boolean changed = false;
-                FlowInformation inf = dataCouter.get(key);
-                if (dataCouter.containsKey(key)){
-                    double size = inf.getDataSize();
-                    inf.setDataSize((long)size + mb);
-                    inf.setTime(inf.getTime()+time);
-                  //  changed = true;
-                  //  System.out.println(inf);
-                }else{
-                  //  FlowInformation counter = new FlowInformation(flow.getTableId(),nw_src,nw_dst,mb,time);
-               //     dataCouter.put(key,counter);
-                   // changed = true;
-                   // System.err.println(counter);
+                     //   sendDataToZabbix(flowInf, conInf.dataNode, conInf.user);
+                        flowMap.put(hashKey, flowInf);
+                        conInfMap.put(hashKey, conInf);
+                    }
+
                 }
-                //deleteFlowEntry(sw, flow);
             }
 
-            }
+        }
 
     }
 
-    private void deleteFlowEntry(IOFSwitch sw, OFFlowStatisticsReply rp){
-        OFMatch match = new OFMatch();
+    public FlowInformation modifyFlow(FlowInformation newInf, FlowInformation oldInf) {
+        double newDataSize = newInf.getDataSize();
+        double oldDataSize = oldInf.getDataSize();
+        double newDurationTime = newInf.getTime();
+        double oldDurationTime = oldInf.getTime();
+            if (newDataSize != oldDataSize && newDurationTime != oldDurationTime) {
+                double currentBandwidth = (newDataSize - oldDataSize) / (newDurationTime - oldDurationTime);
+              //  System.err.println("OLD_DATA: " + oldDataSize + " NEW_DATA " + newDataSize + " OLD_TIME " + oldDurationTime + " NEW TIME " + newDurationTime + " BANDWIDTH " + currentBandwidth);
+                oldInf.setDataSize(newDataSize);
+                oldInf.setTime(newDurationTime);
+                oldInf.setBandwidth(currentBandwidth);
+            }
 
-        match.setDataLayerSource(rp.getMatch().getDataLayerSource());
-        match.setDataLayerDestination(rp.getMatch().getDataLayerDestination());
-        match.setInputPort(rp.getMatch().getInputPort());
-        match.setWildcards(Wildcards.FULL.matchOn(Wildcards.Flag.DL_SRC).matchOn(Wildcards.Flag.DL_DST).matchOn(Wildcards.Flag.IN_PORT));
+        return oldInf;
+    }
 
-        OFFlowMod flowMod = (OFFlowMod)provider.getOFMessageFactory().getMessage(OFType.FLOW_MOD);
 
-        flowMod.setMatch(match);
-        flowMod.setCommand(OFFlowMod.OFPFC_DELETE);
+
+    public ConnectionInfos getConnectionInfos(String srcIp, String srcPort, String dstIp, String dstPort) {
         try {
-            sw.write(flowMod,null);
-            sw.flush();
+            if ((srcIp.equals(searchedIpdataNode1) || srcIp.equals(searchedIpdataNode2)) && srcPort.equals(dataNodePort) &&
+                    !(dstIp.equals(searchedIpdataNode2) || dstIp.equals(searchedIpdataNode1))) {
+                String dataNode = null;
+                dataNode = getDataNodeByIP(srcIp);
+                String user = zabbixApiClient.getUsernameByDataNodeConnection(dataNode, dstIp + ":" + dstPort);
+                ConnectionInfos conInf = new ConnectionInfos(user, dataNode);
+                return conInf;
+
+            } else if ((dstIp.equals(searchedIpdataNode1) || dstIp.equals(searchedIpdataNode2)) &&
+                    dstPort.equals(dataNodePort) && !(srcIp.equals(searchedIpdataNode2) || srcIp.equals(searchedIpdataNode1))) {
+                String dataNode = null;
+                dataNode = getDataNodeByIP(dstIp);
+                String user = zabbixApiClient.getUsernameByDataNodeConnection(dataNode, srcIp + ":" + srcPort);
+                ConnectionInfos conInf = new ConnectionInfos(user, dataNode);
+                return conInf;
+            } else if ((dstIp.equals(searchedIpdataNode1) || dstIp.equals(searchedIpdataNode2)) &&
+                    dstPort.equals(dataNodePort) && (srcIp.equals(searchedIpdataNode2) || srcIp.equals(searchedIpdataNode1))) {
+                //TODO Handle Case if both datanodes communicates
+                return null;
+            } else {
+                return null;
+            }
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (UserNotFoundException e) {
+            e.printStackTrace();
+        } catch (InternalErrorException e) {
+           // e.printStackTrace();
+        } catch (AuthenticationException e) {
+            e.printStackTrace();
+        } finally {
+            ConnectionInfos conTest = new ConnectionInfos("TEST", "TEST");
+            return conTest;
         }
+
     }
 
-    public List<IOFSwitch> getSwitches(IFloodlightProviderService floodlightProvider)
-    {
+    public FlowInformation createFlowInformation(OFFlowStatisticsReply flow) {
+        long timeStamp = System.currentTimeMillis();
+        int tcpSrcPort = 0xFFFF & flow.getMatch().getTransportSource();
+        int tcpDstPort = 0xFFFF & flow.getMatch().getTransportDestination();
+        timeStamp = timeStamp - (flow.getIdleTimeout() * 1000);
+        String srcPort = Integer.toString(tcpSrcPort);
+        String dstPort = Integer.toString(tcpDstPort);
+        String nw_src = IPv4.fromIPv4Address(flow.getMatch().getNetworkSource());
+        String nw_dst = IPv4.fromIPv4Address(flow.getMatch().getNetworkDestination());
+        String dl_src = HexString.toHexString(flow.getMatch().getDataLayerSource());
+        String dl_dst = HexString.toHexString(flow.getMatch().getDataLayerDestination());
+        long count = flow.getByteCount();
+        int time = flow.getDurationSeconds();
+        long startTime = timeStamp - (time * 1000);
+        FlowInformation flowInf = new FlowInformation(startTime, timeStamp, dl_src, dl_dst, nw_src, nw_dst, srcPort, dstPort, count, time);
+        return flowInf;
+    }
+
+
+    public List<IOFSwitch> getSwitches(IFloodlightProviderService floodlightProvider) {
         List<IOFSwitch> switchList = new ArrayList<IOFSwitch>();
 
         Map<Long, IOFSwitch> switchMap = floodlightProvider.getAllSwitchMap();
-        for(Map.Entry<Long, IOFSwitch> entry : switchMap.entrySet()) {
-            switchList.add( entry.getValue() );
+        for (Map.Entry<Long, IOFSwitch> entry : switchMap.entrySet()) {
+            switchList.add(entry.getValue());
         }
 
         return switchList;
@@ -208,5 +257,14 @@ public class FlowTableGetter implements Runnable {
 
     }
 
+    private String getDataNodeByIP(String dstIp) throws UnknownHostException {
+        return InetAddress.getByName(dstIp).getHostName();
+    }
+
+    public void sendDataToZabbix(FlowInformation flowInf, String dataNode, String user) {
+        this.zabbixSender.sendDataAmountUsage(dataNode, user, flowInf.getDataSize());
+        this.zabbixSender.sendBandwidthUsage(dataNode, user, flowInf.getBandWidth());
+        this.zabbixSender.sendDuration(dataNode, user, flowInf.getTime());
+    }
 
 }
