@@ -80,9 +80,7 @@ public class FlowTableGetter implements Runnable {
 
             handleFlows(provider);
             System.out.println("-----------------------------------------------------");
-
             try {
-
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -108,14 +106,17 @@ public class FlowTableGetter implements Runnable {
                     ConnectionInfos conInf = conInfMap.get(hashKey);
                     FlowInformation modFlow = modifyFlow(flowInf,oldFlow);
                     System.err.println(modFlow);
+
+                    //TODO Enable to send to Zabbix!
                   //  sendDataToZabbix(modFlow, conInf.dataNode, conInf.user);
+
                     flowMap.remove(hashKey);
                     flowMap.put(hashKey, flowInf);
                 }else {
                     ConnectionInfos conInf = getConnectionInfos(flowInf.getSrcIp(), flowInf.getSrcPort(), flowInf.getDstIp(), flowInf.getDstPort());
 
                     if (conInf != null) {
-
+                        //TODO Enable to send to Zabbix!
                      //   sendDataToZabbix(flowInf, conInf.dataNode, conInf.user);
                         flowMap.put(hashKey, flowInf);
                         conInfMap.put(hashKey, conInf);
@@ -135,12 +136,10 @@ public class FlowTableGetter implements Runnable {
         double oldDurationTime = oldInf.getTime();
             if (newDataSize != oldDataSize && newDurationTime != oldDurationTime) {
                 double currentBandwidth = (newDataSize - oldDataSize) / (newDurationTime - oldDurationTime);
-              //  System.err.println("OLD_DATA: " + oldDataSize + " NEW_DATA " + newDataSize + " OLD_TIME " + oldDurationTime + " NEW TIME " + newDurationTime + " BANDWIDTH " + currentBandwidth);
                 oldInf.setDataSize(newDataSize);
                 oldInf.setTime(newDurationTime);
                 oldInf.setBandwidth(currentBandwidth);
             }
-
         return oldInf;
     }
 
@@ -165,7 +164,7 @@ public class FlowTableGetter implements Runnable {
                 return conInf;
             } else if ((dstIp.equals(searchedIpdataNode1) || dstIp.equals(searchedIpdataNode2)) &&
                     dstPort.equals(dataNodePort) && (srcIp.equals(searchedIpdataNode2) || srcIp.equals(searchedIpdataNode1))) {
-                //TODO Handle Case if both datanodes communicates
+                //TODO Handle Case if both dataNodes communicates
                 return null;
             } else {
                 return null;
@@ -185,6 +184,7 @@ public class FlowTableGetter implements Runnable {
         } catch (AuthenticationException e) {
             e.printStackTrace();
         } finally {
+            //TODO Change to "return null"
             ConnectionInfos conTest = new ConnectionInfos("TEST", "TEST");
             return conTest;
         }

@@ -47,13 +47,16 @@ public class RemoveMessageListener implements IOFMessageListener {
             flowGetter.conInfMap.remove(hashKey);
             System.out.print("-----------------------------------------------------------------------------------");
             System.err.println("DELETE: " + modFlow);
+
+            //TODO Enable to send to Zabbix!
          //   flowGetter.sendDataToZabbix(modFlow,conInf.dataNode,conInf.user);
 
             //Stop Flow on Zabbix
             modFlow.setBandwidth(0);
             modFlow.setDataSize(0);
             modFlow.setTime(0);
-            flowGetter.sendDataToZabbix(modFlow,conInf.dataNode,conInf.user);
+            //TODO Enable to send to Zabbix!
+          //  flowGetter.sendDataToZabbix(modFlow,conInf.dataNode,conInf.user);
         }
 
 
