@@ -35,7 +35,6 @@ public class RemoveMessageListener implements IOFMessageListener {
 
     @Override
     public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
-
         OFFlowRemoved flow = (OFFlowRemoved) msg;
         FlowInformation flowInf = createFlowInformation(flow);
         String hashKey = flowInf.getHashKey();
@@ -45,18 +44,21 @@ public class RemoveMessageListener implements IOFMessageListener {
             FlowInformation modFlow = flowGetter.modifyFlow(flowInf,oldFlow);
             flowGetter.flowMap.remove(hashKey);
             flowGetter.conInfMap.remove(hashKey);
-            System.out.print("-----------------------------------------------------------------------------------");
-            System.err.println("DELETE: " + modFlow);
+            if (modFlow != null){
+                System.out.println("DELETE: " + modFlow);
+                //TODO Enable to send to Zabbix!
+                //   flowGetter.sendDataToZabbix(modFlow,conInf.dataNode,conInf.user);
+                //Stop Flow on Zabbix
+                modFlow.setBandwidth(0.0);
+                modFlow.setDataSize(0.0);
+                modFlow.setTime(0.0);
+                //TODO Enable to send to Zabbix!
+                //  flowGetter.sendDataToZabbix(modFlow,conInf.dataNode,conInf.user);
 
-            //TODO Enable to send to Zabbix!
-         //   flowGetter.sendDataToZabbix(modFlow,conInf.dataNode,conInf.user);
+            }else{
+                System.out.println("DELETE: " + flowInf);
+            }
 
-            //Stop Flow on Zabbix
-            modFlow.setBandwidth(0);
-            modFlow.setDataSize(0);
-            modFlow.setTime(0);
-            //TODO Enable to send to Zabbix!
-          //  flowGetter.sendDataToZabbix(modFlow,conInf.dataNode,conInf.user);
         }
 
 
@@ -79,11 +81,6 @@ public class RemoveMessageListener implements IOFMessageListener {
         long startTime = timeStamp - (time * 1000);
         FlowInformation flowInf = new FlowInformation(startTime, timeStamp, dl_src, dl_dst, nw_src, nw_dst, srcPort, dstPort, count, time);
         return flowInf;
-    }
-
-    //TODO: Mapping from targetIp to Hostname
-    private String getDataNodeByIP(String dstIp) throws UnknownHostException {
-        return InetAddress.getByName(dstIp).getHostName();
     }
 
     @Override

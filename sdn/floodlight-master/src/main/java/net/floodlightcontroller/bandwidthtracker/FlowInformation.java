@@ -1,5 +1,9 @@
 package net.floodlightcontroller.bandwidthtracker;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+
 public class FlowInformation {
     private long startTime;
     private long endTime;
@@ -13,6 +17,7 @@ public class FlowInformation {
     private double bandWidth;
     private double time;
     private String hashKey;
+    private DecimalFormat df = new DecimalFormat("######,##");
 
 
 
@@ -27,7 +32,7 @@ public class FlowInformation {
         this.dstMac = dstMac;
         this.dataSize = (dataSize/1000);
         this.time = time ;
-        bandWidth = this.dataSize/this.time;
+        bandWidth = computeBandwidth(this.dataSize/this.time);
         hashKey = this.srcIp + this.srcPort + this.dstIp + this.dstPort;
     }
 
@@ -69,9 +74,10 @@ public class FlowInformation {
     }
 
     public String toString(){
-        return  "MAC_Src: " + srcMac + ", IP_Src: " +
-                srcIp + ", SrcPort:" + srcPort + ", MAC_Dst: " + dstMac + ", IP_Dst: " + dstIp + ", DstPort: "+ dstPort + ", Datasize in MB: " +
+        String flow ="MAC_Src: " + srcMac + ", IP_Src: " +
+                srcIp + ", SrcPort:" + srcPort + ", MAC_Dst: " + dstMac + ", IP_Dst: " + dstIp + ", DstPort: "+ dstPort + ", Datasize in kB: " +
                 dataSize + ", DurationTime: " + time +" s" + ", Bandwidth: " + bandWidth + " kB/s";
+        return flow;
     }
 
     public String getHashKey(){
@@ -79,6 +85,20 @@ public class FlowInformation {
     }
 
     public void setBandwidth(double bandwidth) {
-        this.bandWidth = bandwidth;
+        this.bandWidth = computeBandwidth(bandWidth);
+    }
+
+    private double computeBandwidth(double bandWidth){
+        if (!Double.isInfinite(bandWidth) && !Double.isNaN(bandWidth)){
+            return round(bandWidth,2);
+        }else return 0.0;
+    }
+
+    private static double round(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        BigDecimal bd = new BigDecimal(value);
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
+        return bd.doubleValue();
     }
 }

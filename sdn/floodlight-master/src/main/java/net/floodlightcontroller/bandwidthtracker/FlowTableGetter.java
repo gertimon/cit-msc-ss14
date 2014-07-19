@@ -39,9 +39,9 @@ import javax.naming.AuthenticationException;
 public class FlowTableGetter implements Runnable {
     private final static Logger log = LoggerFactory.getLogger(FlowTableGetter.class);
     private final IFloodlightProviderService provider;
-    final String searchedIpdataNode1 = "10.42.0.1";
-    final String searchedIpdataNode2 = "10.42.0.2";
-    final String dataNodePort = "50010";
+    final static String searchedIpdataNode1 = "10.42.0.1";
+    final static String searchedIpdataNode2 = "10.42.0.3";
+    final static String dataNodePort = "50010";
      HashMap<String, FlowInformation> flowMap;
      HashMap<String, ConnectionInfos> conInfMap;
     private  ZabbixAPIClient zabbixApiClient;
@@ -75,19 +75,17 @@ public class FlowTableGetter implements Runnable {
 
     @Override
     public void run() {
-
+        long time = System.currentTimeMillis();
         while (true) {
-
+            long newTime = (System.currentTimeMillis() - time)/1000;
             handleFlows(provider);
-            System.out.println("-----------------------------------------------------");
+            System.out.println("---------------------RUNNING FOR "+(int)newTime+"s--------------------------------");
             try {
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-
-
     }
 
 
@@ -105,17 +103,19 @@ public class FlowTableGetter implements Runnable {
                     FlowInformation oldFlow = flowMap.get(hashKey);
                     ConnectionInfos conInf = conInfMap.get(hashKey);
                     FlowInformation modFlow = modifyFlow(flowInf,oldFlow);
-                    System.err.println(modFlow);
+                    if (modFlow != null){
+                        //TODO Enable to send to Zabbix!
+                        //  sendDataToZabbix(modFlow, conInf.dataNode, conInf.user);
+                        System.out.println(modFlow);
+                        flowMap.remove(hashKey);
+                        flowMap.put(hashKey, flowInf);
+                    }
 
-                    //TODO Enable to send to Zabbix!
-                  //  sendDataToZabbix(modFlow, conInf.dataNode, conInf.user);
-
-                    flowMap.remove(hashKey);
-                    flowMap.put(hashKey, flowInf);
                 }else {
                     ConnectionInfos conInf = getConnectionInfos(flowInf.getSrcIp(), flowInf.getSrcPort(), flowInf.getDstIp(), flowInf.getDstPort());
 
                     if (conInf != null) {
+                        System.out.println("NEW CONNECTIONT: "+ flowInf);
                         //TODO Enable to send to Zabbix!
                      //   sendDataToZabbix(flowInf, conInf.dataNode, conInf.user);
                         flowMap.put(hashKey, flowInf);
@@ -139,27 +139,30 @@ public class FlowTableGetter implements Runnable {
                 oldInf.setDataSize(newDataSize);
                 oldInf.setTime(newDurationTime);
                 oldInf.setBandwidth(currentBandwidth);
+                return oldInf;
             }
-        return oldInf;
+        return null;
     }
 
 
 
     public ConnectionInfos getConnectionInfos(String srcIp, String srcPort, String dstIp, String dstPort) {
+        String dataNode = null;
+        String user = null;
         try {
             if ((srcIp.equals(searchedIpdataNode1) || srcIp.equals(searchedIpdataNode2)) && srcPort.equals(dataNodePort) &&
                     !(dstIp.equals(searchedIpdataNode2) || dstIp.equals(searchedIpdataNode1))) {
-                String dataNode = null;
+
                 dataNode = getDataNodeByIP(srcIp);
-                String user = zabbixApiClient.getUsernameByDataNodeConnection(dataNode, dstIp + ":" + dstPort);
+                user = zabbixApiClient.getUsernameByDataNodeConnection(dataNode, dstIp + ":" + dstPort);
                 ConnectionInfos conInf = new ConnectionInfos(user, dataNode);
                 return conInf;
 
             } else if ((dstIp.equals(searchedIpdataNode1) || dstIp.equals(searchedIpdataNode2)) &&
                     dstPort.equals(dataNodePort) && !(srcIp.equals(searchedIpdataNode2) || srcIp.equals(searchedIpdataNode1))) {
-                String dataNode = null;
+                dataNode = null;
                 dataNode = getDataNodeByIP(dstIp);
-                String user = zabbixApiClient.getUsernameByDataNodeConnection(dataNode, srcIp + ":" + srcPort);
+                user = zabbixApiClient.getUsernameByDataNodeConnection(dataNode, srcIp + ":" + srcPort);
                 ConnectionInfos conInf = new ConnectionInfos(user, dataNode);
                 return conInf;
             } else if ((dstIp.equals(searchedIpdataNode1) || dstIp.equals(searchedIpdataNode2)) &&
