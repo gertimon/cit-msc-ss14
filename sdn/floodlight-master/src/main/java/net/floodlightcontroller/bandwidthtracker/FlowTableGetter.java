@@ -149,6 +149,7 @@ public class FlowTableGetter implements Runnable {
     public ConnectionInfos getConnectionInfos(String srcIp, String srcPort, String dstIp, String dstPort) {
         String dataNode = null;
         String user = null;
+        System.out.println("Connection from: " + srcIp+":"+ srcPort + " to " + dstIp + ":" + dstPort);
         try {
             if ((srcIp.equals(searchedIpdataNode1) || srcIp.equals(searchedIpdataNode2)) && srcPort.equals(dataNodePort) &&
                     !(dstIp.equals(searchedIpdataNode2) || dstIp.equals(searchedIpdataNode1))) {
@@ -188,8 +189,7 @@ public class FlowTableGetter implements Runnable {
             e.printStackTrace();
         } finally {
             //TODO Change to "return null"
-            ConnectionInfos conTest = new ConnectionInfos("TEST", "TEST");
-            return conTest;
+            return null;
         }
 
     }
