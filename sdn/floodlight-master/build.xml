@@ -77,8 +77,8 @@
             artifactId="jackson-dataformat-xml" version="2.4.1"/>
         <dependency groupId="com.fasterxml.jackson.dataformat"
             artifactId="jackson-dataformat-csv" version="2.4.1"/>
-        <dependency groupId="de.tuberlin.cit.project.energy.helper"
-            artifactId="cit-energy-project-helper" version="1.1-SNAPSHOT">
+        <dependency groupId="de.tuberlin.cit.project.energy"
+            artifactId="cit-energy-project-helper" version="1.2-SNAPSHOT">
             <exclusion groupId="org.slf4j" artifactId="slf4j-log4j12"/> <!-- already included in logback-classic... -->
         </dependency>
         <dependency groupId="org.slf4j"
