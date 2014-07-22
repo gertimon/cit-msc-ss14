@@ -39,8 +39,8 @@ import javax.naming.AuthenticationException;
 public class FlowTableGetter implements Runnable {
     private final static Logger log = LoggerFactory.getLogger(FlowTableGetter.class);
     private final IFloodlightProviderService provider;
-    final static String searchedIpdataNode1 = "10.42.0.1";
-    final static String searchedIpdataNode2 = "10.42.0.3";
+    final static String searchedIpdataNode1 = "10.0.42.1";
+    final static String searchedIpdataNode2 = "10.0.42.3";
     final static String dataNodePort = "50010";
      HashMap<String, FlowInformation> flowMap;
      HashMap<String, ConnectionInfos> conInfMap;
@@ -105,7 +105,7 @@ public class FlowTableGetter implements Runnable {
                     FlowInformation modFlow = modifyFlow(flowInf,oldFlow);
                     if (modFlow != null){
                         //TODO Enable to send to Zabbix!
-                        //  sendDataToZabbix(modFlow, conInf.dataNode, conInf.user);
+                        sendDataToZabbix(modFlow, conInf.dataNode, conInf.user);
                         System.out.println(modFlow);
                         flowMap.remove(hashKey);
                         flowMap.put(hashKey, flowInf);
@@ -117,7 +117,7 @@ public class FlowTableGetter implements Runnable {
                     if (conInf != null) {
                         System.out.println("NEW CONNECTIONT: "+ flowInf);
                         //TODO Enable to send to Zabbix!
-                     //   sendDataToZabbix(flowInf, conInf.dataNode, conInf.user);
+                        sendDataToZabbix(flowInf, conInf.dataNode, conInf.user);
                         flowMap.put(hashKey, flowInf);
                         conInfMap.put(hashKey, conInf);
                     }
