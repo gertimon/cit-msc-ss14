@@ -39,11 +39,9 @@ public class ZabbixAPIClientTest {
         apiClient.setAuthToken("testAuthToken");
         long lastclock = (System.currentTimeMillis() / 1000) - 5;
         testServer.setNextResponse("{ \"jsonrpc\":\"2.0\", \"id\":2, \"result\":["
-                + "{\"key_\":\"user.klaus.lastAddress\",\"lastvalue\":\"11.11.11.11:1111\",\"lastclock\":\"" + lastclock + "\"},"
                 + "{\"key_\":\"user.peterFirst.lastAddress\",\"lastvalue\":\"22.22.22.22:2222\",\"lastclock\":\"" + (lastclock - 10) + "\"},"
                 + "{\"key_\":\"user.peter.lastAddress\",\"lastvalue\":\"22.22.22.22:2222\",\"lastclock\":\"" + lastclock + "\"},"
                 + "{\"key_\":\"user.peterLast.lastAddress\",\"lastvalue\":\"22.22.22.22:2222\",\"lastclock\":\"" + (lastclock - 20) + "\"},"
-                + "{\"key_\":\"user.emil.lastAddress\",\"lastvalue\":\"33.33.33.33:3333\",\"lastclock\":\"" + lastclock + "\"}"
                 + "]}");
         String result = apiClient.getUsernameByDataNodeConnection("testDataNode", "22.22.22.22:2222");
         String request = testServer.getLastRequest();
