@@ -166,7 +166,7 @@ public class ZabbixAPIClient {
      */
     public Response executeRPC(String method, JsonNode params) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
         String rpcBody = getRPCBody(method, params);
-        log.info("Running json rpc with body: " + rpcBody);
+        log.debug("Running json rpc with body: " + rpcBody);
 
         Response r = this.httpClient.preparePost(this.zabbixURL)
                 .addHeader("Content-Type", "application/json-rpc")
