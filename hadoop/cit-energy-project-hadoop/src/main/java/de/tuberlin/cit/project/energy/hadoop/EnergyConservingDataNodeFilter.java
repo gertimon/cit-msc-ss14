@@ -10,7 +10,6 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -111,7 +110,7 @@ public class EnergyConservingDataNodeFilter {
      */
     private LocatedBlocks filterBlocks(String username, String path, EnergyMode blockFilterStrategy, LocatedBlocks locatedBlocks) {
         // TODO: test this...
-        Set<String> allowedRacks = getRacks(blockFilterStrategy);
+        List<String> allowedRacks = getRacks(blockFilterStrategy);
         return reduceRacks(allowedRacks, locatedBlocks);
     }
 
@@ -127,7 +126,6 @@ public class EnergyConservingDataNodeFilter {
      * @return
      */
     private LocatedBlocks reduceRacks(Set<String> allowedRacks, LocatedBlocks locatedBlocks) {
-
         try {
             List<LocatedBlock> filteredLocatedBlocks = new ArrayList<LocatedBlock>();
 
@@ -183,19 +181,43 @@ public class EnergyConservingDataNodeFilter {
     }
 
     /**
-     * filters a rack list for an EnergyMode.
+     * filters a rack list based on predefined EnergyMode by rack.
      *
      * @param energyMode
      * @return list of with rack names, matching given energy mode
      */
-    public Set<String> getRacks(EnergyMode energyMode) {
-        Set<String> racks = new HashSet<String>();
+    public List<String> getRacksStatic(EnergyMode energyMode) {
+        List<String> racks = new ArrayList<String>();
         for (String rackName : this.rackEnergyMapping.keySet()) {
             if (this.rackEnergyMapping.get(rackName) == energyMode) {
                 racks.add(rackName);
             }
         }
         return racks;
+    }
+
+    /**
+     *
+     * @param energyMode
+     * @return list of racks, ordered by bandwidth/servercosts relation on
+     * energyMode
+     */
+    public List<String> getRacks(EnergyMode energyMode) {
+        Map<String, Float> nodeEfficiencyRelation;
+        try {
+            // stromverbrauch für nodes ermiteln
+            nodeEfficiencyRelation = NodeEfficencyEvaluator.getPowerBandwidthRelation();
+        } catch (IOException ex) {
+            // tue nichts besonderes wenn etwas nicht klappt...
+            return getRacksStatic(energyMode);
+        }
+
+        // bandbreite für server racks ermitteln
+        // verhältnis zur bandbreite des servers ermitteln
+        // liste sortieren nach kostenverhältnis
+        // bei energyMode CHEAP günstige Server zuerst, sonst umgekehrt
+        // TODO testen ob liste reduziert werden muss oder client von selbst ersten eintrag wählt
+        return null;
     }
 
     public Map<String, EnergyMode> getUserEnergyMapping() {
@@ -221,8 +243,12 @@ public class EnergyConservingDataNodeFilter {
 
     /**
      * Load given filename via class loader.
+     *
+     * @param filename
+     * @return
+     * @throws java.io.FileNotFoundException
      */
-    public Properties loadProperties(String filename) throws IOException, FileNotFoundException {
+    public static Properties loadProperties(String filename) throws IOException, FileNotFoundException {
         Properties prop = new Properties();
         InputStream input = EnergyConservingDataNodeFilter.class.getClassLoader().getResourceAsStream(filename);
         if (input == null) {
