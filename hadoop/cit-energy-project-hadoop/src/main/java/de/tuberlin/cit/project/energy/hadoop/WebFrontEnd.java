@@ -16,7 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import de.tuberlin.cit.project.energy.hadoop.EnergyBaseDataNodeFilter.EnergyMode;
+import de.tuberlin.cit.project.energy.hadoop.EnergyConservingDataNodeFilter.EnergyMode;
 
 /**
  * Web front end around energy base data node filter.
@@ -30,15 +30,15 @@ public class WebFrontEnd extends AbstractHandler {
     public final static String API_PREFIX = "/api/v1/";
     public final static String USER_PROFILE_PATH = "user-profile";
 
-    private final EnergyBaseDataNodeFilter dataNodeFilter;
+    private final EnergyConservingDataNodeFilter dataNodeFilter;
     private final Server webServer;
     private final ObjectMapper objectMapper;
     
-    public WebFrontEnd(EnergyBaseDataNodeFilter dataNodeFilter) {
+    public WebFrontEnd(EnergyConservingDataNodeFilter dataNodeFilter) {
         this(dataNodeFilter, DEFAULT_PORT);
     }
     
-    public WebFrontEnd(EnergyBaseDataNodeFilter dataNodeFilter, int port) {
+    public WebFrontEnd(EnergyConservingDataNodeFilter dataNodeFilter, int port) {
         this.dataNodeFilter = dataNodeFilter;
         this.webServer = new Server(port);
         this.webServer.setHandler(this);

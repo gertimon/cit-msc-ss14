@@ -29,8 +29,9 @@ import de.tuberlin.cit.project.energy.zabbix.ZabbixSender;
  *
  * @author Tobias und Sascha
  */
-public class EnergyBaseDataNodeFilter {
-    private final static Log LOG = LogFactory.getLog(EnergyBaseDataNodeFilter.class);
+@SuppressWarnings("unused")
+public class EnergyConservingDataNodeFilter {
+    private final static Log LOG = LogFactory.getLog(EnergyConservingDataNodeFilter.class);
 
     public static final String RACK_MAPPING_FILENAME = "de/tuberlin/cit/project/energy/hadoop/energy.rack.config.properties";
     public static final String USER_MAPPING_FILENAME = "de/tuberlin/cit/project/energy/hadoop/energy.user.config.properties";
@@ -49,7 +50,7 @@ public class EnergyBaseDataNodeFilter {
 
     public enum EnergyMode { DEFAULT, FAST, CHEAP }
 
-    public EnergyBaseDataNodeFilter(String zabbixHostname, int zabbixPort, 
+    public EnergyConservingDataNodeFilter(String zabbixHostname, int zabbixPort, 
     		String zabbixRestUrl, String zabbixRestUsername, String zabbixRestPassword) {
         this.zabbixHostname = zabbixHostname;
         this.zabbixPort = zabbixPort;
@@ -205,7 +206,7 @@ public class EnergyBaseDataNodeFilter {
      */
     public Properties loadProperties(String filename) throws IOException, FileNotFoundException {
         Properties prop = new Properties();
-        InputStream input = EnergyBaseDataNodeFilter.class.getClassLoader().getResourceAsStream(filename);
+        InputStream input = EnergyConservingDataNodeFilter.class.getClassLoader().getResourceAsStream(filename);
         if (input == null) {
         	throw new FileNotFoundException(filename);
         }

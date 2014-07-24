@@ -106,10 +106,10 @@ public class ZabbixSenderTest {
     }
 
     @Test
-    public void testSendUserDataNodeConnectionIpAndPort() throws InterruptedException {
+    public void testSendInternalDataNodeConnection() throws InterruptedException {
         testServer.resetLastReceivedAgentMessage();
-        this.zabbixSender.sendUserDataNodeConnection("testHostname", "testUsername", "testIP", 4567);
+        this.zabbixSender.sendInternalDataNodeConnection("testHostname", "testUsername", "testIP:4567");
         String receivedMessage = testServer.waitForNextMessage(10000);
-        checkJsonFields(receivedMessage, "testHostname", "user.testUsername.lastAddress", "testIP:4567");
+        checkJsonFields(receivedMessage, "testHostname", "user.testUsername.lastInternalAddress", "testIP:4567");
     }
 }

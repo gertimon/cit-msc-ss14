@@ -97,23 +97,18 @@ public class ZabbixSender implements Runnable {
     /**
      * Create JSON data nodes with given values.
      * @param hostname known by Zabbix
-     * @param clock timestamp in seconds since January 1st 1970
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
      */
-    private ObjectNode createDataNode(String hostname, String key, String value, long clock) {
+    private ObjectNode createDataNode(String hostname, String key, String value, long... clock) {
         ObjectNode data = this.objectMapper.createObjectNode();
         data.put("host", hostname);
         data.put("key", key);
         data.put("value", value);
-        data.put("clock", clock);
+        if (clock.length > 0)
+            data.put("clock", clock[0]);
+        else
+            data.put("clock", System.currentTimeMillis() / 1000);
         return data;
-    }
-
-    /**
-     * Create JSON data nodes with given values and current time.
-     * @param hostname known by Zabbix
-     */
-    private ObjectNode createDataNode(String hostname, String key, String value) {
-        return createDataNode(hostname, key, value, System.currentTimeMillis() / 1000);
     }
 
     /**
@@ -142,19 +137,9 @@ public class ZabbixSender implements Runnable {
     /**
      * @param dataNodeName as hostname
      * @param powerConsumed in watt
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
      */
-    public void sendPowerConsumption(String dataNodeName, double powerConsumed) {
-        valuesQueue.add(new ObjectNode[] {
-            createDataNode(dataNodeName, ZabbixParams.POWER_CONSUMPTION_KEY, Double.toString(powerConsumed))
-        });
-    }
-
-    /**
-     * @param dataNodeName as hostname
-     * @param powerConsumed in watt
-     * @param clock timestamp in seconds since January 1st 1970
-     */
-    public void sendPowerConsumption(String dataNodeName, double powerConsumed, long clock) {
+    public void sendPowerConsumption(String dataNodeName, double powerConsumed, long... clock) {
         valuesQueue.add(new ObjectNode[] {
             createDataNode(dataNodeName, ZabbixParams.POWER_CONSUMPTION_KEY, Double.toString(powerConsumed), clock)
         });
@@ -163,23 +148,24 @@ public class ZabbixSender implements Runnable {
     /**
      * @param dataNodeName as hostname
      * @param username
-     * @param bandwidthConsumed in KByte/second
+     * @param delta allocated space change in bytes on given data node
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
      */
-    public void sendBandwidthUsage(String dataNodeName, String username, double bandwidthConsumed) {
-        valuesQueue.add(new ObjectNode[] {
-            createDataNode(dataNodeName, String.format(ZabbixParams.USER_BANDWIDTH_KEY, username), Double.toString(bandwidthConsumed))
-        });
-    }
-
-    /**
-     *
-     * @param dataNodeName as hostname
-     * @param username
-     * @param dataAmount in bytes
-     */
-    public void sendDataAmountUsage(String dataNodeName, String username, double dataAmount){
+    public void sendDataUsageDelta(String dataNodeName, String username, long delta, long... clock) {
         valuesQueue.add(new ObjectNode[]{
-                createDataNode(dataNodeName, String.format(ZabbixParams.USER_DATAAMOUNT_KEY,username),Double.toString(dataAmount))
+            createDataNode(dataNodeName, String.format(ZabbixParams.USER_DATA_USAGE_DELTA_KEY, username), Long.toString(delta), clock)
+        });
+    }
+
+    /**
+     * @param dataNodeName as hostname
+     * @param username
+     * @param eventJson event data in JSON notation
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
+     */
+    public void sendBlockEvent(String dataNodeName, String username, String eventJson, long... clock) {
+        valuesQueue.add(new ObjectNode[]{
+            createDataNode(dataNodeName, String.format(ZabbixParams.USER_BLOCK_EVENTS_KEY, username), eventJson, clock)
         });
     }
 
@@ -187,22 +173,25 @@ public class ZabbixSender implements Runnable {
      * @param dataNodeName as hostname
      * @param username
      * @param bandwidthConsumed in KByte/second
-     * @param clock timestamp in seconds since January 1st 1970
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
      */
-    public void sendBandwidthUsage(String dataNodeName, String username, double bandwidthConsumed, long clock) {
+    public void sendBandwidthUsage(String dataNodeName, String username, double bandwidthConsumed, long... clock) {
         valuesQueue.add(new ObjectNode[] {
             createDataNode(dataNodeName, String.format(ZabbixParams.USER_BANDWIDTH_KEY, username), Double.toString(bandwidthConsumed), clock)
         });
     }
 
     /**
+     * Log internal cluster bandwidth usage (e.g. HDFS replica creation).
+     *
      * @param dataNodeName as hostname
      * @param username
-     * @param duration in seconds
+     * @param bandwidthConsumed in KByte/second
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
      */
-    public void sendDuration(String dataNodeName, String username, double duration) {
+    public void sendInternalBandwidthUsage(String dataNodeName, String username, double bandwidthConsumed, long... clock) {
         valuesQueue.add(new ObjectNode[] {
-            createDataNode(dataNodeName, String.format(ZabbixParams.USER_DURATION_KEY, username), Double.toString(duration))
+            createDataNode(dataNodeName, String.format(ZabbixParams.USER_INTERNAL_BANDWIDTH_KEY, username), Double.toString(bandwidthConsumed), clock)
         });
     }
 
@@ -210,9 +199,9 @@ public class ZabbixSender implements Runnable {
      * @param dataNodeName as hostname
      * @param username
      * @param duration in seconds
-     * @param clock timestamp in seconds since January 1st 1970
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
      */
-    public void sendDuration(String dataNodeName, String username, double duration, long clock) {
+    public void sendDuration(String dataNodeName, String username, double duration, long... clock) {
         valuesQueue.add(new ObjectNode[] {
             createDataNode(dataNodeName, String.format(ZabbixParams.USER_DURATION_KEY, username), Double.toString(duration), clock)
         });
@@ -222,25 +211,25 @@ public class ZabbixSender implements Runnable {
      * @param dataNodeName as hostname
      * @param username
      * @param clientAddress as ip:port
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
      */
-    public void sendUserDataNodeConnection(String dataNodeName, String username, String clientAddress) {
+    public void sendUserDataNodeConnection(String dataNodeName, String username, String clientAddress, long... clock) {
         valuesQueue.add(new ObjectNode[] {
-            createDataNode(dataNodeName, String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, username), clientAddress)
+            createDataNode(dataNodeName, String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, username), clientAddress, clock)
         });
     }
 
     /**
+     * Logs internal data node connections (e.g. HDFS replica creation)
+     *
      * @param dataNodeName as hostname
      * @param username
-     * @param clientIp client ip
-     * @param clientPort client port
+     * @param srcDataNodeAddress as ip:port
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
      */
-    public void sendUserDataNodeConnection(String dataNodeName, String username, String clientIp, int clientPort) {
-        sendUserDataNodeConnection(dataNodeName, username, clientIp+":"+clientPort);
-    }
-
-    @Deprecated
-    public void sendBandwidthUsageByConnection(String serverName, String clientIP, String clientPort, double bandwidthConsumed) {
-        throw new RuntimeException("Not implemented here! Implement in floodlight controller and cache user/ip+port mapping.");
+    public void sendInternalDataNodeConnection(String dataNodeName, String username, String srcDataNodeAddress, long... clock) {
+        valuesQueue.add(new ObjectNode[] {
+            createDataNode(dataNodeName, String.format(ZabbixParams.USER_LAST_INTERNAL_ADDRESS_MAPPING_KEY, username), srcDataNodeAddress, clock)
+        });
     }
 }
