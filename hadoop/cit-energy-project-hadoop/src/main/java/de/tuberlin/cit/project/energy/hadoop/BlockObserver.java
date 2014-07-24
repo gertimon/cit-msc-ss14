@@ -155,8 +155,8 @@ public class BlockObserver {
                 + ".");
 
         try {
-			LocatedBlocks blocksBefore = JsonUtil.toLocatedBlocks((Map<?, ?>) JSON.parse(blocksBeforeJson));
-	        for (String datanode : getDataNodeNames(blocksBefore))
+            LocatedBlocks blocksBefore = JsonUtil.toLocatedBlocks((Map<?, ?>) JSON.parse(blocksBeforeJson));
+            for (String datanode : getDataNodeNames(blocksBefore))
                 this.zabbixSender.sendBlockEvent(datanode, username,
                         "{\"type\":\"setReplication\", \"path\":\"" + path + "\", \"replication\":" + replication + "}");
 

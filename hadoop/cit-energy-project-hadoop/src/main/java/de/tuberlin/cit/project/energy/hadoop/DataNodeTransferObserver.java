@@ -135,11 +135,11 @@ public class DataNodeTransferObserver {
     private String getDatanodeName(String localAddress) {
         return localAddress.replaceFirst("/", "").split(":")[0];
     }
-    
+
     private String getClientAddress(String remoteAddress) {
         return remoteAddress.replaceFirst("/", "");
     }
-    
+
     private String getUsername(final Token<BlockTokenIdentifier> blockToken) throws IOException {
         return blockToken.decodeIdentifier().getUserId();
     }
