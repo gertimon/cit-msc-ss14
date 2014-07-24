@@ -10,7 +10,7 @@ import org.junit.Test;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
 
-import de.tuberlin.cit.project.energy.hadoop.EnergyBaseDataNodeFilter.EnergyMode;
+import de.tuberlin.cit.project.energy.hadoop.EnergyConservingDataNodeFilter.EnergyMode;
 
 /**
  * Web front end tests.
@@ -19,12 +19,12 @@ import de.tuberlin.cit.project.energy.hadoop.EnergyBaseDataNodeFilter.EnergyMode
  */
 public class WebFrontEndTest {
     private final static int TEST_WEB_PORT = 50100;
-    private static EnergyBaseDataNodeFilter dataNodeFilter;
+    private static EnergyConservingDataNodeFilter dataNodeFilter;
     private static WebFrontEnd webFrontEnd;
 
     @BeforeClass
     public static void setUp() throws Exception {
-        dataNodeFilter = new EnergyBaseDataNodeFilter("127.0.0.1", 10051,
+        dataNodeFilter = new EnergyConservingDataNodeFilter("127.0.0.1", 10051,
                 "http://127.0.0.1/zabbix/api_jsonrpc.php", "dummy", "dummy");
         webFrontEnd = new WebFrontEnd(dataNodeFilter, TEST_WEB_PORT);
     }
