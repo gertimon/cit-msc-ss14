@@ -7,9 +7,11 @@ import de.tuberlin.cit.project.energy.zabbix.model.ZabbixItem;
 
 
 /**
+ * User managment Zabbix API Client (add/drop HDFS users in Zabbix templates).
+ * 
  * @author Sascha
  */
-public class UserClientMappingUtil {
+public class ZabbixUserMappingUtil {
     public static void main(String[] args) throws Exception {
         if (args.length == 2 && args[0].equals("--exists")) {
             String username = args[1];
