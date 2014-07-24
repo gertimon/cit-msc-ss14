@@ -14,6 +14,7 @@ import org.apache.commons.logging.LogFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -25,6 +26,7 @@ import de.tuberlin.cit.project.energy.zabbix.asynchttpclient.LooseTrustManager;
 import de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException;
 import de.tuberlin.cit.project.energy.zabbix.exception.TemplateNotFoundException;
 import de.tuberlin.cit.project.energy.zabbix.exception.UserNotFoundException;
+import de.tuberlin.cit.project.energy.zabbix.model.DatanodeUserConnection;
 import de.tuberlin.cit.project.energy.zabbix.model.ZabbixHistoryObject;
 import de.tuberlin.cit.project.energy.zabbix.model.ZabbixItem;
 
@@ -48,7 +50,7 @@ public class ZabbixAPIClient {
 
     private String authToken = null;
     /** Cached template id */
-    private int dataNodeTemplateID = -1;
+    private int dataNodeUserTemplateID = -1;
 
     public ZabbixAPIClient(String zabbixURL, String zabbixUsername, String zabbixPassword, AsyncHttpClientConfig config) {
         this.zabbixURL = zabbixURL;
@@ -141,15 +143,18 @@ public class ZabbixAPIClient {
      * @param parameters params block in request
      * @return JSON request
      */
-    public String getRPCBody(String method, ObjectNode parameters) {
+    public String getRPCBody(String method, JsonNode parameters) {
         final ObjectNode m = this.objectMapper.createObjectNode();
         m.put("jsonrpc", "2.0");
         if (this.authToken != null)
             m.put("auth", this.authToken);
         m.put("method", method);
-        if (parameters != null)
-            m.with("params").setAll(parameters);
-        else
+        if (parameters != null) {
+            if (parameters instanceof ArrayNode)
+                m.withArray("params").addAll((ArrayNode) parameters);
+            else if (parameters instanceof ObjectNode)
+                m.with("params").setAll((ObjectNode) parameters);
+        } else
             m.putArray("params"); // empty array, required by zabbix
         m.put("id", 1);
 
@@ -159,9 +164,9 @@ public class ZabbixAPIClient {
     /**
      * Initiates a synchrony JSON RPC call to Zabbix REST API.
      */
-    public Response executeRPC(String method, ObjectNode params) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
+    public Response executeRPC(String method, JsonNode params) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
         String rpcBody = getRPCBody(method, params);
-        log.debug("Running json rpc with body: " + rpcBody);
+        log.info("Running json rpc with body: " + rpcBody);
 
         Response r = this.httpClient.preparePost(this.zabbixURL)
                 .addHeader("Content-Type", "application/json-rpc")
@@ -175,18 +180,19 @@ public class ZabbixAPIClient {
     /**
      * Try to find username with given ip:port connected to given hostname.
      *
-     * @param dataNodeName as hostname
+     * @param datanodeName as hostname
      * @param clientAddress as ip:port
      */
-    public String getUsernameByDataNodeConnection(String dataNodeName, String clientAddress)
+    public DatanodeUserConnection getUsernameByDataNodeConnection(String datanodeName, String clientAddress)
             throws IllegalArgumentException, InterruptedException, ExecutionException, IOException,
             AuthenticationException, UserNotFoundException, InternalErrorException {
 
         this.authenticate();
 
         ObjectNode params = this.objectMapper.createObjectNode();
-        params.put("host", dataNodeName);
-        params.with("search").put("key_", String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, "*"));
+        params.put("host", datanodeName);
+        params.with("search").withArray("key_").add(String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, "*"));
+        params.with("search").withArray("key_").add(String.format(ZabbixParams.USER_LAST_INTERNAL_ADDRESS_MAPPING_KEY, "*"));
         params.put("searchWildcardsEnabled", true);
         params.with("filter").put("value", clientAddress);
 
@@ -213,12 +219,22 @@ public class ZabbixAPIClient {
             }
 
             if (usernameKey != null && System.currentTimeMillis()/1000 - ZabbixParams.MAX_USER_IP_MAPPING_AGE < lastclock) {
-                String username = usernameKey.substring("user.".length());
-                return username.substring(0, username.length() - ".lastAddress".length());
+                if (usernameKey.matches(String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, ".*"))) {
+                    String username = usernameKey.replaceFirst(
+                            String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, "(.*)\\"), "$1");
+                    return new DatanodeUserConnection(clientAddress, datanodeName, username, false);
+
+                } else if (usernameKey.matches(String.format(ZabbixParams.USER_LAST_INTERNAL_ADDRESS_MAPPING_KEY, ".*"))) {
+                    String username = usernameKey.replaceFirst(
+                            String.format(ZabbixParams.USER_LAST_INTERNAL_ADDRESS_MAPPING_KEY, "(.*)"), "$1");
+                    return new DatanodeUserConnection(clientAddress, datanodeName, username, true);
+
+                } else
+                    throw new InternalErrorException("Unknown key in mapping found: " + usernameKey);
             } else
                 throw new UserNotFoundException();
         } else
-            throw new InternalErrorException();
+            throw new InternalErrorException("Command failed with HTTP status: " + response.getStatusCode());
     }
 
     /**
@@ -226,26 +242,27 @@ public class ZabbixAPIClient {
      *
      * @return Cached or fetched template id from Zabbix.
      */
-    public int getDataNodeTemplateID()
+    public int getDataNodeTemplateId()
             throws IllegalArgumentException, InterruptedException, ExecutionException, IOException,
             AuthenticationException, TemplateNotFoundException, InternalErrorException {
 
-        if (this.dataNodeTemplateID > 0) {
-            return this.dataNodeTemplateID;
+        if (this.dataNodeUserTemplateID > 0) {
+            return this.dataNodeUserTemplateID;
 
         } else {
             this.authenticate();
 
             ObjectNode params = this.objectMapper.createObjectNode();
             params.put("output", "templateid");
-            params.with("filter").put("host", ZabbixParams.DATANODE_TEMPLATE_NAME);
+            params.with("filter").put("host", ZabbixParams.DATANODE_USER_TEMPLATE_NAME);
 
             Response response = this.executeRPC("template.get", params);
 
             if (response.getStatusCode() == 200) {
                 JsonNode jsonResponse = this.objectMapper.readTree(response.getResponseBody());
                 if (jsonResponse.get("result").isArray() && jsonResponse.get("result").size() > 0) {
-                    return jsonResponse.get("result").get(0).get("templateid").asInt();
+                    this.dataNodeUserTemplateID = jsonResponse.get("result").get(0).get("templateid").asInt();
+                    return this.dataNodeUserTemplateID;
                 } else
                     throw new TemplateNotFoundException();
             } else
@@ -256,8 +273,39 @@ public class ZabbixAPIClient {
     /**
      * Set cached template id manual. Used in tests.
      */
-    public void setDataNodeTemplateID(int dataNodeTemplateID) {
-        this.dataNodeTemplateID = dataNodeTemplateID;
+    public void setDataNodeUserTemplateId(int dataNodeTemplateId) {
+        this.dataNodeUserTemplateID = dataNodeTemplateId;
+    }
+
+    /**
+     * Fetches the application id with given name from data node user template.
+     *
+     * @return application id from Zabbix if found or -1 otherwise
+     */
+    public int getApplictionId(String name)
+            throws IllegalArgumentException, InterruptedException, ExecutionException, IOException,
+            AuthenticationException, TemplateNotFoundException, InternalErrorException {
+        this.authenticate();
+
+        ObjectNode params = this.objectMapper.createObjectNode();
+        params.put("output", "extend");
+        params.put("hostids", getDataNodeTemplateId());
+
+        Response response = this.executeRPC("application.get", params);
+
+        if (response.getStatusCode() == 200) {
+            JsonNode jsonResponse = this.objectMapper.readTree(response.getResponseBody());
+            if (jsonResponse.get("result").isArray() && jsonResponse.get("result").size() > 0) {
+                for (JsonNode o : jsonResponse.get("result")) {
+                    if (o.get("name").asText().equalsIgnoreCase(name))
+                        return o.get("applicationid").asInt();
+                }
+
+                return -1;
+            } else
+                throw new TemplateNotFoundException();
+        } else
+            throw new InternalErrorException();
     }
 
     /**
@@ -270,7 +318,7 @@ public class ZabbixAPIClient {
         this.authenticate();
 
         ObjectNode params = this.objectMapper.createObjectNode();
-        params.put("host", ZabbixParams.DATANODE_TEMPLATE_NAME);
+        params.put("host", ZabbixParams.DATANODE_USER_TEMPLATE_NAME);
         params.put("key_", String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, username));
 
         Response response = this.executeRPC("item.exists", params);
@@ -289,18 +337,101 @@ public class ZabbixAPIClient {
             AuthenticationException, InternalErrorException, TemplateNotFoundException {
         this.authenticate();
 
-        ObjectNode params = this.objectMapper.createObjectNode();
-        params.put("name", "Last client address from user " + username);
-        params.put("key_", String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, username));
-        params.put("delay", "30"); // dummy, but required value
-        params.put("type", "2"); // zabbix trapper
-        params.put("value_type", "4"); // text
-        params.put("hostid", getDataNodeTemplateID()); // use template id as host
+        // find HDFS application id
+        int appId = getApplictionId("HDFS");
 
-        if (this.executeRPC("item.create", params).getStatusCode() != 200)
+        // external client connection <-> user mapping
+        ObjectNode text = this.objectMapper.createObjectNode();
+        text.put("name", "Last client address from user " + username);
+        text.put("key_", String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, username));
+        text.put("type", "2"); // zabbix trapper
+        text.put("value_type", "4"); // text
+        text.put("hostid", getDataNodeTemplateId()); // use template id as host
+        if (appId > 0)
+            text.withArray("applications").add(appId);
+        if (this.executeRPC("item.create", text).getStatusCode() != 200)
+            throw new InternalErrorException();
+
+        // internal datanode connection <-> user mapping
+        text.put("name", "Last internal datanode address from user " + username);
+        text.put("key_", String.format(ZabbixParams.USER_LAST_INTERNAL_ADDRESS_MAPPING_KEY, username));
+        if (this.executeRPC("item.create", text).getStatusCode() != 200)
+            throw new InternalErrorException();
+
+        // bandwidth usage
+        ObjectNode numeric = this.objectMapper.createObjectNode();
+        numeric.put("name", "Bandwidth consumed by user " + username);
+        numeric.put("key_", String.format(ZabbixParams.USER_BANDWIDTH_KEY, username));
+        numeric.put("delay", "30"); // dummy, but required value
+        numeric.put("type", "2"); // zabbix trapper
+        numeric.put("value_type", "3"); // numeric unsigned
+        numeric.put("units", "KiB/s");
+        numeric.put("hostid", getDataNodeTemplateId()); // use template id as host
+        if (appId > 0)
+            numeric.withArray("applications").add(appId);
+        if (this.executeRPC("item.create", numeric).getStatusCode() != 200)
+            throw new InternalErrorException();
+
+        // internal bandwidth usage
+        numeric.put("name", "Bandwidth internal consumed by user " + username);
+        numeric.put("key_", String.format(ZabbixParams.USER_INTERNAL_BANDWIDTH_KEY, username));
+        if (this.executeRPC("item.create", numeric).getStatusCode() != 200)
+            throw new InternalErrorException();
+
+        // data usage
+        numeric.put("name", "Allocated data space change by user " + username);
+        numeric.put("key_", String.format(ZabbixParams.USER_DATA_USAGE_DELTA_KEY, username));
+        numeric.put("units", "KiB");
+        numeric.put("value_type", "0"); // float
+        if (this.executeRPC("item.create", numeric).getStatusCode() != 200)
+            throw new InternalErrorException();
+
+        // block events
+        text.put("name", "Create/remove block events performed by user " + username);
+        text.put("key_", String.format(ZabbixParams.USER_BLOCK_EVENTS_KEY, username));
+        text.put("value_type", "2"); // log
+        if (this.executeRPC("item.create", text).getStatusCode() != 200)
             throw new InternalErrorException();
 
         // TODO: add more here
+    }
+
+    /**
+     * Removes all user items in DataNode template.
+     *
+     * @return removed items
+     */
+    public List<ZabbixItem> deleteUserInDataNodeTemplate(String username)
+            throws IllegalArgumentException, InterruptedException, ExecutionException, IOException,
+            AuthenticationException, InternalErrorException, TemplateNotFoundException {
+        this.authenticate();
+
+        // find item ids
+        ObjectNode searchParams = this.objectMapper.createObjectNode();
+        String userKeys[] = {
+                ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY,
+                ZabbixParams.USER_LAST_INTERNAL_ADDRESS_MAPPING_KEY,
+                ZabbixParams.USER_BANDWIDTH_KEY,
+                ZabbixParams.USER_INTERNAL_BANDWIDTH_KEY,
+                ZabbixParams.USER_DATA_USAGE_DELTA_KEY,
+                ZabbixParams.USER_BLOCK_EVENTS_KEY
+        };
+        for (String key : userKeys)
+            searchParams.with("filter").withArray("key_").add(String.format(key, username));
+        searchParams.put("hostids", getDataNodeTemplateId()); // use template id as host
+        searchParams.withArray("output").add("itemid");
+        searchParams.withArray("output").add("key_");
+        List<ZabbixItem> items = getItems(searchParams);
+
+        if (items.size() > 0) {
+            int ids[] = new int[items.size()];
+            for (int i = 0; i < items.size(); i++)
+                ids[i] = items.get(i).getItemId();
+            deleteItems(ids);
+
+            return items;
+        } else
+            return new ArrayList<ZabbixItem>(0);
     }
 
     /**
@@ -331,6 +462,32 @@ public class ZabbixAPIClient {
                 return new ArrayList<ZabbixItem>(0);
         } else
             throw new InternalErrorException();
+    }
+
+    /**
+     * Implements item.delete from Zabbix API.
+     * @param itemIds
+     * @see https://www.zabbix.com/documentation/2.2/manual/api/reference/item/delete
+     * @return true if succeed, throws exception otherwise
+     */
+    public boolean deleteItems(int[] itemIds) throws AuthenticationException, IllegalArgumentException, InterruptedException, ExecutionException, IOException, InternalErrorException {
+        this.authenticate();
+
+        if (itemIds.length == 0)
+            throw new IllegalArgumentException("No item id's provided.");
+
+        ArrayNode params = this.objectMapper.createArrayNode();
+        for (int id : itemIds)
+            params.add(id + "");
+        Response response = this.executeRPC("item.delete", params);
+
+        System.out.println("Request: " + params);
+        System.out.println("Got result: " + response.getResponseBody());
+
+        if (response.getStatusCode() == 200)
+            return true;
+        else
+            throw new InternalErrorException("Got HTTP status code: " + response.getStatusCode());
     }
 
     /**
