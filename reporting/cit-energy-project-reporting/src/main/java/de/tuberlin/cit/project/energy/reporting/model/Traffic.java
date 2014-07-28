@@ -25,7 +25,7 @@ public class Traffic {
      */
     public Map<Plan, Double> calculateUserTraffic(String username) {
 
-        Map<Plan, Double> result = new HashMap<>();
+        Map<Plan, Double> result = new HashMap<Plan, Double>();
 
         for (Iterator<Plan> it = getPlanIterator(); it.hasNext();) {
             Plan plan = it.next();
@@ -44,7 +44,7 @@ public class Traffic {
      */
     public Map<Plan, Double> getTrafficSum() {
 
-        Map<Plan, Double> result = new HashMap<>();
+        Map<Plan, Double> result = new HashMap<Plan, Double>();
 
         for (Iterator<Plan> it = getPlanIterator(); it.hasNext();) {
             Plan plan = it.next();

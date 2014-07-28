@@ -36,7 +36,7 @@ public class Storage {
      */
     public double calculateWeigthedHarmonicMedian(long fromTimeMillis, long toTimeMillis) throws Exception {
         // create ordered list of all given time stamps
-        List<Long> times = new LinkedList<>(storageValues.keySet());
+        List<Long> times = new LinkedList<Long>(storageValues.keySet());
         int size = times.size();
 
         // test that there is an key existing smaller fromTimeMillis

@@ -25,7 +25,7 @@ public class StorageTest {
         long toTimeMillis = fromTimeMillis + 3;// * 21600000; // ein drei-viertel Tag
 
         // add some sample storage change entries
-        TreeMap<Long, Double> values = new TreeMap<>();
+        TreeMap<Long, Double> values = new TreeMap<Long, Double>();
 
         // add some older entries
         values.put(fromTimeMillis - 30, 5000.0);
