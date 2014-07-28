@@ -11,8 +11,8 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <groupId>de.tuberlin.cit.project.energy</groupId>
   <artifactId>cit-energy-project-reporting</artifactId>
+  <name>cit-energy-project-reporting</name>
   <packaging>jar</packaging>
 
   <properties>
