@@ -8,9 +8,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.mortbay.jetty.Request;
+import org.mortbay.jetty.Server;
+import org.mortbay.jetty.handler.AbstractHandler;
 
 public class ZabbixAPITestServer extends AbstractHandler {
     private final Server server;
@@ -37,8 +37,8 @@ public class ZabbixAPITestServer extends AbstractHandler {
     }
 
     @Override
-    public void handle(String path, Request baseRequest, HttpServletRequest request,
-            HttpServletResponse response) throws IOException, ServletException {
+    public void handle(String path, HttpServletRequest request, HttpServletResponse response, int dispatch)
+            throws IOException, ServletException {
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(request.getInputStream()));
         this.lastRequest = "";
@@ -53,6 +53,6 @@ public class ZabbixAPITestServer extends AbstractHandler {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
 
-        baseRequest.setHandled(true);
+        ((Request)request).setHandled(true);
     }
 }

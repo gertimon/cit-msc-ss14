@@ -8,9 +8,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.mortbay.jetty.Request;
+import org.mortbay.jetty.Server;
+import org.mortbay.jetty.handler.AbstractHandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -55,8 +55,8 @@ public class WebFrontEnd extends AbstractHandler {
     }
 
     @Override
-    public void handle(String path, Request baseRequest, HttpServletRequest request,
-            HttpServletResponse response) throws IOException, ServletException {
+    public void handle(String path, HttpServletRequest request, HttpServletResponse response, int dispatch)
+            throws IOException, ServletException {
 
         if (path.equalsIgnoreCase(API_PREFIX + USER_PROFILE_PATH)) {
             if (request.getMethod().equals("PUT")) {
@@ -87,7 +87,7 @@ public class WebFrontEnd extends AbstractHandler {
                 responseNode.withArray("availableProfiles").add(mode.toString());
             
             this.objectMapper.writeValue(response.getOutputStream(), responseNode);
-            baseRequest.setHandled(true);
+            ((Request)request).setHandled(true);
         }
     }
 
