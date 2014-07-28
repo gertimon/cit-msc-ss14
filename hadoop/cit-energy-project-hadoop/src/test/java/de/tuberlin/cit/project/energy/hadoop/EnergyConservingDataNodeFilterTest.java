@@ -8,7 +8,12 @@ package de.tuberlin.cit.project.energy.hadoop;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.hadoop.hdfs.protocol.DatanodeID;
+import org.apache.hadoop.hdfs.protocol.DatanodeInfo;
 import org.apache.hadoop.hdfs.protocol.LocatedBlocks;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -30,6 +35,19 @@ public class EnergyConservingDataNodeFilterTest {
         LocatedBlocks locatedBlocks;
         locatedBlocks = mapper.readValue(this.getClass().getResourceAsStream("LocatedBlocksSample.json"), LocatedBlocks.class);
 
+    }
+
+    @Test
+    public void ListToArrayTest() {
+
+        List<DatanodeInfo> testList = new ArrayList<DatanodeInfo>();
+        DatanodeInfo testNode = new DatanodeInfo(new DatanodeID("0.0.0.0", "hostname", "dnuuid", 0, 0, 33, 22));
+        testList.add(testNode);
+        testList.add(testNode);
+        DatanodeInfo[] list = {};
+        DatanodeInfo[] resultArray = testList.toArray(list);
+
+        Assert.assertEquals(2, resultArray.length);
     }
 
 }
