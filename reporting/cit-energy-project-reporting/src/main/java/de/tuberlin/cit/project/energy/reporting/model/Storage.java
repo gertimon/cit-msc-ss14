@@ -1,56 +1,86 @@
 package de.tuberlin.cit.project.energy.reporting.model;
 
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.TreeMap;
 
 /**
+ * represents user storage amount by time.
  *
  * @author Tobias
  */
 public class Storage {
 
-    private final Map<Long, Double> storageValues; // at least one value earlier than fromTimeMillis 
-    private final long fromTimeMillis;
-    private final long toTimeMillis;
+    private final TreeMap<Long, Double> storageValues; // at least one value earlier than fromTimeMillis
 
-    public Storage(Map<Long, Double> storageValues, long fromTimeMillis, long toTimeMillis) {
+    /**
+     * To initialize Storage, create a Map with time stamps (Long) and storage
+     * amount values (Double).
+     *
+     * @param storageValues
+     * @param fromTimeMillis
+     * @param toTimeMillis
+     */
+    public Storage(TreeMap<Long, Double> storageValues) {
         this.storageValues = storageValues;
-        this.fromTimeMillis = fromTimeMillis;
-        this.toTimeMillis = toTimeMillis;
     }
 
-    public double getStorageMedian() throws Exception {
-        // create ordered list of time stamps
+    /**
+     * calculate median for given range of time. Needs at least one entry in
+     * storageValues with a smaller or equal time value than requested.
+     *
+     * @param fromTimeMillis
+     * @param toTimeMillis
+     * @return
+     * @throws Exception
+     */
+    public double calculateWeigthedHarmonicMedian(long fromTimeMillis, long toTimeMillis) throws Exception {
+        // create ordered list of all given time stamps
         List<Long> times = new LinkedList<>(storageValues.keySet());
-        Collections.sort(times);
         int size = times.size();
 
-        // test that there is an element existing before fromTimeMillis
+        // test that there is an key existing smaller fromTimeMillis
         if (size == 0 || times.get(0) > fromTimeMillis) {
             throw new Exception("need a storage value before fromTimeMillis");
         }
 
-//        times.
-        long durationComplete = toTimeMillis - fromTimeMillis;
+        long lastTime = 0;
+        long duration;
 
-        long lastTime = times.get(0);
-        double result = 0.0;
+        double weights = 0, durations = 0, value = 0;
 
-        for (Long time : times) {
-            if (time <= toTimeMillis) {
-                lastTime = time;
-            } else {
-                double lastStorageValue = storageValues.get(lastTime);
-                long durationPart = time - lastTime;
+        for (long time : times) {
 
-                lastTime = time;
+            if (time >= fromTimeMillis) {
+                // given value after start time
+                // retrieve weight for value
+                if (lastTime < fromTimeMillis) {
+                    // first run, calculate time from given range
+                    duration = time - fromTimeMillis;
+                } else {
+                    // not first run, calculate difference to last entry
+                    duration = time - lastTime;
+                }
+                // retrieve storage value
+                value = storageValues.get(lastTime);
+
+                // add values to lists
+                weights += (duration * value);
+                durations += duration;
             }
-
+            // keep last time entry
+            lastTime = time;
+        }
+        // add last row
+        if (lastTime < toTimeMillis) {
+            duration = toTimeMillis - lastTime;
+            value = storageValues.get(lastTime);
+            // add values to lists
+            weights += (duration * value);
+            durations += duration;
         }
 
-        return result;
+        return weights / durations;
     }
 
 }
