@@ -111,10 +111,13 @@ public class EnergyConservingDataNodeFilter {
     }
 
     /**
-     * removes some blocks that mismatchs a filter strategy iff required packets
+     * removes some blocks that mismatches a filter strategy if required packets
      * exist on desired data nodes.
      *
-     * @param blockFilterStrategy recognises CHEAP, FAST, null
+     * TODO:
+     *  - filter first located block
+     *  - filter and reanable cached blocks
+     *
      * @param locatedBlocks
      * @return
      */
@@ -168,7 +171,9 @@ public class EnergyConservingDataNodeFilter {
      */
     public LocatedBlock createLocatedBlock(LocatedBlock block, List<DatanodeInfo> locations) {
         DatanodeInfo[] locs = {};
-        LocatedBlock filteredBlock = new LocatedBlock(block.getBlock(), locations.toArray(locs), block.getStorageIDs(), block.getStorageTypes(), block.getStartOffset(), block.isCorrupt(), block.getCachedLocations());
+        LocatedBlock filteredBlock = new LocatedBlock(block.getBlock(), locations.toArray(locs), block.getStartOffset(), block.isCorrupt());
+        filteredBlock.setBlockToken(block.getBlockToken());
+        // TODO: add _filtered_ cached locations
         return filteredBlock;
     }
 
