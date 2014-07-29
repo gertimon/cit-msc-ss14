@@ -523,6 +523,80 @@ public class ZabbixAPIClient {
     }
 
     /**
+    * Method for requesting numeric history from Zabbix on a given hostname and itemkey.
+    * @param hostName specified hostname on which data is being requested
+    * @param itemKey specified itemkey for data
+    * @param timeFrom beginning of the timeframe for data request (in seconds, UNIX timestamp)
+    * @param timeTill end of the timeframe for data request (in seconds, UNIX timestamp)
+    * @return List numeric history data
+    */
+    public List<ZabbixHistoryObject> getNumericHistory(String hostName, String itemKey, int timeFrom, int timeTill) throws AuthenticationException, IllegalArgumentException, InterruptedException, ExecutionException, IOException, InternalErrorException {
+
+        //request for itemID
+        ObjectNode params = this.objectMapper.createObjectNode();
+        params.put("output","extend");
+        params.put("host",hostName);
+        params.with("search").put("key_",itemKey);
+
+        int itemID = this.getItems(params).get(0).getItemId();
+
+        //request for item history in between fromTime and tillTime
+        params = this.objectMapper.createObjectNode();
+        params.put("output","extend");
+        params.put("history",3);
+        params.put("itemids",itemID);
+        params.put("time_from",timeFrom);
+        params.put("time_till",timeTill);
+
+        return this.getHistory(params);
+    }
+
+
+    /**
+    * Method for requesting numeric history from Zabbix on a given hostname and itemkey including preceding Element to the timeFrom timestamp.
+    * @param hostName specified hostname on which data is being requested
+    * @param itemKey specified itemkey for data
+    * @param timeFrom beginning of the timeframe for data request (in seconds, UNIX timestamp)
+    * @param timeTill end of the timeframe for data request (in seconds, UNIX timestamp)
+    * @return List numeric history data including the preceding history element
+    */
+    public List<ZabbixHistoryObject> getNumericHistoryWithPrecedingElement(String hostName, String itemKey, int timeFrom, int timeTill) throws AuthenticationException, IllegalArgumentException, InterruptedException, ExecutionException, IOException, InternalErrorException {
+
+        //request for itemID
+        ObjectNode params = this.objectMapper.createObjectNode();
+        params.put("output","extend");
+        params.put("host",hostName);
+        params.with("search").put("key_",itemKey);
+
+        int itemID = this.getItems(params).get(0).getItemId();
+
+        //request preceding element
+        params = this.objectMapper.createObjectNode();
+        params.put("output","extend");
+        params.put("history",3);
+        params.put("itemids",itemID);
+        params.put("limit",1);
+        params.put("time_till",timeFrom);
+        params.put("sortfield","clock");
+        params.put("sortorder","DESC");
+
+        ZabbixHistoryObject precedingElement = this.getHistory(params).get(0);
+
+        //request for item history in between fromTime and tillTime
+        params = this.objectMapper.createObjectNode();
+        params.put("output","extend");
+        params.put("history",3);
+        params.put("itemids",itemID);
+        params.put("time_from",timeFrom);
+        params.put("time_till",timeTill);
+        
+        List<ZabbixHistoryObject> result = this.getHistory(params);
+        result.add(0,precedingElement);
+
+        return result;
+    }
+
+    /**
      * Kills all connections and stops HTTP client threads.
      */
     public void quit() {
