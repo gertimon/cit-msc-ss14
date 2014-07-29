@@ -63,7 +63,7 @@ public class FlowTableGetter implements Runnable {
         }
     }
 
-    private class ConnectionInfos {
+    public class ConnectionInfos {
         String datanode;
         DatanodeUserConnection connection;
 
@@ -276,7 +276,6 @@ public class FlowTableGetter implements Runnable {
         }else{
             zabbixSender.sendBandwidthUsage(conInf.datanode,conInf.connection.getUser(),flowInf.getBandWidth(),ts);
         }
-
        // this.zabbixSender.sendDuration(dataNode, user, flowInf.getTime());
     }
 
