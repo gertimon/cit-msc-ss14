@@ -54,8 +54,10 @@ public class ClientInformationTracker implements IFloodlightModule{
     @Override
     public void startUp(FloodlightModuleContext context) throws FloodlightModuleException {
         try {
-            RemoveMessageListener removeMessageListener = new RemoveMessageListener();
-            //new Thread(new FlowTableGetter(provider, removeMessageListener)).start();
+            FlowTableGetter flowGetter = new FlowTableGetter(provider);
+            Thread flowWorker = new Thread(flowGetter);
+            flowWorker.start();
+            RemoveMessageListener removeMessageListener = new RemoveMessageListener(flowGetter);
             provider.addOFMessageListener(OFType.FLOW_REMOVED, removeMessageListener);
         } catch(KeyManagementException e) {
             throw new FloodlightModuleException("Failed to initilize remove message listener.", e);
