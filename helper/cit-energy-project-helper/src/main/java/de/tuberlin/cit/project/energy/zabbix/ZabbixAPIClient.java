@@ -463,7 +463,26 @@ public class ZabbixAPIClient {
         } else
             throw new InternalErrorException();
     }
-
+    
+    /**
+     * Method for getting Zabbix Items using hostname and itemkey.
+     * @param hostName Hostname of the Server where the Item is stored
+     * @param itemKey identification key for the ZabbixItem
+     * @return 
+     * @throws javax.naming.AuthenticationException 
+     * @throws java.lang.InterruptedException 
+     * @throws java.util.concurrent.ExecutionException 
+     * @throws de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException 
+     * @throws java.io.IOException 
+     */
+    public List<ZabbixItem> getItems(String hostName, String itemKey) throws AuthenticationException, IllegalArgumentException, InterruptedException, ExecutionException, IOException, InternalErrorException{
+        
+        ObjectNode params = this.objectMapper.createObjectNode();
+        params.put("output","extend");
+        params.put("host",hostName);
+        params.with("search").put("key_",itemKey);
+        return this.getItems(params);
+    }
     /**
      * Implements item.delete from Zabbix API.
      * @param itemIds
