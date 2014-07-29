@@ -1,5 +1,10 @@
 package de.tuberlin.cit.project.energy.hadoop;
 
+import de.tuberlin.cit.project.energy.zabbix.ZabbixAPIClient;
+import de.tuberlin.cit.project.energy.zabbix.ZabbixParams;
+import de.tuberlin.cit.project.energy.zabbix.model.ZabbixHistoryObject;
+import de.tuberlin.cit.project.energy.zabbix.model.ZabbixItem;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,7 +50,10 @@ public class NodeEfficencyEvaluator {
      * @return
      */
     private static Float fetchNodePowerConsumption(String zabbixNodeName) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        ZabbixAPIClient apiClient = new ZabbixAPIClient();
+        List<ZabbixItem> items = apiClient.getItems(zabbixNodeName, "datanode.power");
+
+        return items.getLastValue();
     }
 
     /**
@@ -55,7 +63,9 @@ public class NodeEfficencyEvaluator {
      * @return
      */
     private static Float fetchNodeBandwidth(String zabbixNodeName) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+        ZabbixAPIClient apiClient = new ZabbixAPIClient();
+        List<ZabbixItem> items = apiClient.getItems(zabbixNodeName, "user.all.bandwidth");
 
+        return items.getLastValue();
+    }
 }
