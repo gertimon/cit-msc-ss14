@@ -24,7 +24,7 @@ public class ZabbixParams {
 
     public static final int MAX_USER_IP_MAPPING_AGE = 60 * 60; // use only values updated within the given time frame (in seconds)
 
-    public static final String USERNAME = ""; // tubit username
-    public static final String PASSWORD = ""; // tubit password
+    public static final String USERNAME = "geidggqg"; // tubit username
+    public static final String PASSWORD = "C26ee1ab"; // tubit password
 
 }

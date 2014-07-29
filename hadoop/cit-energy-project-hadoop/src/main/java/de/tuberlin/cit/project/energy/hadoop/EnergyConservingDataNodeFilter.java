@@ -125,7 +125,7 @@ public class EnergyConservingDataNodeFilter {
      * @param locatedBlocks
      * @return
      */
-    private LocatedBlocks reduceRacks(Set<String> allowedRacks, LocatedBlocks locatedBlocks) {
+    private LocatedBlocks reduceRacks(List<String> allowedRacks, LocatedBlocks locatedBlocks) {
         try {
             List<LocatedBlock> filteredLocatedBlocks = new ArrayList<LocatedBlock>();
 

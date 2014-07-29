@@ -4,9 +4,11 @@ import de.tuberlin.cit.project.energy.zabbix.ZabbixAPIClient;
 import de.tuberlin.cit.project.energy.zabbix.ZabbixParams;
 import de.tuberlin.cit.project.energy.zabbix.model.ZabbixHistoryObject;
 import de.tuberlin.cit.project.energy.zabbix.model.ZabbixItem;
-
 import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -24,11 +26,11 @@ public class NodeEfficencyEvaluator {
      * @param keySet contains requested rack-names
      * @return rack-names with last power consumption value
      */
-    static Map<String, Float> getPowerBandwidthRelation() throws IOException {
+    static Map<String, Float> getPowerBandwidthRelation() throws IOException, Exception {
 
         Properties rackNodes;
 
-        rackNodes = EnergyBaseDataNodeFilter.loadProperties("energy.nodes.config.properties");
+        rackNodes = EnergyConservingDataNodeFilter.loadProperties("energy.nodes.config.properties");
 
         Map<String, Float> resultMap = new HashMap<String, Float>();
 
@@ -49,11 +51,11 @@ public class NodeEfficencyEvaluator {
      * @param zabbixNodeName
      * @return
      */
-    private static Float fetchNodePowerConsumption(String zabbixNodeName) {
+    private static Float fetchNodePowerConsumption(String zabbixNodeName) throws Exception {
         ZabbixAPIClient apiClient = new ZabbixAPIClient();
         List<ZabbixItem> items = apiClient.getItems(zabbixNodeName, "datanode.power");
 
-        return items.getLastValue();
+        return new Float(items.get(items.size() - 1).getLastValue());
     }
 
     /**
@@ -62,10 +64,10 @@ public class NodeEfficencyEvaluator {
      * @param zabbixNodeName
      * @return
      */
-    private static Float fetchNodeBandwidth(String zabbixNodeName) {
+    private static Float fetchNodeBandwidth(String zabbixNodeName) throws Exception {
         ZabbixAPIClient apiClient = new ZabbixAPIClient();
         List<ZabbixItem> items = apiClient.getItems(zabbixNodeName, "user.all.bandwidth");
 
-        return items.getLastValue();
+        return new Float(items.get(items.size() - 1).getLastValue());
     }
 }
