@@ -1,6 +1,7 @@
 package de.tuberlin.cit.project.energy.zabbix;
 
 public class ZabbixParams {
+
     public static final String DEFAULT_ZABBIX_REST_URL = "https://mpjss14.cit.tu-berlin.de/zabbix/api_jsonrpc.php";
     public static final String DEFAULT_ZABBIX_USERNAME = "admin";
     public static final String DEFAULT_ZABBIX_PASSWORD = "zabbix!";
@@ -18,5 +19,9 @@ public class ZabbixParams {
 
     public static final String DATANODE_USER_TEMPLATE_NAME = "CitProjectDatanodeUsers";
 
-    public static final int MAX_USER_IP_MAPPING_AGE = 60*60; // use only values updated within the given time frame (in seconds)
+    public static final int MAX_USER_IP_MAPPING_AGE = 60 * 60; // use only values updated within the given time frame (in seconds)
+
+    public static final String USERNAME = ""; // tubit username
+    public static final String PASSWORD = ""; // tubit password
+
 }
