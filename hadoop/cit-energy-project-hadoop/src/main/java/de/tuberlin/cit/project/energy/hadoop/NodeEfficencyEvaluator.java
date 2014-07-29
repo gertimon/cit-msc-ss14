@@ -26,7 +26,7 @@ public class NodeEfficencyEvaluator {
      * @param keySet contains requested rack-names
      * @return rack-names with last power consumption value
      */
-    static Map<String, Float> getPowerBandwidthRelation() throws IOException, Exception {
+    static Map<String, Float> getPowerBandwidthRelation() throws IOException {
 
         Properties rackNodes;
 
@@ -35,10 +35,14 @@ public class NodeEfficencyEvaluator {
         Map<String, Float> resultMap = new HashMap<String, Float>();
 
         for (Object zabbixNodeName : rackNodes.keySet()) {
-
-            Float energy = fetchNodePowerConsumption(zabbixNodeName.toString());
-            Float bandwidth = fetchNodeBandwidth(zabbixNodeName.toString());
-            resultMap.put(zabbixNodeName.toString(), energy / bandwidth);
+            
+            try {
+                Float energy = fetchNodePowerConsumption(zabbixNodeName.toString());
+                Float bandwidth = fetchNodeBandwidth(zabbixNodeName.toString());
+                resultMap.put(zabbixNodeName.toString(), energy / bandwidth);
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
 
         }
 
