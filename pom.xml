@@ -26,6 +26,11 @@
         <artifactId>cit-energy-project-hadoop</artifactId>
         <version>${project.version}</version>
       </dependency>
+      <dependency>
+        <groupId>de.tuberlin.cit.project.energy</groupId>
+        <artifactId>cit-energy-project-reporting</artifactId>
+        <version>${project.version}</version>
+      </dependency>
 
       <dependency>
         <groupId>com.ning</groupId>
@@ -78,6 +83,7 @@
   <modules>
     <module>helper/cit-energy-project-helper</module>
     <module>hadoop/cit-energy-project-hadoop</module>
+    <module>reporting/cit-energy-project-reporting</module>
   </modules>
 
   <build>
