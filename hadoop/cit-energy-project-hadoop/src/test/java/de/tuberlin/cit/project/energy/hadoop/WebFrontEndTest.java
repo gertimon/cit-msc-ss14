@@ -42,8 +42,10 @@ public class WebFrontEndTest {
         Response response = httpClient.prepareGet("http://localhost:" + TEST_WEB_PORT + "/api/v1/user-profile").execute().get();
 
         assertEquals("Has http status ok", 200, response.getStatusCode());
-        String result = response.getResponseBody().replace(" ", "").replace("\n", "");        
-        assertTrue("Contains username", result.matches(".*\"username\":\"testUser\".*"));
+        String result = new String(response.getResponseBodyAsBytes(), "utf-8").replace(" ", "").replaceAll("\n|\r", "");
+        String unsernameMatch = ".*\"username\":\"testUser\".*";
+        System.out.println("Match:\n" + result + "\n" + unsernameMatch);
+        assertTrue("Contains username", result.matches(unsernameMatch));
         assertTrue("Contains energy mode", result.matches(".*\"profile\" ?: ?\"DEFAULT\".*"));
         assertTrue("Contains available profile default", result.matches(".*\"availableProfiles\":\\[.*\"DEFAULT\".*\\].*"));
         assertTrue("Contains available profile cheap", result.matches(".*\"availableProfiles\":\\[.*\"CHEAP\".*\\].*"));
