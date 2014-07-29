@@ -778,7 +778,72 @@ public class ZabbixAPIClient {
 
         return result;
     }
+    
+    /**
+     * Method for getting all hosts for a given HostGroup.
+     * @param hostGroupName Name of the HostGroup to look up for Hosts.
+     * @return list of hosts belonging to given HostGroup
+     * @throws java.lang.InterruptedException
+     * @throws java.io.IOException
+     * @throws java.util.concurrent.ExecutionException
+     * @throws javax.naming.AuthenticationException
+     * @throws de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException
+     */
+    public List<String> getHosts(String hostGroupName) throws IllegalArgumentException, InterruptedException, ExecutionException, AuthenticationException, InternalErrorException, IOException{
+        this.authenticate();
 
+        //get groupid for Host Group "Cit Project Datanodes"
+        ObjectNode params = this.objectMapper.createObjectNode();
+        params.withArray("output").add("groupid");
+        if(hostGroupName.isEmpty()){
+            //default host group
+            params.with("filter").withArray("name").add("Cit Project Datanodes");
+        }else{
+            params.with("filter").withArray("name").add(hostGroupName);
+        }
+
+        Response response = this.executeRPC("hostgroup.get", params);
+        
+        int groupid = 9;  //defaul value for the MPJSS14 Datanodes Group
+        if (response.getStatusCode() == 200) {
+            JsonNode jsonResponse = objectMapper.readTree(response.getResponseBody());
+                if(jsonResponse.get("result").isArray() && jsonResponse.get("result").size()>0){
+                    //get GroupId
+                    groupid = jsonResponse.findValue("groupid").asInt();
+                    System.out.println("groupid:\t"+groupid);
+                }
+                else{
+                    //no match for given Group Name
+                    return new ArrayList<String>(0);
+                }
+        } else{
+            throw new InternalErrorException();
+        }
+           
+        //get hosts for received groupid
+        params = this.objectMapper.createObjectNode();
+        params.put("groupids",groupid);
+        params.withArray("output").add("host");
+        
+        response = this.executeRPC("host.get", params);
+
+        if (response.getStatusCode() == 200) {
+            JsonNode jsonResponse = objectMapper.readTree(response.getResponseBody());
+            if (jsonResponse.get("result").isArray() && jsonResponse.get("result").size() > 0) {
+                List<String> resultList = new ArrayList<String>(jsonResponse.get("result").size());
+                //add hostnames to result list
+                for (JsonNode item : jsonResponse.get("result")){
+                    resultList.add(item.findValue("host").asText());
+                }
+                return resultList;
+            } else
+                //requested hostgroup has no hosts
+                return new ArrayList<String>(0);
+        } else{
+            throw new InternalErrorException();
+        }
+    }
+    
     /**
     * Method for adding/removing additional to/from calculated items formula(params).
      * @param itemKey identification String for the item to be updated
