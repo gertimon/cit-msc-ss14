@@ -15,6 +15,7 @@ public class ZabbixParams {
     public static final String USER_INTERNAL_BANDWIDTH_KEY = "user.%s.internalBandwidth";
     public static final String USER_DURATION_KEY = "user.%s.duration";
     public static final String USER_DATA_USAGE_DELTA_KEY = "user.%s.dataUsageDeltas";
+    public static final String USER_DATA_USAGE_KEY = "user.%s.dataUsage";
     public static final String USER_BLOCK_EVENTS_KEY = "user.%s.blockEvents";
 
     public static final String DATANODE_USER_TEMPLATE_NAME = "CitProjectDatanodeUsers";

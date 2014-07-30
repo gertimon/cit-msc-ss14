@@ -160,6 +160,18 @@ public class ZabbixSender implements Runnable {
     /**
      * @param dataNodeName as hostname
      * @param username
+     * @param usage complete allocated space by user
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
+     */
+    public void sendDataUsage(String dataNodeName, String username, long usage, long... clock) {
+        valuesQueue.add(new ObjectNode[]{
+            createDataNode(dataNodeName, String.format(ZabbixParams.USER_DATA_USAGE_KEY, username), Long.toString(usage), clock)
+        });
+    }
+
+    /**
+     * @param dataNodeName as hostname
+     * @param username
      * @param eventJson event data in JSON notation
      * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
      */
