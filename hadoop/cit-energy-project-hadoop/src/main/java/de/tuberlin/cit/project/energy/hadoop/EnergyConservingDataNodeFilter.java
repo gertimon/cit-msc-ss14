@@ -2,6 +2,7 @@ package de.tuberlin.cit.project.energy.hadoop;
 
 import de.tuberlin.cit.project.energy.zabbix.ZabbixAPIClient;
 import de.tuberlin.cit.project.energy.zabbix.ZabbixSender;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hdfs.protocol.DatanodeInfo;
@@ -48,7 +50,6 @@ public class EnergyConservingDataNodeFilter {
     private final WebFrontEnd webFrontEnd;
 
     public enum EnergyMode {
-
         DEFAULT, FAST, CHEAP
     }
 
@@ -90,6 +91,10 @@ public class EnergyConservingDataNodeFilter {
             LOG.info("New filter request: path=" + path + ", username=" + username + ", remoteAddress=" + remoteAddress + ", energyMode=" + energyMode + ", locatedBlocks=" + JsonUtil.toJsonString(locatedBlocks));
             LocatedBlocks filteredBlockLocations = filterBlocks(username, path, energyMode, locatedBlocks);
             LOG.info("Returning filtered block locations: " + JsonUtil.toJsonString(filteredBlockLocations));
+
+            for (String datanode : HadoopUtils.getDataNodeNames(filteredBlockLocations))
+                this.zabbixSender.sendLastUsedProfile(datanode, username, energyMode.toString());
+
             return filteredBlockLocations;
 
         } catch (IOException e) {

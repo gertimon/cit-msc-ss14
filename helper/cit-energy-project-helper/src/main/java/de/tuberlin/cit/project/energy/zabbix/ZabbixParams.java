@@ -11,6 +11,7 @@ public class ZabbixParams {
     public static final String POWER_CONSUMPTION_KEY = "datanode.power";
     public static final String USER_LAST_ADDRESS_MAPPING_KEY = "user.%s.lastAddress";
     public static final String USER_LAST_INTERNAL_ADDRESS_MAPPING_KEY = "user.%s.lastInternalAddress";
+    public static final String USER_LAST_USED_PROFILE_KEY = "user.%s.lastUsedProfile";
     public static final String USER_BANDWIDTH_KEY = "user.%s.bandwidth";
     public static final String USER_INTERNAL_BANDWIDTH_KEY = "user.%s.internalBandwidth";
     public static final String USER_DURATION_KEY = "user.%s.duration";
