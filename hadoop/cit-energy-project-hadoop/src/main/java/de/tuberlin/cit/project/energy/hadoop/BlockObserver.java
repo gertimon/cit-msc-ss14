@@ -1,5 +1,6 @@
 package de.tuberlin.cit.project.energy.hadoop;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -11,6 +12,8 @@ import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.ContentSummary;
+import org.apache.hadoop.fs.UnresolvedLinkException;
 import org.apache.hadoop.hdfs.protocol.DatanodeID;
 import org.apache.hadoop.hdfs.protocol.DatanodeInfo;
 import org.apache.hadoop.hdfs.protocol.ExtendedBlock;
@@ -18,6 +21,7 @@ import org.apache.hadoop.hdfs.protocol.LocatedBlock;
 import org.apache.hadoop.hdfs.protocol.LocatedBlocks;
 import org.apache.hadoop.hdfs.server.protocol.NamenodeProtocols;
 import org.apache.hadoop.hdfs.web.JsonUtil;
+import org.apache.hadoop.security.AccessControlException;
 import org.mortbay.util.ajax.JSON;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -35,6 +39,8 @@ import de.tuberlin.cit.project.energy.zabbix.ZabbixSender;
 @SuppressWarnings("unused")
 public class BlockObserver {
     private final static Log LOG = LogFactory.getLog(BlockObserver.class);
+
+    private final static String HOME_DIR_PATTERN = "/users/%s";
 
     private final NamenodeProtocols namenode;
     private final String zabbixHostname;
@@ -96,10 +102,15 @@ public class BlockObserver {
             }
         }
 
+        long userDataUsage = getUserDataUsage(username);
+
         for (String datanode : allocatedBytes.keySet()) {
             this.zabbixSender.sendDataUsageDelta(datanode, username, allocatedBytes.get(datanode));
             this.zabbixSender.sendBlockEvent(datanode, username,
                     "{\"type\":\"complete\", \"numBytes\":" + allocatedBytes.get(datanode) + ", \"path\":\"" + path + "\"}");
+
+            if (userDataUsage >= 0)
+                this.zabbixSender.sendDataUsage(datanode, username, userDataUsage);
         }
     }
 
@@ -128,10 +139,15 @@ public class BlockObserver {
                 }
             }
 
+            long userDataUsage = getUserDataUsage(username);
+
             for (String datanode : removedBytes.keySet()) {
                 this.zabbixSender.sendDataUsageDelta(datanode, username, -1 * removedBytes.get(datanode));
                 this.zabbixSender.sendBlockEvent(datanode, username, "{\"type\":\"delete\", \"numBytes\":"
                         + removedBytes.get(datanode) + ", \"path\":\"" + path + "\"}");
+
+                if (userDataUsage >= 0)
+                    this.zabbixSender.sendDataUsage(datanode, username, userDataUsage);
             }
 
         } catch (IOException e) {
@@ -166,7 +182,7 @@ public class BlockObserver {
     }
 
     /**
-     * TODO: Calculate and update data usage.
+     * TODO: Calculate and update delta data usage.
      */
     public void concat(String target, String src[], String username, LocatedBlocks srcBlocks[]) {
         LOG.info("Got setReplication operation with "
@@ -180,9 +196,15 @@ public class BlockObserver {
         for (LocatedBlocks locatedBlocks : srcBlocks)
             datanodes.addAll(getDataNodeNames(locatedBlocks));
 
-        for (String datanode : datanodes)
+        long userDataUsage = getUserDataUsage(username);
+
+        for (String datanode : datanodes) {
             this.zabbixSender.sendBlockEvent(datanode, username,
                     "{\"type\":\"concat\", \"target\":\"" + target + "\", \"src\":" + Arrays.toString(src) + "}");
+
+            if (userDataUsage >= 0)
+                this.zabbixSender.sendDataUsage(datanode, username, userDataUsage);
+        }
     }
 
     private Set<String> getDataNodeNames(LocatedBlocks locatedBlocks) {
@@ -194,5 +216,18 @@ public class BlockObserver {
         }
 
         return datanodes;
+    }
+
+    /**
+     * @return complete allocated space by user home dir or -1 otherwise
+     */
+    private long getUserDataUsage(String username) {
+        try {
+            String homeDir = String.format(HOME_DIR_PATTERN, username);
+            return this.namenode.getContentSummary(homeDir).getSpaceConsumed();
+        } catch (IOException e) {
+            /* file not found, giving up... */
+        }
+        return -1;
     }
 }
