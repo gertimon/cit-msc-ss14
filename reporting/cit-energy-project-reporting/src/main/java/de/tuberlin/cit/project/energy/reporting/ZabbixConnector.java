@@ -29,6 +29,14 @@ public class ZabbixConnector {
 
     }
 
+    public List<String> getDatanodeHosts() {
+        try {
+            return client.getHosts(null);
+        } catch (IllegalArgumentException | InterruptedException | ExecutionException | AuthenticationException | InternalErrorException | IOException ex) {
+            Logger.getLogger(ZabbixConnector.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
 
     protected List<ZabbixHistoryObject> getPowerUsageForRange(String hostname, long fromMillis, long toMillis) throws AuthenticationException, ExecutionException, IOException, IllegalArgumentException, InternalErrorException, InterruptedException, KeyManagementException, NoSuchAlgorithmException {
         List<ZabbixHistoryObject> result = null;

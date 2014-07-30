@@ -1,31 +1,45 @@
 package de.tuberlin.cit.project.energy.reporting;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.List;
+
 /**
  *
  * @author Tobias
  */
 public class Report {
 
-    private final String username;
+    ZabbixConnector connector;
+
     private final long fromTimeMillis;
     private final long toTimeMillis;
 
-//    private final Plan plan; // static now, overview when a plan was switched would be helpful (TODO plan-switch to zabbix)
+    private List<String> hosts;
+
     /**
      *
-     * @param username
      * @param fromTimeMillis
      * @param toTimeMillis
+     * @throws java.security.KeyManagementException
+     * @throws java.security.NoSuchAlgorithmException
      */
-    public Report(String username, long fromTimeMillis, long toTimeMillis) {
-        this.username = username;
+    public Report(long fromTimeMillis, long toTimeMillis) throws KeyManagementException, NoSuchAlgorithmException {
         this.fromTimeMillis = fromTimeMillis;
         this.toTimeMillis = toTimeMillis;
-        calculate();
+        this.connector = new ZabbixConnector();
     }
 
-    double calculateStorage() {
-        return 0.0;
+    private void retrieveHostsList() {
+        hosts = connector.getDatanodeHosts();
+    }
+
+    public void fetchValues() {
+        retrieveHostsList();
+    }
+
+    public List<String> getHosts() {
+        return hosts;
     }
 
     /**

@@ -949,4 +949,8 @@ public class ZabbixAPIClient {
     public void quit() {
         this.httpClient.close();
     }
+
+    public List<String> getHosts() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }
