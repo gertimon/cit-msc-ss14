@@ -15,7 +15,7 @@ public class ZabbixHistoryObject {
 
     @JsonProperty("itemid")
     private int itemId;
-    private long clock;
+    private long clock; // seconds
     private String value;
     private long ns;
     @JsonProperty("hosts")
@@ -35,6 +35,12 @@ public class ZabbixHistoryObject {
         return itemId;
     }
 
+    /**
+     * returns a timestamp in seconds. for conversion to date multiply value by
+     * 1000.
+     *
+     * @return
+     */
     public long getClock() {
         return clock;
     }
