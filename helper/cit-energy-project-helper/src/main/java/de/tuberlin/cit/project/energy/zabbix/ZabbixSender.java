@@ -244,4 +244,18 @@ public class ZabbixSender implements Runnable {
             createDataNode(dataNodeName, String.format(ZabbixParams.USER_LAST_INTERNAL_ADDRESS_MAPPING_KEY, username), srcDataNodeAddress, clock)
         });
     }
+
+    /**
+     * Logs internal data node connections (e.g. HDFS replica creation)
+     *
+     * @param dataNodeName as hostname
+     * @param username
+     * @param lastUsedProfile see {@link EnergyConservingDataNodeFilter}
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
+     */
+    public void sendLastUsedProfile(String dataNodeName, String username, String profile, long... clock) {
+        valuesQueue.add(new ObjectNode[] {
+            createDataNode(dataNodeName, String.format(ZabbixParams.USER_LAST_USED_PROFILE_KEY, username), profile, clock)
+        });
+    }
 }

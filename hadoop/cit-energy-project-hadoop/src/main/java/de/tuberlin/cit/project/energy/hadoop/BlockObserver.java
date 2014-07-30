@@ -172,7 +172,7 @@ public class BlockObserver {
 
         try {
             LocatedBlocks blocksBefore = JsonUtil.toLocatedBlocks((Map<?, ?>) JSON.parse(blocksBeforeJson));
-            for (String datanode : getDataNodeNames(blocksBefore))
+            for (String datanode : HadoopUtils.getDataNodeNames(blocksBefore))
                 this.zabbixSender.sendBlockEvent(datanode, username,
                         "{\"type\":\"setReplication\", \"path\":\"" + path + "\", \"replication\":" + replication + "}");
 
@@ -194,7 +194,7 @@ public class BlockObserver {
 
         Set<String> datanodes = new HashSet<String>();
         for (LocatedBlocks locatedBlocks : srcBlocks)
-            datanodes.addAll(getDataNodeNames(locatedBlocks));
+            datanodes.addAll(HadoopUtils.getDataNodeNames(locatedBlocks));
 
         long userDataUsage = getUserDataUsage(username);
 
@@ -207,15 +207,17 @@ public class BlockObserver {
         }
     }
 
-    private Set<String> getDataNodeNames(LocatedBlocks locatedBlocks) {
-        Set<String> datanodes = new HashSet<String>();
-        for (LocatedBlock block : locatedBlocks.getLocatedBlocks()) {
-            for (DatanodeInfo datanode : block.getLocations()) {
-                datanodes.add(datanode.getHostName());
-            }
+    /**
+     * @return complete allocated space by user home dir or -1 otherwise
+     */
+    private long getUserDataUsage(String username) {
+        try {
+            String homeDir = String.format(HOME_DIR_PATTERN, username);
+            return this.namenode.getContentSummary(homeDir).getSpaceConsumed();
+        } catch (IOException e) {
+            /* file not found, giving up... */
         }
-
-        return datanodes;
+        return -1;
     }
 
     /**

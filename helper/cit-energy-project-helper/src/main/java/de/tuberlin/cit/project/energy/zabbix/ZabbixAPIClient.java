@@ -430,6 +430,14 @@ public class ZabbixAPIClient {
             throw new InternalErrorException();
         }
 
+        // last used profile
+        text.put("name", "Last energy profile used by user " + username);
+        text.put("key_", String.format(ZabbixParams.USER_LAST_USED_PROFILE_KEY, username));
+        text.put("value_type", "2"); // log
+        if (this.executeRPC("item.create", text).getStatusCode() != 200) {
+            throw new InternalErrorException();
+        }
+
         // TODO: add more here
     }
 
