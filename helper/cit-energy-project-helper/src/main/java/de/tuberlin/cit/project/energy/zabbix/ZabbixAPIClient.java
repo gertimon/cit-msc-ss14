@@ -214,6 +214,7 @@ public class ZabbixAPIClient {
         String usernameKey = null;
         long lastclock = Long.MIN_VALUE;
 
+        // find item with matching client id and highest clock value
         for (ZabbixItem item : items) {
             if (item.getLastValue() != null && item.getLastValue().equals(clientAddress)
                     && (usernameKey == null || item.getLastClock() > lastclock)) {
