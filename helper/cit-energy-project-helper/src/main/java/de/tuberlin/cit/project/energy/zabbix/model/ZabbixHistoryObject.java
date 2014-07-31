@@ -20,6 +20,7 @@ public class ZabbixHistoryObject {
     private long ns;
     @JsonProperty("hosts")
     private List<HostId> hostIds;
+    private String username;
 
     public static class HostId {
 
@@ -68,10 +69,19 @@ public class ZabbixHistoryObject {
     public float getFloatValue() {
         return Float.parseFloat(this.value);
     }
+    
+    public String getUserName() {
+        return username;
+    }
+    
+    //required for getNumericHistory methods @ZabbixAPIClient
+    public void setUserName(String name) {
+        username = name;
+    }
 
     @Override
     public String toString() {
-        return "ZabbixHistoryObject{" + "itemId=" + itemId + ", clock=" + clock + ", value=" + value + ", ns=" + ns + ", hostIds=" + hostIds + '}';
+        return "ZabbixHistoryObject{" + "itemId=" + itemId + ", clock=" + clock + ", value=" + value + ", ns=" + ns +", username=" + username + ", hostIds=" + hostIds + '}';
     }
 
 }

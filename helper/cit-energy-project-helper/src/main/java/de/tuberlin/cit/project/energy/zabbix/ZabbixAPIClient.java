@@ -679,7 +679,7 @@ public class ZabbixAPIClient {
 
                 return resultList;
             } else {
-                return new ArrayList<ZabbixHistoryObject>(0);
+                return new ArrayList<>(0);
             }
         } else {
             throw new InternalErrorException();
@@ -711,8 +711,16 @@ public class ZabbixAPIClient {
         params.put("output", "extend");
         params.put("host", hostName);
         params.with("search").put("key_", itemKey);
-
-        int itemID = this.getItems(params).get(0).getItemId();
+        
+        int itemID = -1;
+        List<ZabbixItem> itemIDcheck = this.getItems(params);
+        //check for item existence, result is empty if item doesnt exist
+        if (itemIDcheck.size() > 0) {
+            itemID = itemIDcheck.get(0).getItemId();
+        } else {
+            //no item exists for given itemKey, thus empty result list is returned
+            return new ArrayList<>(0);
+        }
 
         //request for item history in between timeFromSeconds and timeTillSeconds
         params = this.objectMapper.createObjectNode();
@@ -721,8 +729,20 @@ public class ZabbixAPIClient {
         params.put("itemids", itemID);
         params.put("time_from", timeFromSeconds);
         params.put("time_till", timeTillSeconds);
-
-        return this.getHistory(params);
+        
+        List<ZabbixHistoryObject> result = this.getHistory(params);
+        //check for adding usernames
+        if (result.size() > 0 && itemKey.startsWith("user.")) {
+            //data is userspecific and username is added to results
+            String name = itemKey.split("\\.")[1];
+            for (ZabbixHistoryObject item : result) {
+                item.setUserName(name);
+            }
+            return result;
+        } else {
+            //return list, empty or not userspecific
+            return result;
+        }
     }
 
     /**
@@ -751,7 +771,15 @@ public class ZabbixAPIClient {
         params.put("host", hostName);
         params.with("search").put("key_", itemKey);
 
-        int itemID = this.getItems(params).get(0).getItemId();
+        int itemID = -1;
+        List<ZabbixItem> itemIDcheck = this.getItems(params);
+        //check for item existence, result is empty if item doesnt exist
+        if (itemIDcheck.size() > 0) {
+            itemID = itemIDcheck.get(0).getItemId();
+        } else {
+            //no item exists for given itemKey, thus empty result list is returned
+            return new ArrayList<>(0);
+        }
 
         //request preceding element
         params = this.objectMapper.createObjectNode();
@@ -763,7 +791,13 @@ public class ZabbixAPIClient {
         params.put("sortfield", "clock");
         params.put("sortorder", "DESC");
 
-        ZabbixHistoryObject precedingElement = this.getHistory(params).get(0);
+        List<ZabbixHistoryObject> result = this.getHistory(params);
+        ZabbixHistoryObject precedingElement = null;
+        //check for existence of a preceding element
+        if (result.size() > 0) {
+            precedingElement = result.get(0);
+        }
+        result = null;
 
         //request for item history in between timeFromSeconds and timeTillSeconds
         params = this.objectMapper.createObjectNode();
@@ -773,10 +807,32 @@ public class ZabbixAPIClient {
         params.put("time_from", timeFromSeconds);
         params.put("time_till", timeTillSeconds);
 
-        List<ZabbixHistoryObject> result = this.getHistory(params);
-        result.add(0, precedingElement);
-
-        return result;
+        result = this.getHistory(params);
+        //check for adding preceding element if it was succesfully retrieved
+        if (precedingElement != null){
+            //check for clock times to prevent double entrys
+            if (result.size() > 0){
+                //resultlist not empty, clock comparison required
+                if (precedingElement.getClock()<result.get(0).getClock()){
+                    result.add(0, precedingElement);
+                }
+            } else {
+                //result list is empty and only preceding element exists
+                result.add(0, precedingElement);
+            }
+        }   
+        //check for adding usernames
+        if (result.size() > 0 && itemKey.startsWith("user.")) {
+            //data is userspecific and username is added to results
+            String name = itemKey.split("\\.")[1];
+            for (ZabbixHistoryObject item : result) {
+                item.setUserName(name);
+            }
+            return result;
+        } else {
+            //return list, empty or not userspecific
+            return result;
+        }
     }
     
     /**
@@ -807,16 +863,14 @@ public class ZabbixAPIClient {
         int groupid = 9;  //defaul value for the MPJSS14 Datanodes Group
         if (response.getStatusCode() == 200) {
             JsonNode jsonResponse = objectMapper.readTree(response.getResponseBody());
-                if(jsonResponse.get("result").isArray() && jsonResponse.get("result").size()>0){
-                    //get GroupId
-                    groupid = jsonResponse.findValue("groupid").asInt();
-                    System.out.println("groupid:\t"+groupid);
-                }
-                else{
-                    //no match for given Group Name
-                    return new ArrayList<String>(0);
-                }
-        } else{
+            if (jsonResponse.get("result").isArray() && jsonResponse.get("result").size() > 0) {
+                //get GroupId
+                groupid = jsonResponse.findValue("groupid").asInt();
+            } else {
+                //no match for given Group Name
+                return new ArrayList<>(0);
+            }
+        } else {
             throw new InternalErrorException();
         }
            
@@ -888,6 +942,39 @@ public class ZabbixAPIClient {
         params.put("params", newFormula);
         if (this.executeRPC("item.update", params).getStatusCode() != 200) {
             throw new InternalErrorException();
+        }
+    }
+    
+    /**
+     * 
+     * @return list of all usernames
+     */
+    public List<String> getAllUsers() throws AuthenticationException, IllegalArgumentException, InterruptedException, ExecutionException, InternalErrorException, IOException, TemplateNotFoundException{
+        this.authenticate();
+        //fetching Datanode User templateID
+        if (dataNodeUserTemplateID < 0){
+            this.setDataNodeUserTemplateId(this.getDataNodeTemplateId());
+        }
+        
+        ObjectNode params = this.objectMapper.createObjectNode();
+        params.put("output", "extend");
+        params.put("templateids", dataNodeUserTemplateID);
+//        params.with("search").put("key_", "user.*.bandwidth");
+        params.with("search").put("key_", String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, "*"));
+//        params.with("search").withArray("key_").add(String.format(ZabbixParams.USER_LAST_INTERNAL_ADDRESS_MAPPING_KEY, "*"));
+        params.put("searchWildcardsEnabled", true);
+        List<ZabbixItem> response = this.getItems(params);
+        
+        if (response.size() > 0) {
+            //adding names of the users to result list
+            List<String> result = new ArrayList<>(response.size());
+            for (ZabbixItem item : response) {
+                result.add(item.getKey().split("\\.")[1]);
+            }
+            return result;
+        } else {
+            //no users found matching the templateid and itemKey search parameter
+            return new ArrayList<>(0);
         }
     }
 
