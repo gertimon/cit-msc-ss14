@@ -151,6 +151,43 @@ public class FlowTableGetter implements Runnable {
         String dataNode;
         System.out.println("Connection from: " + srcIp+":"+ srcPort + " to " + dstIp + ":" + dstPort);
         try {
+        if (srcPort.equals("50010")){
+            //if (srcIp.equals("10.0.42.1")) dataNode = "CitProjectAsok05";
+            //else dataNode = "CitProjectOffice";
+            dataNode = getDataNodeByIP(srcIp);
+            DatanodeUserConnection connection = null;
+            System.err.println("SRC Get Connection: " + dataNode + ", " + dstIp +":"+dstPort);
+            connection = zabbixApiClient.getUsernameByDataNodeConnection(dataNode,dstIp + ":" + dstPort);
+            ConnectionInfos conInf = new ConnectionInfos(dataNode,connection);
+            return conInf;
+        }else if (dstPort.equals("50010")){
+            //if (srcIp.equals("10.0.42.1")) dataNode = "CitProjectAsok05";
+           // else dataNode = "CitProjectOffice";
+            dataNode = getDataNodeByIP(dstIp);
+            System.err.println("DST Get Connection: " + dataNode + ", " + srcIp +":"+srcPort);
+            DatanodeUserConnection connection = null;
+            connection = zabbixApiClient.getUsernameByDataNodeConnection(dataNode, srcIp + ":" + srcPort);
+            ConnectionInfos conInf = new ConnectionInfos(dataNode,connection);
+            return conInf;
+        }else return null;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (AuthenticationException e) {
+                e.printStackTrace();
+            } catch (UserNotFoundException e) {
+                e.printStackTrace();
+            } catch (InternalErrorException e) {
+                e.printStackTrace();
+            }finally {
+            return  null;
+        }
+
+
+        /*try {
             if ((srcIp.equals(searchedIpdataNode1) || srcIp.equals(searchedIpdataNode2)) && srcPort.equals(dataNodePort) &&
                     !(dstIp.equals(searchedIpdataNode2) || dstIp.equals(searchedIpdataNode1))) {
                 dataNode = getDataNodeByIP(srcIp);
@@ -191,7 +228,7 @@ public class FlowTableGetter implements Runnable {
         } finally {
             //TODO Change to "return null"
             return null;
-        }
+        }*/
 
     }
 
@@ -271,6 +308,7 @@ public class FlowTableGetter implements Runnable {
 
     public void sendDataToZabbix(FlowInformation flowInf, ConnectionInfos conInf) {
         long ts = System.currentTimeMillis() / 1000;
+        System.err.println("Ich schicke etwas");
         if (conInf.connection.isInternal()){
           zabbixSender.sendInternalBandwidthUsage(conInf.datanode,conInf.connection.getUser(),flowInf.getBandWidth(),ts);
         }else{
