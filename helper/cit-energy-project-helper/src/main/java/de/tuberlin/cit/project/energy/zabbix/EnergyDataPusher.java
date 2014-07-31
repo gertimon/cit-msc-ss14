@@ -53,8 +53,9 @@ public class EnergyDataPusher {
                         // --- ...and delete non-digits with this regexp
                         currPower = Double.parseDouble(xtract.replaceAll("\\D+",""));
                         currPower /= 466;
-                        DecimalFormat DecForm =  new DecimalFormat("#.#");
-                        return Double.valueOf(DecForm.format(currPower));
+                        
+                        // --- Two decimal places are enough
+                        return Math.round(currPower*100.0) /100.0;
                     }
                 }
             }
@@ -62,51 +63,6 @@ public class EnergyDataPusher {
         } catch (IOException ex) {
             Logger.getLogger(EnergyDataPusher.class.getName()).log(Level.SEVERE, null, ex);
         }
-		return 0.0;
-        
+		return 0.0;   
     }
-    
-    /*
-    public String getPower() {
-    	
-    	// --- Connect and Login to the webinterface
-    	try {
-			Connection.Response res =
-					Jsoup.connect("http://192.168.100.116/login.html")
-					.data("pw", "1")
-					.method(Method.POST)
-					.execute();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-    	
-    	
-    	
-    	
-    	// --- extracting power data data from HTML
-    	try {
-			Document doc = Jsoup.connect("http://192.168.100.116/energenie.html").get();
-			String power = doc.getElementById("pC").html();
-			//String power = doc.getElementsByClass("ig").html(); // For testing purposes
-			System.out.println("Data: " +power);
-			return power;
-			
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-    	
-    	
-    	
-    	return "";
-    	
-    }*/
-    
-	
-	
-	
-	
-	
 }
