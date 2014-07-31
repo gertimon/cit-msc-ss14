@@ -106,6 +106,7 @@ public class FlowTableGetter implements Runnable {
                     FlowInformation modFlow = modifyFlow(flowInf,oldFlow);
                     if (modFlow != null){
                         //TODO Enable to send to Zabbix!
+                        System.out.println("SEND NEW BANDWIDTH UPDATE");
                         sendDataToZabbix(modFlow, conInf);
                         System.out.println(modFlow);
                         flowMap.remove(hashKey);
@@ -114,6 +115,9 @@ public class FlowTableGetter implements Runnable {
 
                 }else {
                         ConnectionInfos conInf = getConnectionInfos(flowInf.getSrcIp(), flowInf.getSrcPort(), flowInf.getDstIp(), flowInf.getDstPort());
+                            if (conInf != null) {
+                                System.out.println("NEW USER: " + conInf.connection.getUser());
+                            }
                             if (conInf != null) {
                                 System.out.println("NEW CONNECTIONT: "+ flowInf);
                                 //TODO Enable to send to Zabbix!
@@ -149,7 +153,7 @@ public class FlowTableGetter implements Runnable {
 
     public ConnectionInfos getConnectionInfos(String srcIp, String srcPort, String dstIp, String dstPort) {
         String dataNode;
-        System.out.println("Connection from: " + srcIp+":"+ srcPort + " to " + dstIp + ":" + dstPort);
+       // System.out.println("Connection from: " + srcIp+":"+ srcPort + " to " + dstIp + ":" + dstPort);
         try {
         if (srcPort.equals("50010")){
             //if (srcIp.equals("10.0.42.1")) dataNode = "CitProjectAsok05";
