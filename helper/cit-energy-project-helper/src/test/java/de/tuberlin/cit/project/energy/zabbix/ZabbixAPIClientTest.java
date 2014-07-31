@@ -41,15 +41,16 @@ public class ZabbixAPIClientTest {
         apiClient.setAuthToken("testAuthToken");
         long lastclock = (System.currentTimeMillis() / 1000) - 5;
         testServer.setNextResponse("{ \"jsonrpc\":\"2.0\", \"id\":2, \"result\":["
+                + "{\"key_\":\"user.klaus.lastAddress\",\"lastvalue\":\"22.22.22.22:3333\",\"lastclock\":\"" + (lastclock) + "\"},"
                 + "{\"key_\":\"user.peterFirst.lastAddress\",\"lastvalue\":\"22.22.22.22:2222\",\"lastclock\":\"" + (lastclock - 10) + "\"},"
                 + "{\"key_\":\"user.peter.lastAddress\",\"lastvalue\":\"22.22.22.22:2222\",\"lastclock\":\"" + lastclock + "\"},"
-                + "{\"key_\":\"user.peterLast.lastAddress\",\"lastvalue\":\"22.22.22.22:2222\",\"lastclock\":\"" + (lastclock - 20) + "\"}"
+                + "{\"key_\":\"user.peterLast.lastAddress\",\"lastvalue\":\"22.22.22.22:2222\",\"lastclock\":\"" + (lastclock - 20) + "\"},"
+                + "{\"key_\":\"user.heinz.lastAddress\",\"lastvalue\":\"22.22.22.22:4444\",\"lastclock\":\"" + (lastclock) + "\"}"
                 + "]}");
         DatanodeUserConnection result = apiClient.getUsernameByDataNodeConnection("testDataNode", "22.22.22.22:2222");
         String request = testServer.getLastRequest();
         assertTrue("Request contains get.item method", request.matches(".*\"method\":\"item.get\".*"));
-        assertTrue("Request contains user.*.lastAddress as key filter", request.matches(".*\"search\":\\{.*\"key_\":\\[.*\"user\\.\\*\\.lastAddress\".*\\].*\\}.*"));
-        assertTrue("Request contains user.*.lastInternalAddress as key filter", request.matches(".*\"search\":\\{.*\"key_\":\\[.*\"user\\.\\*\\.lastInternalAddress\".*\\].*\\}.*"));
+        assertTrue("Request contains user.*.last*Address as key filter", request.matches(".*\"search\":\\{.*\"key_\":.*\"user\\.\\*\\.last\\*Address\".*\\}.*"));
         assertEquals("Finds correct username from results", "peter", result.getUser());
         assertEquals("Sets non internal connection typ", false, result.isInternal());
     }
@@ -60,15 +61,16 @@ public class ZabbixAPIClientTest {
         apiClient.setAuthToken("testAuthToken");
         long lastclock = (System.currentTimeMillis() / 1000) - 5;
         testServer.setNextResponse("{ \"jsonrpc\":\"2.0\", \"id\":2, \"result\":["
-                + "{\"key_\":\"user.peterFirst.lastAddress\",\"lastvalue\":\"22.22.22.22:2222\",\"lastclock\":\"" + (lastclock - 10) + "\"},"
+                + "{\"key_\":\"user.klaus.lastAddress\",\"lastvalue\":\"22.22.22.22:3333\",\"lastclock\":\"" + (lastclock) + "\"},"
+                + "{\"key_\":\"user.peterFirst.lastInternalAddress\",\"lastvalue\":\"22.22.22.22:2222\",\"lastclock\":\"" + (lastclock - 10) + "\"},"
                 + "{\"key_\":\"user.peter.lastInternalAddress\",\"lastvalue\":\"22.22.22.22:2222\",\"lastclock\":\"" + lastclock + "\"},"
-                + "{\"key_\":\"user.peterLast.lastAddress\",\"lastvalue\":\"22.22.22.22:2222\",\"lastclock\":\"" + (lastclock - 20) + "\"}"
+                + "{\"key_\":\"user.peterLast.lastInternalAddress\",\"lastvalue\":\"22.22.22.22:2222\",\"lastclock\":\"" + (lastclock - 20) + "\"},"
+                + "{\"key_\":\"user.heinz.lastInternalAddress\",\"lastvalue\":\"22.22.22.22:4444\",\"lastclock\":\"" + (lastclock) + "\"}"
                 + "]}");
         DatanodeUserConnection result = apiClient.getUsernameByDataNodeConnection("testDataNode", "22.22.22.22:2222");
         String request = testServer.getLastRequest();
         assertTrue("Request contains get.item method", request.matches(".*\"method\":\"item.get\".*"));
-        assertTrue("Request contains user.*.lastAddress as key filter", request.matches(".*\"search\":\\{.*\"key_\":\\[.*\"user\\.\\*\\.lastAddress\".*\\].*\\}.*"));
-        assertTrue("Request contains user.*.lastInternalAddress as key filter", request.matches(".*\"search\":\\{.*\"key_\":\\[.*\"user\\.\\*\\.lastInternalAddress\".*\\].*\\}.*"));
+        assertTrue("Request contains user.*.last*Address as key filter", request.matches(".*\"search\":\\{.*\"key_\":.*\"user\\.\\*\\.last\\*Address\".*\\}.*"));
         assertEquals("Finds correct username from results", "peter", result.getUser());
         assertEquals("Sets internal connection typ", true, result.isInternal());
     }
