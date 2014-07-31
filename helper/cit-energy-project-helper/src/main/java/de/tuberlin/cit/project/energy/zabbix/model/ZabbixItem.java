@@ -22,9 +22,13 @@ public class ZabbixItem {
     @JsonProperty("key_")
     private String key;
     private int history = -1;
+    @JsonProperty("lastclock")
     private long lastClock = -1;
+    @JsonProperty("valuetype")
     private int valueType = -1;
+    @JsonProperty("lastvalue")
     private String lastValue;
+    @JsonProperty("prevvalue")
     private String prevValue;
     
     public int getItemId() { return itemId; }
@@ -58,9 +62,9 @@ public class ZabbixItem {
         if (history > 0)
             keyValues.add("history=" + this.history);
         if (lastClock > 0)
-            keyValues.add("lastClock" + this.lastClock);
+            keyValues.add("lastClock=" + this.lastClock);
         if (valueType > 0)
-            keyValues.add("valueType" + this.valueType);
+            keyValues.add("valueType=" + this.valueType);
         if (lastValue != null)
             keyValues.add("lastValue=" + this.lastValue);
         if (prevValue != null)

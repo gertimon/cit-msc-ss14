@@ -202,52 +202,43 @@ public class ZabbixAPIClient {
 
         ObjectNode params = this.objectMapper.createObjectNode();
         params.put("host", datanodeName);
-        params.with("search").withArray("key_").add(String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, "*"));
-        params.with("search").withArray("key_").add(String.format(ZabbixParams.USER_LAST_INTERNAL_ADDRESS_MAPPING_KEY, "*"));
+        params.with("search").put("key_", "user.*.last*Address"); // accepts only one value, no array!
         params.put("searchWildcardsEnabled", true);
-        params.with("filter").put("value", clientAddress);
+        // filter doesn't work with text fields...
 
         params.withArray("output").add("key_");
         params.withArray("output").add("lastvalue");
         params.withArray("output").add("lastclock");
 
-        Response response = this.executeRPC("item.get", params);
+        List<ZabbixItem> items = getItems(params);
+        String usernameKey = null;
+        long lastclock = Long.MIN_VALUE;
 
-        if (response.getStatusCode() == 200) {
-            String usernameKey = null;
-            long lastclock = Long.MIN_VALUE;
-
-            JsonNode jsonResponse = objectMapper.readTree(response.getResponseBody());
-
-            if (jsonResponse.get("result").isArray()) {
-                for (JsonNode item : jsonResponse.get("result")) {
-                    long currentLastclock = item.get("lastclock").asLong();
-                    if (usernameKey == null || currentLastclock > lastclock) {
-                        usernameKey = item.get("key_").asText();
-                        lastclock = currentLastclock;
-                    }
-                }
+        // find item with matching client id and highest clock value
+        for (ZabbixItem item : items) {
+            if (item.getLastValue() != null && item.getLastValue().equals(clientAddress)
+                    && (usernameKey == null || item.getLastClock() > lastclock)) {
+                usernameKey = item.getKey();
+                lastclock = item.getLastClock();
             }
+        }
 
-            if (usernameKey != null && System.currentTimeMillis() / 1000 - ZabbixParams.MAX_USER_IP_MAPPING_AGE < lastclock) {
-                if (usernameKey.matches(String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, ".*"))) {
-                    String username = usernameKey.replaceFirst(
-                        String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, "(.*)\\"), "$1");
-                    return new DatanodeUserConnection(clientAddress, datanodeName, username, false);
+        if (usernameKey != null && System.currentTimeMillis() / 1000 - ZabbixParams.MAX_USER_IP_MAPPING_AGE < lastclock) {
+            if (usernameKey.matches(String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, ".*"))) {
+                String username = usernameKey.replaceFirst(
+                    String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, "(.*)\\"), "$1");
+                return new DatanodeUserConnection(clientAddress, datanodeName, username, false);
 
-                } else if (usernameKey.matches(String.format(ZabbixParams.USER_LAST_INTERNAL_ADDRESS_MAPPING_KEY, ".*"))) {
-                    String username = usernameKey.replaceFirst(
-                        String.format(ZabbixParams.USER_LAST_INTERNAL_ADDRESS_MAPPING_KEY, "(.*)"), "$1");
-                    return new DatanodeUserConnection(clientAddress, datanodeName, username, true);
+            } else if (usernameKey.matches(String.format(ZabbixParams.USER_LAST_INTERNAL_ADDRESS_MAPPING_KEY, ".*"))) {
+                String username = usernameKey.replaceFirst(
+                    String.format(ZabbixParams.USER_LAST_INTERNAL_ADDRESS_MAPPING_KEY, "(.*)"), "$1");
+                return new DatanodeUserConnection(clientAddress, datanodeName, username, true);
 
-                } else {
-                    throw new InternalErrorException("Unknown key in mapping found: " + usernameKey);
-                }
             } else {
-                throw new UserNotFoundException();
+                throw new InternalErrorException("Unknown key in mapping found: " + usernameKey);
             }
         } else {
-            throw new InternalErrorException("Command failed with HTTP status: " + response.getStatusCode());
+            throw new UserNotFoundException();
         }
     }
 
