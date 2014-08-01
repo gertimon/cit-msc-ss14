@@ -219,17 +219,4 @@ public class BlockObserver {
         }
         return -1;
     }
-
-    /**
-     * @return complete allocated space by user home dir or -1 otherwise
-     */
-    private long getUserDataUsage(String username) {
-        try {
-            String homeDir = String.format(HOME_DIR_PATTERN, username);
-            return this.namenode.getContentSummary(homeDir).getSpaceConsumed();
-        } catch (IOException e) {
-            /* file not found, giving up... */
-        }
-        return -1;
-    }
 }
