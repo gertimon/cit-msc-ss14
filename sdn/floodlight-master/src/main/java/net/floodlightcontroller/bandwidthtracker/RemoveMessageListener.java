@@ -49,9 +49,9 @@ public class RemoveMessageListener implements IOFMessageListener {
                 //TODO Enable to send to Zabbix!
                 flowGetter.sendDataToZabbix(modFlow,conInf);
                 //Stop Flow on Zabbix
-                modFlow.setBandwidth(0.0);
-                modFlow.setDataSize(0.0);
-                modFlow.setTime(0.0);
+                modFlow.setBandwidth(0);
+                //modFlow.setDataSize(0.0);
+                //modFlow.setTime(0.0);
                 //TODO Enable to send to Zabbix!
                 flowGetter.sendDataToZabbix(modFlow,conInf);
 
