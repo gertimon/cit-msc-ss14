@@ -157,17 +157,17 @@ public class FlowTableGetter implements Runnable {
         DatanodeUserConnection connection = null;
         try {
             if (srcPort.equals("50010")) {
-                if (srcIp.equals("10.0.42.1")) dataNode = "CitProjectAsok05";
-                else dataNode = "CitProjectOffice";
-                //dataNode = getDataNodeByIP(srcIp);
+               // if (srcIp.equals("10.0.42.1")) dataNode = "CitProjectAsok05";
+                //else dataNode = "CitProjectOffice";
+                dataNode = getDataNodeByIP(srcIp);
                 String user = dstIp + ":" + dstPort;
                 connection = zabbixApiClient.getUsernameByDataNodeConnection(dataNode, user);
                 ConnectionInfos conInf = new ConnectionInfos(dataNode, connection);
                 return conInf;
             } else if (dstPort.equals("50010")) {
-                if (dstIp.equals("10.0.42.1")) dataNode = "CitProjectAsok05";
-                else dataNode = "CitProjectOffice";
-                //dataNode = getDataNodeByIP(dstIp);
+                //if (dstIp.equals("10.0.42.1")) dataNode = "CitProjectAsok05";
+                //else dataNode = "CitProjectOffice";
+                dataNode = getDataNodeByIP(dstIp);
                 String user = srcIp + ":" + srcPort;
                 connection = zabbixApiClient.getUsernameByDataNodeConnection(dataNode, user);
                 ConnectionInfos conInf = new ConnectionInfos(dataNode, connection);
