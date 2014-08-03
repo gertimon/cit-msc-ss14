@@ -44,8 +44,8 @@
     <property name="floodlight-test-jar" location="${target}/floodlight-test.jar"/>
     <property name="thrift.dir" value="${basedir}/src/main/thrift"/>
     <property name="thrift.out.dir" value="lib/gen-java"/>
-    <property name="ant.build.javac.source" value="1.6"/>
-    <property name="ant.build.javac.target" value="1.6"/>
+    <property name="ant.build.javac.source" value="1.7"/>
+    <property name="ant.build.javac.target" value="1.7"/>
     <property name="findbugs.home" value="../build/findbugs-2.0.2"/>
     <property name="findbugs.results" value="findbugs-results" />
     <property name="lib" location="lib"/>
@@ -77,8 +77,8 @@
             artifactId="jackson-dataformat-xml" version="2.4.1"/>
         <dependency groupId="com.fasterxml.jackson.dataformat"
             artifactId="jackson-dataformat-csv" version="2.4.1"/>
-        <dependency groupId="de.tuberlin.cit.project.energy.helper"
-            artifactId="cit-energy-project-helper" version="1.1-SNAPSHOT">
+        <dependency groupId="de.tuberlin.cit.project.energy"
+            artifactId="cit-energy-project-helper" version="1.3-SNAPSHOT">
             <exclusion groupId="org.slf4j" artifactId="slf4j-log4j12"/> <!-- already included in logback-classic... -->
         </dependency>
         <dependency groupId="org.slf4j"
@@ -99,7 +99,7 @@
         <dependency groupId="args4j"
             artifactId="args4j" version="2.0.16"/>
         <dependency groupId="com.googlecode.concurrentlinkedhashmap"
-            artifactId="concurrentlinkedhashmap-lru" version="1.2"/>
+            artifactId="concurrentlinkedhashmap-lru" version="1.4"/>
         <dependency groupId="org.python"
             artifactId="jython-standalone" version="2.5.2"/>
         <dependency groupId="org.apache.thrift"
@@ -344,7 +344,7 @@
             noindex="false"
             nonavbar="false"
             notree="false"
-            source="1.6"
+            source="1.7"
             sourcepath="${source}"
             splitindex="true"
             use="true"
