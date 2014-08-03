@@ -5,8 +5,6 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 
 public class FlowInformation {
-    private long startTime;
-    private long endTime;
     private String srcIp;
     private String dstIp;
     private String srcPort;
@@ -21,9 +19,7 @@ public class FlowInformation {
 
 
 
-    public FlowInformation(long startTime, long endTime, String srcMac, String dstMac, String srcIP, String dstIP, String srcPort,String dstPort, long dataSize, double time){
-        this.startTime = startTime;
-        this.endTime = endTime;
+    public FlowInformation(String srcMac, String dstMac, String srcIP, String dstIP, String srcPort,String dstPort, long dataSize, double time){
         this.srcIp = srcIP;
         this.dstIp = dstIP;
         this.srcMac = srcMac;
@@ -88,6 +84,7 @@ public class FlowInformation {
         this.bandWidth = (int)bandwidth;
     }
 
+    //May be used later...
     private double computeBandwidth(double bandWidth){
         if (!Double.isInfinite(bandWidth) && !Double.isNaN(bandWidth)){
             return round(bandWidth,2);

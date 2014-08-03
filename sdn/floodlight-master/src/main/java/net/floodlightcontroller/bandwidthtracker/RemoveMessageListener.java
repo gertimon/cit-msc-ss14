@@ -36,52 +36,37 @@ public class RemoveMessageListener implements IOFMessageListener {
     @Override
     public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
         OFFlowRemoved flow = (OFFlowRemoved) msg;
-        FlowInformation flowInf = createFlowInformation(flow);
+        OFFlowStatisticsReply stat = new OFFlowStatisticsReply();
+        stat.setMatch(flow.getMatch());
+        stat.setByteCount(flow.getByteCount());
+        stat.setDurationSeconds(flow.getDurationSeconds());
+        FlowInformation flowInf = flowGetter.createFlowInformation(stat);
         String hashKey = flowInf.getHashKey();
-        if (flowGetter.flowMap.containsKey(hashKey) && flowGetter.conInfMap.containsKey(hashKey)){
+        if (flowGetter.flowMap.containsKey(hashKey) && flowGetter.conInfMap.containsKey(hashKey)) {
             FlowInformation oldFlow = flowGetter.flowMap.get(hashKey);
             FlowTableGetter.ConnectionInfos conInf = flowGetter.conInfMap.get(hashKey);
-            FlowInformation modFlow = flowGetter.modifyFlow(flowInf,oldFlow);
+            FlowInformation modFlow = flowGetter.modifyFlow(flowInf, oldFlow);
             flowGetter.flowMap.remove(hashKey);
             flowGetter.conInfMap.remove(hashKey);
-            if (modFlow != null){
+            if (modFlow != null) {
                 System.out.println("DELETE: " + modFlow);
                 //TODO Enable to send to Zabbix!
-                flowGetter.sendDataToZabbix(modFlow,conInf);
+                flowGetter.sendDataToZabbix(modFlow, conInf);
                 //Stop Flow on Zabbix
                 modFlow.setBandwidth(0);
                 //modFlow.setDataSize(0.0);
                 //modFlow.setTime(0.0);
                 //TODO Enable to send to Zabbix!
-                flowGetter.sendDataToZabbix(modFlow,conInf);
+                flowGetter.sendDataToZabbix(modFlow, conInf);
 
-            }else{
+            } else {
                 System.out.println("DELETE: " + flowInf);
             }
 
         }
-
-
         return Command.CONTINUE;
     }
 
-    private FlowInformation createFlowInformation(OFFlowRemoved flow) {
-        long timeStamp = System.currentTimeMillis();
-        int tcpSrcPort = 0xFFFF & flow.getMatch().getTransportSource();
-        int tcpDstPort = 0xFFFF & flow.getMatch().getTransportDestination();
-        timeStamp = timeStamp - (flow.getIdleTimeout() * 1000);
-        String srcPort = Integer.toString(tcpSrcPort);
-        String dstPort = Integer.toString(tcpDstPort);
-        String nw_src = IPv4.fromIPv4Address(flow.getMatch().getNetworkSource());
-        String nw_dst = IPv4.fromIPv4Address(flow.getMatch().getNetworkDestination());
-        String dl_src = HexString.toHexString(flow.getMatch().getDataLayerSource());
-        String dl_dst = HexString.toHexString(flow.getMatch().getDataLayerDestination());
-        long count = flow.getByteCount();
-        int time = flow.getDurationSeconds();
-        long startTime = timeStamp - (time * 1000);
-        FlowInformation flowInf = new FlowInformation(startTime, timeStamp, dl_src, dl_dst, nw_src, nw_dst, srcPort, dstPort, count, time);
-        return flowInf;
-    }
 
     @Override
     public String getName() {

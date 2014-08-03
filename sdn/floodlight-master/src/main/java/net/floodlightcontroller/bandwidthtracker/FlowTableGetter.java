@@ -195,10 +195,8 @@ public class FlowTableGetter implements Runnable {
 
 
     public FlowInformation createFlowInformation(OFFlowStatisticsReply flow) {
-        long timeStamp = System.currentTimeMillis();
         int tcpSrcPort = 0xFFFF & flow.getMatch().getTransportSource();
         int tcpDstPort = 0xFFFF & flow.getMatch().getTransportDestination();
-        timeStamp = timeStamp - (flow.getIdleTimeout() * 1000);
         String srcPort = Integer.toString(tcpSrcPort);
         String dstPort = Integer.toString(tcpDstPort);
         String nw_src = IPv4.fromIPv4Address(flow.getMatch().getNetworkSource());
@@ -207,8 +205,7 @@ public class FlowTableGetter implements Runnable {
         String dl_dst = HexString.toHexString(flow.getMatch().getDataLayerDestination());
         long count = flow.getByteCount();
         int time = flow.getDurationSeconds();
-        long startTime = timeStamp - (time * 1000);
-        FlowInformation flowInf = new FlowInformation(startTime, timeStamp, dl_src, dl_dst, nw_src, nw_dst, srcPort, dstPort, count, time);
+        FlowInformation flowInf = new FlowInformation(dl_src, dl_dst, nw_src, nw_dst, srcPort, dstPort, count, time);
         return flowInf;
     }
 
