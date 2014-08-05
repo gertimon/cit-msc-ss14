@@ -206,18 +206,41 @@ public class EnergyConservingDataNodeFilter {
         Map<String, Float> nodeEfficiencyRelation;
         try {
             // stromverbrauch für nodes ermiteln
+            // bandbreite für server racks ermitteln
+            // verhältnis zur bandbreite des servers ermitteln
             nodeEfficiencyRelation = NodeEfficencyEvaluator.getPowerBandwidthRelation();
         } catch (IOException ex) {
             // tue nichts besonderes wenn etwas nicht klappt...
             return getRacksStatic(energyMode);
         }
 
-        // bandbreite für server racks ermitteln
-        // verhältnis zur bandbreite des servers ermitteln
-        // liste sortieren nach kostenverhältnis
-        // bei energyMode CHEAP günstige Server zuerst, sonst umgekehrt
+        // Durchschnittliche Relation
+        // Alle die kleiner sind wenn CHEAP ausgewählt
+        Float averageRelation = getAvarageEnergyRelation(nodeEfficiencyRelation);
+        return getRacksByMode(energyMode, nodeEfficiencyRelation, averageRelation);
         // TODO testen ob liste reduziert werden muss oder client von selbst ersten eintrag wählt
-        return null;
+    }
+
+    private Float getAvarageEnergyRelation(Map<String, Float> nodeEfficiencyRelation) {
+        Float sum = 0.0;
+        for(Entry<String, Float> entry : nodeEfficiencyRelation) {
+            sum += entry.getValue();
+        }
+        return sum / nodeEfficiencyRelation.length;
+    }
+
+    private List<String> getRacksByMode(Energymode, energyMode, Map<String, Float> nodeEfficiencyRelation, Float averageRelation) {
+        List<String> list = new List<String>();
+
+        for(Entry<String, Float> entry : nodeEfficiencyRelation) {
+            if(energyMode == EnergyMode.CHEAP) {
+                if(entry.getValue() < averageRelation) list.add(entry.getKey());
+            } else {
+                if(entry.getValue() > averageRelation) list.add(entry.getKey());
+            }
+        }
+
+        return list;
     }
 
     public Map<String, EnergyMode> getUserEnergyMapping() {

@@ -57,6 +57,7 @@ public class NodeEfficencyEvaluator {
      */
     private static Float fetchNodePowerConsumption(String zabbixNodeName) throws Exception {
         ZabbixAPIClient apiClient = new ZabbixAPIClient();
+        // TODO: refactor getItems
         List<ZabbixItem> items = apiClient.getItems(zabbixNodeName, "datanode.power");
 
         return new Float(items.get(items.size() - 1).getLastValue());
