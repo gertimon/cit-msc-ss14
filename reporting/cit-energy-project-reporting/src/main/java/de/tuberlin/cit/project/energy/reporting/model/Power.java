@@ -11,13 +11,24 @@ import java.util.List;
  */
 public class Power {
 
-    private final List<PowerValue> powerValues;
+    private List<PowerValue> powerValues;
 
     public Power(List<ZabbixHistoryObject> response) {
         powerValues = new ArrayList<>();
         for (ZabbixHistoryObject zabbixHistoryObject : response) {
             powerValues.add(new PowerValue(zabbixHistoryObject.getClock(), zabbixHistoryObject.getIntValue()));
         }
+    }
+
+    Power() {
+    }
+
+    public void setPowerValues(List<PowerValue> powerValues) {
+        this.powerValues = powerValues;
+    }
+
+    public List<PowerValue> getPowerValues() {
+        return powerValues;
     }
 
     /**
@@ -30,7 +41,7 @@ public class Power {
         return wattSeconds / 3600000;
     }
 
-    public Double getPowerAsWattSeconds(long startTimeMillis, long endTimeMillis) {
+    public static Double getPowerAsWattSeconds(List<PowerValue> powerValues, long startTimeMillis, long endTimeMillis) {
         // use seconds for times
         long lastTimeSeconds = startTimeMillis / 1000;
         long stopTimeSeconds = endTimeMillis / 1000;
@@ -50,6 +61,10 @@ public class Power {
             return wattSeconds;
         }
         return null;
+    }
+
+    PowerValue createPowerValue(Long timeMillis, int i) {
+        return new PowerValue(timeMillis / 1000, i);
     }
 
     public class PowerValue {

@@ -4,11 +4,11 @@ import de.tuberlin.cit.project.energy.reporting.model.Power;
 import de.tuberlin.cit.project.energy.zabbix.ZabbixAPIClient;
 import de.tuberlin.cit.project.energy.zabbix.ZabbixParams;
 import de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException;
+import de.tuberlin.cit.project.energy.zabbix.exception.TemplateNotFoundException;
 import de.tuberlin.cit.project.energy.zabbix.model.ZabbixHistoryObject;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
@@ -31,7 +31,9 @@ public class ZabbixConnector {
 
     public List<String> getDatanodeHosts() {
         try {
-            return client.getHosts(null);
+            List<String> hosts = client.getHosts(null);
+            System.out.println("Host List: " + hosts);
+            return hosts;
         } catch (IllegalArgumentException | InterruptedException | ExecutionException | AuthenticationException | InternalErrorException | IOException ex) {
             Logger.getLogger(ZabbixConnector.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -57,23 +59,34 @@ public class ZabbixConnector {
         return null;
     }
 
-    public String getUserTraffic(String userName, long fromMillis, long toMillis) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public List<ZabbixHistoryObject> getUserTraffic(String userName, String host, long fromMillis, long toMillis) {
+        try {
+            return client.getNumericHistory(host, String.format(ZabbixParams.USER_BANDWIDTH_KEY, userName), fromMillis / 1000, toMillis / 1000);
+        } catch (AuthenticationException | IllegalArgumentException | InterruptedException | ExecutionException | IOException | InternalErrorException ex) {
+            Logger.getLogger(ZabbixConnector.class.getName()).log(Level.SEVERE, null, ex);
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
+    public List<ZabbixHistoryObject> getUserStorage(String username, long fromMillis, long toMillis) {
+        try {
+            // each node has same value for that
+            return client.getNumericHistoryWithPrecedingElement(HOSTS[1], String.format(ZabbixParams.USER_DATA_USAGE_KEY, username), toMillis / 1000, toMillis / 1000);
+        } catch (AuthenticationException | IllegalArgumentException | InterruptedException | ExecutionException | IOException | InternalErrorException ex) {
+            Logger.getLogger(ZabbixConnector.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
     }
 
 //    @Override
-    public String getUserStorageAverage(String userName, long fromMillis, long toMillis) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-//    @Override
-    public Collection<String> getUserNamesforRange(long fromMillis, long toMillis) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-//    @Override
-    public Collection<String> getAllUsernames() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public List<String> getAllUsernames() {
+        try {
+            return client.getAllUsers();
+        } catch (AuthenticationException | IllegalArgumentException | InterruptedException | ExecutionException | InternalErrorException | IOException | TemplateNotFoundException ex) {
+            Logger.getLogger(ZabbixConnector.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
     }
 
 }
