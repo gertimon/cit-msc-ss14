@@ -342,7 +342,7 @@ public class ZabbixAPIClient {
     }
 
     /**
-     * Creates all user items in DataNode template.
+     * Creates all user items in DataNode template. (additionally updates calculated items, creates graphs) 
      */
     public void createUserInDataNodeTemplate(String username)
         throws IllegalArgumentException, InterruptedException, ExecutionException, IOException,
@@ -373,7 +373,7 @@ public class ZabbixAPIClient {
             throw new InternalErrorException();
         }
 
-        // bandwidth usage
+        //external(user) bandwidth usage
         ObjectNode numeric = this.objectMapper.createObjectNode();
         numeric.put("name", "Bandwidth consumed by user " + username);
         numeric.put("key_", String.format(ZabbixParams.USER_BANDWIDTH_KEY, username));
@@ -389,14 +389,14 @@ public class ZabbixAPIClient {
             throw new InternalErrorException();
         }
 
-        // internal bandwidth usage
+        // internal(HDFS data replication) bandwidth usage
         numeric.put("name", "Bandwidth internal consumed by user " + username);
         numeric.put("key_", String.format(ZabbixParams.USER_INTERNAL_BANDWIDTH_KEY, username));
         if (this.executeRPC("item.create", numeric).getStatusCode() != 200) {
             throw new InternalErrorException();
         }
 
-        // data usage (delta)
+        // user data usage (delta)
         numeric.put("name", "Allocated data space change by user " + username);
         numeric.put("key_", String.format(ZabbixParams.USER_DATA_USAGE_DELTA_KEY, username));
         numeric.put("units", "Byte");
@@ -405,7 +405,7 @@ public class ZabbixAPIClient {
             throw new InternalErrorException();
         }
 
-        // complete data usage
+        // user data usage
         numeric.put("name", "Complete allocated data space by user " + username);
         numeric.put("key_", String.format(ZabbixParams.USER_DATA_USAGE_KEY, username));
         numeric.put("value_type", "3"); // numeric unsigned
@@ -420,7 +420,7 @@ public class ZabbixAPIClient {
         if (this.executeRPC("item.create", text).getStatusCode() != 200) {
             throw new InternalErrorException();
         }
-
+        
         // last used profile
         text.put("name", "Last energy profile used by user " + username);
         text.put("key_", String.format(ZabbixParams.USER_LAST_USED_PROFILE_KEY, username));
@@ -428,8 +428,73 @@ public class ZabbixAPIClient {
         if (this.executeRPC("item.create", text).getStatusCode() != 200) {
             throw new InternalErrorException();
         }
+        
+        //Requesting itemids for graph creation
+        int userDataUsageId = -1;
+        int userBandwidthUsageId = -1;
+        int allDataUsageId = -1;
+        int allBandwidthUsageId = -1;
+        // - user bandwidth id
+        ObjectNode idRequest = this.objectMapper.createObjectNode();
+        idRequest.put("output", "extend");
+        idRequest.put("hostids", getDataNodeTemplateId());
+        idRequest.with("search").put("key_", String.format(ZabbixParams.USER_BANDWIDTH_KEY, username));
+        List<ZabbixItem> idResponse = this.getItems(idRequest);
+        if (idResponse.size()>0) {
+            for (ZabbixItem idResponseItem : idResponse) {
+                if (idResponseItem.getKey().equals(String.format(ZabbixParams.USER_BANDWIDTH_KEY,username)))
+                    userBandwidthUsageId = idResponseItem.getItemId();
+            }
+        }
+        // - user data usage id
+        idRequest.with("search").put("key_", String.format(ZabbixParams.USER_DATA_USAGE_KEY, username));
+        idResponse = this.getItems(idRequest);
+        if (idResponse.size()>0) {
+            for (ZabbixItem idResponseItem : idResponse) {
+                if (idResponseItem.getKey().equals(String.format(ZabbixParams.USER_DATA_USAGE_KEY,username)))
+                    userDataUsageId = idResponseItem.getItemId();
+            }
+        }
+        // - all users bandwidth id
+        idRequest.with("search").put("key_", String.format(ZabbixParams.USER_BANDWIDTH_KEY, "all"));
+        idResponse = this.getItems(idRequest);
+        if (idResponse.size()>0) {
+            for (ZabbixItem idResponseItem : idResponse) {
+                if (idResponseItem.getKey().equals(String.format(ZabbixParams.USER_BANDWIDTH_KEY,"all")))
+                    allBandwidthUsageId = idResponseItem.getItemId();
+            }
+        }
+        // - all users data usage id
+        idRequest.with("search").put("key_", String.format(ZabbixParams.USER_DATA_USAGE_KEY, "all"));
+        idResponse = this.getItems(idRequest);
+        if (idResponse.size()>0) {
+            for (ZabbixItem idResponseItem : idResponse) {
+                if (idResponseItem.getKey().equals(String.format(ZabbixParams.USER_DATA_USAGE_KEY, "all")))
+                    allDataUsageId = idResponseItem.getItemId();
+            }
+        }
+        
+        // send initial values (0's) where required to not break the calculated items
+        // TODO: test that initial values are actually being received by zabbix
+//        ZabbixSender sender = new ZabbixSender();
+//        List<String> hosts = getHosts(ZabbixParams.DATANODE_HOST_GROUP_NAME);
+//        long clock = System.currentTimeMillis()/1000;
+//        for(String host : hosts) {
+//            System.out.println("Sending Data to " + host);
+//            sender.sendDataUsage(host, username, 0, clock);
+//            sender.sendBandwidthUsage(host, username, 0, clock);
+//        }
 
-        // TODO: add more here
+        // update calculated items
+        this.updateCalculatedItem(String.format(ZabbixParams.USER_BANDWIDTH_KEY, "all"), String.format(ZabbixParams.USER_BANDWIDTH_KEY,username), true);
+        this.updateCalculatedItem(String.format(ZabbixParams.USER_DATA_USAGE_KEY, "all"), String.format(ZabbixParams.USER_DATA_USAGE_KEY, username), true);
+        
+        //create graphs
+        this.createGraph(username + ":Bandwidth consumption",userBandwidthUsageId,allBandwidthUsageId);
+        this.createGraph(username + ":allocated space",userDataUsageId,allDataUsageId);
+        
+        //TODO: uncomment when sender does send data as intended
+//        sender.quit();
     }
 
     /**
@@ -447,10 +512,12 @@ public class ZabbixAPIClient {
         String userKeys[] = {
             ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY,
             ZabbixParams.USER_LAST_INTERNAL_ADDRESS_MAPPING_KEY,
+            ZabbixParams.USER_LAST_USED_PROFILE_KEY,
             ZabbixParams.USER_BANDWIDTH_KEY,
             ZabbixParams.USER_INTERNAL_BANDWIDTH_KEY,
             ZabbixParams.USER_DATA_USAGE_DELTA_KEY,
-            ZabbixParams.USER_BLOCK_EVENTS_KEY
+            ZabbixParams.USER_BLOCK_EVENTS_KEY,
+            ZabbixParams.USER_DATA_USAGE_KEY
         };
         for (String key : userKeys) {
             searchParams.with("filter").withArray("key_").add(String.format(key, username));
@@ -459,13 +526,35 @@ public class ZabbixAPIClient {
         searchParams.withArray("output").add("itemid");
         searchParams.withArray("output").add("key_");
         List<ZabbixItem> items = getItems(searchParams);
+        //find graph ids
+        searchParams = this.objectMapper.createObjectNode();
+        searchParams.put("hostids", getDataNodeTemplateId());
+        searchParams.withArray("output").add("graphid");
+        searchParams.with("search").put("name", username +":");
+        Response response = this.executeRPC("graph.get", searchParams);
+        
+        if (response.getStatusCode() == 200) {
+            JsonNode jsonResponse = objectMapper.readTree(response.getResponseBody());
+            if (jsonResponse.get("result").size() > 0) {
+                int graphIds[] = new int[jsonResponse.get("result").size()];
+                for (int counter = 0; counter < jsonResponse.get("result").size(); counter++) {
+                    graphIds[counter] = jsonResponse.get("result").get(counter).findValue("graphid").asInt();
+                }
+                //delte graphs for given user
+                this.graphDelete(graphIds);
+            }
+        }
 
         if (items.size() > 0) {
             int ids[] = new int[items.size()];
             for (int i = 0; i < items.size(); i++) {
                 ids[i] = items.get(i).getItemId();
             }
+            // delete items for given username
             deleteItems(ids);
+            // remove entrys in calculated items for given username
+            this.updateCalculatedItem(String.format(ZabbixParams.USER_BANDWIDTH_KEY, "all"), String.format(ZabbixParams.USER_BANDWIDTH_KEY, username), false);
+            this.updateCalculatedItem(String.format(ZabbixParams.USER_DATA_USAGE_KEY, "all"), String.format(ZabbixParams.USER_DATA_USAGE_KEY, username), false);
 
             return items;
         } else {
@@ -689,7 +778,106 @@ public class ZabbixAPIClient {
 
         return result;
     }
+    
+    /**
+    * Method for adding/removing additional to/from calculated items formula(params).
+    * @param itemKey identification String for the item to be updated
+    * @param addedKey the key that is to be added/removed to/from the formula
+    * @param addParams true: addedKey is to be added to the formula, false: addedKey is to be removed from the formula
+    */
+    private void updateCalculatedItem(String itemKey, String addedKey, boolean addParams) throws IllegalArgumentException, InterruptedException, ExecutionException, AuthenticationException, TemplateNotFoundException, InternalErrorException, IOException{
+        this.authenticate();
+        
+        //read out previous value
+        ObjectNode params = this.objectMapper.createObjectNode();
+        params.put("output", "extend");
+        params.put("hostids", getDataNodeTemplateId());
+        params.with("search").put("key_", itemKey);
+        List<ZabbixItem> result = this.getItems(params);
+        ZabbixItem calcItem = null;
+        if (result.size() > 0){
+            calcItem = result.get(0);
+        }
+        String newFormula = "";
+        if (addParams) {
+            //add new itemkey to formula
+            newFormula = calcItem.getParams() + "+last(\"" + addedKey + "\")";
+            if (newFormula.startsWith("+")) {
+                newFormula = newFormula.substring(1, newFormula.length());
+            }
+        } else {
+            //delete itemkey from fromula
+            String formulaItems[] = calcItem.getParams().split("\\+");
+            for (String formulaItem : formulaItems) {
+                if (!formulaItem.equals("last(\""+addedKey+"\")")) {
+                    newFormula += formulaItem + "+";
+                }
+            }
+            if (newFormula.endsWith("+")) {
+                newFormula = newFormula.substring(0, newFormula.length()-1);
+            }
+        }
+        //update new formula
+        params = this.objectMapper.createObjectNode();
+        params.put("itemid", calcItem.getItemId());
+        params.put("params", newFormula);
+        if (this.executeRPC("item.update", params).getStatusCode() != 200) {
+            throw new InternalErrorException();
+        }   
+    }
+    
+    /**
+     *  Method for creating user graph with two legend entries
+     * @param graphName Visible name of the graph
+     * @param userItemId id of the user item that is to be added to the future graph
+     * @param allUsersItemId id of the calculated item for all users
+     */
+    private void createGraph(String graphName, int userItemId, int allUsersItemId) throws InternalErrorException, InterruptedException, IllegalArgumentException, ExecutionException, IOException{
+        ObjectNode params = this.objectMapper.createObjectNode();
+        params.put("name", graphName);
+        params.put("width", 900);
+        params.put("height", 200);
+        params.put("ymax_type", 2); // max y in graph limited allUserItemId
+        params.put("ymax_itemid", allUsersItemId); 
+        params.put("ymin_type", 1); // min y is limited by a fixes value (default:0)
+        ObjectNode graphItem = this.objectMapper.createObjectNode();
+        graphItem.put("itemid",userItemId);
+        graphItem.put("color", "00AA00");
+        params.withArray("gitems").add(graphItem);
+        graphItem = this.objectMapper.createObjectNode();
+        graphItem.put("itemid", allUsersItemId);
+        graphItem.put("color", "3333FF");
+        params.withArray("gitems").add(graphItem);
+        if (this.executeRPC("graph.create", params).getStatusCode() != 200) {
+            throw new InternalErrorException();
+        } 
+    }
+    
+    /**
+     * Method for deleting single graph for given id.
+     * @param itemIds ids of the graph that are to be removed
+     */
+    private void graphDelete(int itemIds[]) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException, AuthenticationException, InternalErrorException {
+        this.authenticate();
 
+        if (itemIds.length == 0) {
+            throw new IllegalArgumentException("No item id's provided.");
+        }
+
+        ArrayNode params = this.objectMapper.createArrayNode();
+        for (int id : itemIds) {
+            params.add(id + "");
+        }
+        Response response = this.executeRPC("graph.delete", params);
+
+        System.out.println("Request: " + params);
+        System.out.println("Got result: " + response.getResponseBody());
+
+        if (response.getStatusCode() != 200) {
+            throw new InternalErrorException("Got HTTP status code: " + response.getStatusCode());
+        }
+    }
+    
     /**
      * Kills all connections and stops HTTP client threads.
      */

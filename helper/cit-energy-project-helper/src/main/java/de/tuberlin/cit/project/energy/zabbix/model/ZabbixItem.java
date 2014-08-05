@@ -21,6 +21,9 @@ public class ZabbixItem {
     private String name;
     @JsonProperty("key_")
     private String key;
+    @JsonProperty("params")
+    //params field is the formula field for Calculated Items
+    private String params;
     private int history = -1;
     @JsonProperty("lastclock")
     private long lastClock = -1;
@@ -40,6 +43,7 @@ public class ZabbixItem {
     public int getValueType() { return valueType; }
     public String getLastValue() { return lastValue; }
     public String getPrevValue() { return prevValue; }
+    public String getParams() { return params; }
     
     public Date getLastDate() {
         return new Date(this.lastClock * 1000);
@@ -59,6 +63,8 @@ public class ZabbixItem {
             keyValues.add("history=" + this.history);
         if (name != null)
             keyValues.add("name=" + this.name);
+        if (params != null)
+            keyValues.add("params="+ this.params);
         if (history > 0)
             keyValues.add("history=" + this.history);
         if (lastClock > 0)

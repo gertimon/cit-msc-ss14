@@ -20,6 +20,7 @@ public class ZabbixParams {
     public static final String USER_BLOCK_EVENTS_KEY = "user.%s.blockEvents";
 
     public static final String DATANODE_USER_TEMPLATE_NAME = "CitProjectDatanodeUsers";
+    public static final String DATANODE_HOST_GROUP_NAME = "Cit Project Datanodes";
 
     public static final int MAX_USER_IP_MAPPING_AGE = 60 * 60; // use only values updated within the given time frame (in seconds)
 
