@@ -41,7 +41,7 @@ public class Storage {
 
         // test that there is an key existing smaller fromTimeMillis
         if (size == 0 || times.get(0) > fromTimeMillis) {
-            throw new Exception("need a storage value before fromTimeMillis");
+            times.add(0, 0l);
         }
 
         long lastTime = 0;
