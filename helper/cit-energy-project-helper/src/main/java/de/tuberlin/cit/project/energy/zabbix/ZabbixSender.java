@@ -156,7 +156,7 @@ public class ZabbixSender implements Runnable {
             createDataNode(dataNodeName, String.format(ZabbixParams.USER_DATA_USAGE_DELTA_KEY, username), Long.toString(delta), clock)
         });
     }
-
+    
     /**
      * @param dataNodeName as hostname
      * @param username
