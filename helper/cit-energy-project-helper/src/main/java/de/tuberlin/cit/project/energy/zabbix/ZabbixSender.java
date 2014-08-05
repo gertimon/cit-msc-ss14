@@ -128,6 +128,8 @@ public class ZabbixSender implements Runnable {
 
         String jsonRequest = request.toString();
         byte[] header = calculateHeader(jsonRequest.length());
+        
+        log.debug("Sending data: " + jsonRequest);
 
         Socket clientSocket = new Socket(this.zabbixHostname, this.zabbixPort);
         DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
