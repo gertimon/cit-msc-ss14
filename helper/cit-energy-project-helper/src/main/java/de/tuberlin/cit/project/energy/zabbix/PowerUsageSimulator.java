@@ -24,16 +24,19 @@ public class PowerUsageSimulator {
         }
 
         System.out.println("Simulating server power consumption every " + SIMULATING_INTERVAL + " seconds.");
-        Random rand = new Random();
+        EnergyDataPusher pusher = new EnergyDataPusher();
 
-        while (true) {
-            for (String hostname : hosts) {
-                double powerConsumption = 200 + rand.nextInt(100);
+        while(true) {
+            for(String hostname : hosts) {
+                //double powerConsumption = 200 + rand.nextInt(100);
+            	
+            	double powerConsumption = pusher.getPower(hostname);
                 System.out.println("Host " + hostname + " consumed " + powerConsumption + "W.");
                 zabbixSender.sendPowerConsumption(hostname, powerConsumption);
+                
+                
             }
             Thread.sleep(SIMULATING_INTERVAL * 1000);
         }
     }
-
 }
