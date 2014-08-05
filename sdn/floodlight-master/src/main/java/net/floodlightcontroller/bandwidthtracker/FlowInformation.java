@@ -12,10 +12,10 @@ public class FlowInformation {
     private String srcMac;
     private String dstMac;
     private double dataSize;
-    private int bandWidth;
+    private double bandWidth;
     private double time;
     private String hashKey;
-    private DecimalFormat df = new DecimalFormat("######,##");
+
 
 
 
@@ -28,7 +28,7 @@ public class FlowInformation {
         this.dstMac = dstMac;
         this.dataSize = (dataSize/1000);
         this.time = time ;
-        bandWidth = (int)(this.dataSize/this.time);
+        bandWidth = computeBandwidth(this.dataSize/this.time);
         hashKey = this.srcIp + this.srcPort + this.dstIp + this.dstPort;
     }
 
@@ -81,7 +81,7 @@ public class FlowInformation {
     }
 
     public void setBandwidth(double bandwidth) {
-        this.bandWidth = (int)bandwidth;
+        this.bandWidth = computeBandwidth(bandwidth);
     }
 
     //May be used later...
