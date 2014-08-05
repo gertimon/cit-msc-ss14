@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -127,11 +126,11 @@ public class EnergyConservingDataNodeFilter {
      */
     private LocatedBlocks reduceRacks(List<String> allowedRacks, LocatedBlocks locatedBlocks) {
         try {
-            List<LocatedBlock> filteredLocatedBlocks = new ArrayList<LocatedBlock>();
+            List<LocatedBlock> filteredLocatedBlocks = new ArrayList<>();
 
             for (LocatedBlock block : locatedBlocks.getLocatedBlocks()) {
                 // extract locations that match the energy mode
-                List<DatanodeInfo> cleanLocations = new ArrayList<DatanodeInfo>();
+                List<DatanodeInfo> cleanLocations = new ArrayList<>();
                 for (DatanodeInfo location : block.getLocations()) {
                     if (allowedRacks.contains(location.getNetworkLocation())) {
                         cleanLocations.add(location);
@@ -187,7 +186,7 @@ public class EnergyConservingDataNodeFilter {
      * @return list of with rack names, matching given energy mode
      */
     public List<String> getRacksStatic(EnergyMode energyMode) {
-        List<String> racks = new ArrayList<String>();
+        List<String> racks = new ArrayList<>();
         for (String rackName : this.rackEnergyMapping.keySet()) {
             if (this.rackEnergyMapping.get(rackName) == energyMode) {
                 racks.add(rackName);
@@ -222,21 +221,22 @@ public class EnergyConservingDataNodeFilter {
     }
 
     private Float getAvarageEnergyRelation(Map<String, Float> nodeEfficiencyRelation) {
-        Float sum = 0.0;
-        for(Entry<String, Float> entry : nodeEfficiencyRelation) {
-            sum += entry.getValue();
+        Float sum = 0.0f;
+        for(String key : nodeEfficiencyRelation.keySet()) {
+            sum += nodeEfficiencyRelation.get(key);
         }
-        return sum / nodeEfficiencyRelation.length;
+        return sum / nodeEfficiencyRelation.size();
     }
 
-    private List<String> getRacksByMode(Energymode, energyMode, Map<String, Float> nodeEfficiencyRelation, Float averageRelation) {
-        List<String> list = new List<String>();
+    private List<String> getRacksByMode(EnergyMode energyMode, Map<String, Float> nodeEfficiencyRelation, Float averageRelation) {
+        List<String> list = new ArrayList<>();
 
-        for(Entry<String, Float> entry : nodeEfficiencyRelation) {
+        for(String key : nodeEfficiencyRelation.keySet()) {
+            Float value = nodeEfficiencyRelation.get(key);
             if(energyMode == EnergyMode.CHEAP) {
-                if(entry.getValue() < averageRelation) list.add(entry.getKey());
+                if(value <= averageRelation) list.add(key);
             } else {
-                if(entry.getValue() > averageRelation) list.add(entry.getKey());
+                if(value >= averageRelation) list.add(key);
             }
         }
 
@@ -248,7 +248,7 @@ public class EnergyConservingDataNodeFilter {
     }
 
     private Map<String, EnergyMode> loadEnergyMapping(String resourceName) {
-        HashMap<String, EnergyMode> mapping = new HashMap<String, EnergyMode>();
+        HashMap<String, EnergyMode> mapping = new HashMap<>();
 
         try {
             Properties properties = loadProperties(resourceName);
