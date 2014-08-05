@@ -186,7 +186,8 @@ public class FlowTableGetter implements Runnable {
         } catch (AuthenticationException e) {
             e.printStackTrace();
         } catch (UserNotFoundException e) {
-            e.printStackTrace();
+           // e.printStackTrace();
+            System.err.println("User not found or Zabbix may not be ready!");
         } catch (InternalErrorException e) {
             e.printStackTrace();
         }
