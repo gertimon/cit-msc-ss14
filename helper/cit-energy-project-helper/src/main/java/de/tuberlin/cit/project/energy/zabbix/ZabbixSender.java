@@ -57,8 +57,9 @@ public class ZabbixSender implements Runnable {
     public void run() {
         while(!Thread.interrupted()) {
             try {
-                ObjectNode data[] = valuesQueue.take();
+                ObjectNode data[] = valuesQueue.peek();
                 sendDataToZabbix(data);
+                valuesQueue.remove();
             } catch (UnknownHostException e) {
                 System.err.println("Can't find zabbix host: " + e);
                 break;
@@ -66,15 +67,18 @@ public class ZabbixSender implements Runnable {
                 // do nothing, just drop the current (failed) value
                 System.err.println("Failed to send values to zabbix!");
                 e.printStackTrace();
-            } catch (InterruptedException e) {
             }
         }
     }
 
     /**
-     * Stops sender thread.
+     * Waits until all data is transfered and stops sender thread.
+     * @throws InterruptedException 
      */
-    public void quit() {
+    public void quit() throws InterruptedException {
+    	while (!this.valuesQueue.isEmpty()) {
+    		Thread.sleep(500);
+    	}
         this.senderThread.interrupt();
     }
 
@@ -124,6 +128,8 @@ public class ZabbixSender implements Runnable {
 
         String jsonRequest = request.toString();
         byte[] header = calculateHeader(jsonRequest.length());
+        
+        log.debug("Sending data: " + jsonRequest);
 
         Socket clientSocket = new Socket(this.zabbixHostname, this.zabbixPort);
         DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
