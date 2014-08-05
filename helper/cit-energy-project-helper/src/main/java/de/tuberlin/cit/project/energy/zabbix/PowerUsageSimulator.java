@@ -30,9 +30,11 @@ public class PowerUsageSimulator {
             for(String hostname : hosts) {
                 //double powerConsumption = 200 + rand.nextInt(100);
             	
-            	double powerConsumption = pusher.getPower();
+            	double powerConsumption = pusher.getPower(hostname);
                 System.out.println("Host " + hostname + " consumed " + powerConsumption + "W.");
                 zabbixSender.sendPowerConsumption(hostname, powerConsumption);
+                
+                
             }
             Thread.sleep(SIMULATING_INTERVAL * 1000);
         }
