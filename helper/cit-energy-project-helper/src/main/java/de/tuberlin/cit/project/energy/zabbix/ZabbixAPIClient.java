@@ -379,7 +379,7 @@ public class ZabbixAPIClient {
         numeric.put("key_", String.format(ZabbixParams.USER_BANDWIDTH_KEY, username));
         numeric.put("delay", "30"); // dummy, but required value
         numeric.put("type", "2"); // zabbix trapper
-        numeric.put("value_type", "3"); // numeric unsigned
+        numeric.put("value_type", "0"); // numeric float
         numeric.put("units", "Byte/s");
         numeric.put("hostid", getDataNodeTemplateId()); // use template id as host
         if (appId > 0) {
@@ -400,7 +400,7 @@ public class ZabbixAPIClient {
         numeric.put("name", "Allocated data space change by user " + username);
         numeric.put("key_", String.format(ZabbixParams.USER_DATA_USAGE_DELTA_KEY, username));
         numeric.put("units", "Byte");
-        numeric.put("value_type", "0"); // float
+        numeric.put("value_type", "0"); // numeric float
         if (this.executeRPC("item.create", numeric).getStatusCode() != 200) {
             throw new InternalErrorException();
         }
