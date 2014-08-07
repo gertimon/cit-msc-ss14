@@ -23,7 +23,10 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import javax.naming.AuthenticationException;
@@ -877,38 +880,54 @@ public class ZabbixAPIClient {
      * @param hostGroupName Name of the HostGroup to look up for Hosts.
      * @return list of hosts belonging to given HostGroup
      */
-    public List<String> getHostNames(String hostGroupName) throws IllegalArgumentException, InterruptedException,
+    public Set<String> getHostNames(String hostGroupName) throws IllegalArgumentException, InterruptedException,
              ExecutionException, AuthenticationException, InternalErrorException, IOException,
              HostGroupNotFoundException {
+
+        return getHostIds(hostGroupName).keySet();
+    }
+
+    public Set<String> getDataNodeHostNames() throws AuthenticationException, IllegalArgumentException,
+            InterruptedException, ExecutionException, InternalErrorException, IOException, HostGroupNotFoundException {
+
+        return getHostNames(ZabbixParams.DATANODE_HOST_GROUP_NAME);
+    }
+
+    /**
+     * Implements host.get from Zabbix API.
+     * @return hostname <-> hostid map
+     */
+    public Map<String, Integer> getHostIds(String hostGroupName) throws AuthenticationException,
+            IllegalArgumentException, InterruptedException, ExecutionException, IOException, InternalErrorException,
+            HostGroupNotFoundException {
 
         ObjectNode params = this.objectMapper.createObjectNode();
         params = this.objectMapper.createObjectNode();
         params.put("groupids", getDataNodeHostGroupId());
         params.withArray("output").add("host");
-        
+
         Response response = this.executeRPC("host.get", params);
 
         if (response.getStatusCode() == 200) {
             JsonNode jsonResponse = objectMapper.readTree(response.getResponseBody());
+            HashMap<String, Integer> result = new HashMap<>(jsonResponse.get("result").size());
+
             if (jsonResponse.get("result").isArray() && jsonResponse.get("result").size() > 0) {
-                List<String> resultList = new ArrayList<String>(jsonResponse.get("result").size());
-                //add hostnames to result list
-                for (JsonNode item : jsonResponse.get("result")){
-                    resultList.add(item.findValue("host").asText());
-                }
-                return resultList;
-            } else
-                //requested hostgroup has no hosts
-                return new ArrayList<String>(0);
+                for (JsonNode item : jsonResponse.get("result"))
+                    result.put(item.get("host").asText(), item.get("hostid").asInt());
+            }
+
+            return result;
         } else{
             throw new InternalErrorException();
         }
     }
 
-    public List<String> getDataNodeHostNames() throws AuthenticationException, IllegalArgumentException,
-            InterruptedException, ExecutionException, InternalErrorException, IOException, HostGroupNotFoundException {
+    public Map<String, Integer> getDataNodeHostIds(String hostGroupName) throws AuthenticationException,
+            IllegalArgumentException, InterruptedException, ExecutionException, IOException, InternalErrorException,
+            HostGroupNotFoundException {
 
-        return getHostNames(ZabbixParams.DATANODE_HOST_GROUP_NAME);
+        return getHostIds(ZabbixParams.DATANODE_HOST_GROUP_NAME);
     }
 
     /**
