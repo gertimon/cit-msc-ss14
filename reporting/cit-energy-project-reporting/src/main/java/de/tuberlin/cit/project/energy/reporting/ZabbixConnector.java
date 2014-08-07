@@ -1,24 +1,23 @@
 package de.tuberlin.cit.project.energy.reporting;
 
-import de.tuberlin.cit.project.energy.reporting.model.Power;
-import de.tuberlin.cit.project.energy.zabbix.ZabbixAPIClient;
-import de.tuberlin.cit.project.energy.zabbix.ZabbixParams;
-import de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException;
-import de.tuberlin.cit.project.energy.zabbix.exception.TemplateNotFoundException;
-import de.tuberlin.cit.project.energy.zabbix.model.ZabbixHistoryObject;
-
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.naming.AuthenticationException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import de.tuberlin.cit.project.energy.reporting.model.Power;
+import de.tuberlin.cit.project.energy.zabbix.ZabbixAPIClient;
+import de.tuberlin.cit.project.energy.zabbix.ZabbixParams;
+import de.tuberlin.cit.project.energy.zabbix.exception.HostGroupNotFoundException;
+import de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException;
+import de.tuberlin.cit.project.energy.zabbix.exception.TemplateNotFoundException;
+import de.tuberlin.cit.project.energy.zabbix.model.ZabbixHistoryObject;
 
 /**
  *
@@ -34,10 +33,10 @@ public class ZabbixConnector {
 
     }
 
-    public List<String> getDatanodeHosts() throws AuthenticationException, IllegalArgumentException,
-            InterruptedException, ExecutionException, InternalErrorException, IOException {
+    public Set<String> getDatanodeHosts() throws AuthenticationException, IllegalArgumentException,
+            InterruptedException, ExecutionException, InternalErrorException, IOException, HostGroupNotFoundException {
 
-        List<String> hosts = client.getHosts(null);
+        Set<String> hosts = client.getDataNodeHostNames();
         System.out.println("Host List: " + hosts);
         return hosts;
     }

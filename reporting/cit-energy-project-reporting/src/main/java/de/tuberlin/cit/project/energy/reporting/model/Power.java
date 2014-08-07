@@ -20,11 +20,16 @@ public class Power {
         }
     }
 
-    Power() {
+    public Power() {
+        this.powerValues = new ArrayList<>();
     }
 
     public void setPowerValues(List<PowerValue> powerValues) {
         this.powerValues = powerValues;
+    }
+
+    public void addValue(long timeInSeconds, int powerInWatt) {
+        this.powerValues.add(new PowerValue(timeInSeconds, powerInWatt));
     }
 
     public List<PowerValue> getPowerValues() {
@@ -72,8 +77,8 @@ public class Power {
         public long timeAsSeconds;
         public int powerAsWatt;
 
-        public PowerValue(Long timeAsSeconds, int powerAsWatt) {
-            this.timeAsSeconds = timeAsSeconds.intValue();
+        public PowerValue(long timeAsSeconds, int powerAsWatt) {
+            this.timeAsSeconds = timeAsSeconds;
             this.powerAsWatt = powerAsWatt;
         }
 
