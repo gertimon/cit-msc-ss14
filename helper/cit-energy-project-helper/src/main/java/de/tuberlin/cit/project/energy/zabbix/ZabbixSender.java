@@ -31,6 +31,7 @@ public class ZabbixSender implements Runnable {
     private final BlockingQueue<ObjectNode[]> valuesQueue;
     private final Thread senderThread;
     private final ObjectMapper objectMapper;
+    private boolean isFinishing = false;
 
     public ZabbixSender(String zabbixHostname, int zabbixPort) {
         this.zabbixHostname = zabbixHostname;
@@ -57,9 +58,10 @@ public class ZabbixSender implements Runnable {
     public void run() {
         while(!Thread.interrupted()) {
             try {
-                ObjectNode data[] = valuesQueue.peek();
-                sendDataToZabbix(data);
-                valuesQueue.remove();
+                while (!this.valuesQueue.isEmpty()) {
+                    ObjectNode data[] = valuesQueue.take();
+                    sendDataToZabbix(data);
+                }
             } catch (UnknownHostException e) {
                 System.err.println("Can't find zabbix host: " + e);
                 break;
@@ -67,6 +69,13 @@ public class ZabbixSender implements Runnable {
                 // do nothing, just drop the current (failed) value
                 System.err.println("Failed to send values to zabbix!");
                 e.printStackTrace();
+            } catch (InterruptedException e) {
+                if (this.isFinishing) {
+                    if (!this.valuesQueue.isEmpty())
+                        throw new RuntimeException("Sender finished, but unsend data found in queue!");
+                    else
+                        break;
+                }
             }
         }
     }
@@ -76,10 +85,16 @@ public class ZabbixSender implements Runnable {
      * @throws InterruptedException 
      */
     public void quit() throws InterruptedException {
-    	while (!this.valuesQueue.isEmpty()) {
-    		Thread.sleep(500);
-    	}
+        this.isFinishing = true;
         this.senderThread.interrupt();
+        this.senderThread.join();
+    }
+
+    /**
+     * @return true if send queue contains values
+     */
+    public boolean hasUnsendDataLeft() {
+        return !this.valuesQueue.isEmpty();
     }
 
     /**
