@@ -17,10 +17,14 @@ public class ZabbixAgentTestServer implements Runnable {
     private final ServerSocket serverSocket;
     private final Thread serverThread;
 
-    public ZabbixAgentTestServer(int port) throws IOException {
-        this.serverSocket = new ServerSocket(port);
+    public ZabbixAgentTestServer() throws IOException {
+        this.serverSocket = new ServerSocket(0);
         this.serverThread = new Thread(this);
         this.serverThread.start();
+    }
+
+    public int getPort() {
+        return this.serverSocket.getLocalPort();
     }
 
     public void close() throws IOException {
