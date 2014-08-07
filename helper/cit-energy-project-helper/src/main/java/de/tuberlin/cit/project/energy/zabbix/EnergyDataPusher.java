@@ -24,11 +24,11 @@ public class EnergyDataPusher {
 
 		try {
 			if (hostname == "CitProjectAsok05") {
-				energyUrl = new URL("http://localhost:8082/login.html"); // Asok05
-				//energyUrl = new URL("http://10.0.42.2:8082/login.html");
+				//energyUrl = new URL("http://localhost:8082/login.html"); // Asok05
+				energyUrl = new URL("http://10.0.42.2:8082/login.html");
 			} else if (hostname == "CitProjectOffice") {
-				energyUrl = new URL("http://localhost:8081/login.html"); // OfficePC
-				//energyUrl = new URL("http://10.0.42.2:8081/login.html");
+				//energyUrl = new URL("http://localhost:8081/login.html"); // OfficePC
+				energyUrl = new URL("http://10.0.42.2:8081/login.html");
 			} else {
 				System.out.println("Wrong hostname.");
 				return 0.0;
@@ -68,7 +68,6 @@ public class EnergyDataPusher {
 					}
 				}
 			}
-
 		}
 		catch (IOException ex) {
 			Logger.getLogger(EnergyDataPusher.class.getName()).log(Level.SEVERE, null, ex);
