@@ -48,14 +48,13 @@ public class RemoveMessageListener implements IOFMessageListener {
                 System.out.println("DELETE: " + modFlow);
                 //TODO Enable to send to Zabbix!
                 flowGetter.sendDataToZabbix(modFlow, conInf);
-                //Stop Flow on Zabbix
-                modFlow.setBandwidth(0.0);
-                //modFlow.setDataSize(0.0);
-                //modFlow.setTime(0.0);
+                //Stop Flow on Zabbix and push 0
                 //TODO Enable to send to Zabbix!
-                flowGetter.sendDataToZabbix(modFlow, conInf);
+                flowGetter.sendDataToZabbix(new FlowInformation(), conInf);
 
             } else {
+                oldFlow.setBandwidth(0.0);
+                flowGetter.sendDataToZabbix(oldFlow, conInf);
                 System.out.println("DELETE: " + flowInf);
             }
 

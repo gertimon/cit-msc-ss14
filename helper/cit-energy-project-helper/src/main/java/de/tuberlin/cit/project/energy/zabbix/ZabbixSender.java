@@ -58,8 +58,9 @@ public class ZabbixSender implements Runnable {
         while(!Thread.interrupted()) {
             try {
                 ObjectNode data[] = valuesQueue.peek();
+                if (data != null){
                 sendDataToZabbix(data);
-                valuesQueue.remove();
+                valuesQueue.remove();}
             } catch (UnknownHostException e) {
                 System.err.println("Can't find zabbix host: " + e);
                 break;

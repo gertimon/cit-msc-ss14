@@ -16,7 +16,9 @@ public class FlowInformation {
     private double time;
     private String hashKey;
 
-
+    public FlowInformation(){
+        this(null,null,null,null,null,null,0,0.0);
+    }
 
 
     public FlowInformation(String srcMac, String dstMac, String srcIP, String dstIP, String srcPort,String dstPort, long dataSize, double time){
@@ -26,7 +28,7 @@ public class FlowInformation {
         this.srcPort = srcPort;
         this.dstPort = dstPort;
         this.dstMac = dstMac;
-        this.dataSize = (dataSize);
+        this.dataSize = dataSize;
         this.time = time ;
         bandWidth = computeBandwidth(this.dataSize/this.time);
         hashKey = this.srcIp + this.srcPort + this.dstIp + this.dstPort;
@@ -71,8 +73,8 @@ public class FlowInformation {
 
     public String toString(){
         String flow ="MAC_Src: " + srcMac + ", IP_Src: " +
-                srcIp + ", SrcPort:" + srcPort + ", MAC_Dst: " + dstMac + ", IP_Dst: " + dstIp + ", DstPort: "+ dstPort + ", Datasize in kB: " +
-                dataSize + ", DurationTime: " + time +" s" + ", Bandwidth: " + bandWidth + " kB/s";
+                srcIp + ", SrcPort:" + srcPort + ", MAC_Dst: " + dstMac + ", IP_Dst: " + dstIp + ", DstPort: "+ dstPort + ", Datasize in Bytes: " +
+                dataSize + ", DurationTime: " + time +" s" + ", Bandwidth: " + bandWidth + " Bytes/s";
         return flow;
     }
 
