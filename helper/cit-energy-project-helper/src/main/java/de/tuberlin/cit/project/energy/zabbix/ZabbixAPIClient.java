@@ -217,7 +217,7 @@ public class ZabbixAPIClient {
         // find item with matching client id and highest clock value
         for (ZabbixItem item : items) {
             if (item.getLastValue() != null && item.getLastValue().equals(clientAddress)
-                    && (usernameKey == null || item.getLastClock() > lastclock)) {
+                && (usernameKey == null || item.getLastClock() > lastclock)) {
                 usernameKey = item.getKey();
                 lastclock = item.getLastClock();
             }
@@ -420,7 +420,7 @@ public class ZabbixAPIClient {
         if (this.executeRPC("item.create", text).getStatusCode() != 200) {
             throw new InternalErrorException();
         }
-        
+
         // last used profile
         text.put("name", "Last energy profile used by user " + username);
         text.put("key_", String.format(ZabbixParams.USER_LAST_USED_PROFILE_KEY, username));
@@ -428,7 +428,7 @@ public class ZabbixAPIClient {
         if (this.executeRPC("item.create", text).getStatusCode() != 200) {
             throw new InternalErrorException();
         }
-        
+
         //Requesting itemids for graph creation
         int userDataUsageId = -1;
         int userBandwidthUsageId = -1;
@@ -440,40 +440,40 @@ public class ZabbixAPIClient {
         idRequest.put("hostids", getDataNodeTemplateId());
         idRequest.with("search").put("key_", String.format(ZabbixParams.USER_BANDWIDTH_KEY, username));
         List<ZabbixItem> idResponse = this.getItems(idRequest);
-        if (idResponse.size()>0) {
+        if (idResponse.size() > 0) {
             for (ZabbixItem idResponseItem : idResponse) {
                 if (idResponseItem.getKey().equals(String.format(ZabbixParams.USER_BANDWIDTH_KEY,username)))
                     userBandwidthUsageId = idResponseItem.getItemId();
+                }
             }
-        }
         // - user data usage id
         idRequest.with("search").put("key_", String.format(ZabbixParams.USER_DATA_USAGE_KEY, username));
         idResponse = this.getItems(idRequest);
-        if (idResponse.size()>0) {
+        if (idResponse.size() > 0) {
             for (ZabbixItem idResponseItem : idResponse) {
                 if (idResponseItem.getKey().equals(String.format(ZabbixParams.USER_DATA_USAGE_KEY,username)))
                     userDataUsageId = idResponseItem.getItemId();
+                }
             }
-        }
         // - all users bandwidth id
         idRequest.with("search").put("key_", String.format(ZabbixParams.USER_BANDWIDTH_KEY, "all"));
         idResponse = this.getItems(idRequest);
-        if (idResponse.size()>0) {
+        if (idResponse.size() > 0) {
             for (ZabbixItem idResponseItem : idResponse) {
                 if (idResponseItem.getKey().equals(String.format(ZabbixParams.USER_BANDWIDTH_KEY,"all")))
                     allBandwidthUsageId = idResponseItem.getItemId();
+                }
             }
-        }
         // - all users data usage id
         idRequest.with("search").put("key_", String.format(ZabbixParams.USER_DATA_USAGE_KEY, "all"));
         idResponse = this.getItems(idRequest);
-        if (idResponse.size()>0) {
+        if (idResponse.size() > 0) {
             for (ZabbixItem idResponseItem : idResponse) {
                 if (idResponseItem.getKey().equals(String.format(ZabbixParams.USER_DATA_USAGE_KEY, "all")))
                     allDataUsageId = idResponseItem.getItemId();
+                }
             }
-        }
-        
+
         // send initial values (0's) where required to not break the calculated items
         // TODO: test that initial values are actually being received by zabbix
 //        ZabbixSender sender = new ZabbixSender();
@@ -486,13 +486,13 @@ public class ZabbixAPIClient {
 //        }
 
         // update calculated items
-        this.updateCalculatedItem(String.format(ZabbixParams.USER_BANDWIDTH_KEY, "all"), String.format(ZabbixParams.USER_BANDWIDTH_KEY,username), true);
+        this.updateCalculatedItem(String.format(ZabbixParams.USER_BANDWIDTH_KEY, "all"), String.format(ZabbixParams.USER_BANDWIDTH_KEY, username), true);
         this.updateCalculatedItem(String.format(ZabbixParams.USER_DATA_USAGE_KEY, "all"), String.format(ZabbixParams.USER_DATA_USAGE_KEY, username), true);
-        
+
         //create graphs
-        this.createGraph(username + ":Bandwidth consumption",userBandwidthUsageId,allBandwidthUsageId);
-        this.createGraph(username + ":allocated space",userDataUsageId,allDataUsageId);
-        
+        this.createGraph(username + ":Bandwidth consumption", userBandwidthUsageId, allBandwidthUsageId);
+        this.createGraph(username + ":allocated space", userDataUsageId, allDataUsageId);
+
         //TODO: uncomment when sender does send data as intended
 //        sender.quit();
     }
@@ -530,9 +530,9 @@ public class ZabbixAPIClient {
         searchParams = this.objectMapper.createObjectNode();
         searchParams.put("hostids", getDataNodeTemplateId());
         searchParams.withArray("output").add("graphid");
-        searchParams.with("search").put("name", username +":");
+        searchParams.with("search").put("name", username + ":");
         Response response = this.executeRPC("graph.get", searchParams);
-        
+
         if (response.getStatusCode() == 200) {
             JsonNode jsonResponse = objectMapper.readTree(response.getResponseBody());
             if (jsonResponse.get("result").size() > 0) {
@@ -597,24 +597,24 @@ public class ZabbixAPIClient {
             throw new InternalErrorException();
         }
     }
-    
+
     /**
      * Method for getting Zabbix Items using hostname and itemkey.
      * @param hostName Hostname of the Server where the Item is stored
      * @param itemKey identification key for the ZabbixItem
-     * @return 
-     * @throws javax.naming.AuthenticationException 
-     * @throws java.lang.InterruptedException 
-     * @throws java.util.concurrent.ExecutionException 
+     * @return
+     * @throws javax.naming.AuthenticationException
+     * @throws java.lang.InterruptedException
+     * @throws java.util.concurrent.ExecutionException
      * @throws de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException 
-     * @throws java.io.IOException 
+     * @throws java.io.IOException
      */
-    public List<ZabbixItem> getItems(String hostName, String itemKey) throws AuthenticationException, IllegalArgumentException, InterruptedException, ExecutionException, IOException, InternalErrorException{
-        
+    public List<ZabbixItem> getItems(String hostName, String itemKey) throws AuthenticationException, IllegalArgumentException, InterruptedException, ExecutionException, IOException, InternalErrorException {
+
         ObjectNode params = this.objectMapper.createObjectNode();
-        params.put("output","extend");
-        params.put("host",hostName);
-        params.with("search").put("key_",itemKey);
+        params.put("output", "extend");
+        params.put("host", hostName);
+        params.with("search").put("key_", itemKey);
         return this.getItems(params);
     }
     /**
@@ -692,10 +692,10 @@ public class ZabbixAPIClient {
      *
      * @param hostName specified hostname on which data is being requested
      * @param itemKey specified itemkey for data
-     * @param timeFrom beginning of the timeframe for data request (in seconds,
+     * @param timeFromSeconds beginning of the timeframe for data request (in
+     * seconds, UNIX timestamp)
+     * @param timeTillSeconds end of the timeframe for data request (in seconds,
      * UNIX timestamp)
-     * @param timeTill end of the timeframe for data request (in seconds, UNIX
-     * timestamp)
      * @return List numeric history data
      * @throws javax.naming.AuthenticationException
      * @throws
@@ -704,7 +704,7 @@ public class ZabbixAPIClient {
      * @throws java.util.concurrent.ExecutionException
      * @throws java.io.IOException
      */
-    public List<ZabbixHistoryObject> getNumericHistory(String hostName, String itemKey, long timeFrom, long timeTill) throws AuthenticationException, IllegalArgumentException, InterruptedException, ExecutionException, IOException, InternalErrorException {
+    public List<ZabbixHistoryObject> getNumericHistory(String hostName, String itemKey, long timeFromSeconds, long timeTillSeconds) throws AuthenticationException, IllegalArgumentException, InterruptedException, ExecutionException, IOException, InternalErrorException {
 
         //request for itemID
         ObjectNode params = this.objectMapper.createObjectNode();
@@ -714,27 +714,27 @@ public class ZabbixAPIClient {
 
         int itemID = this.getItems(params).get(0).getItemId();
 
-        //request for item history in between fromTime and tillTime
+        //request for item history in between timeFromSeconds and timeTillSeconds
         params = this.objectMapper.createObjectNode();
         params.put("output", "extend");
         params.put("history", 3);
         params.put("itemids", itemID);
-        params.put("time_from", timeFrom);
-        params.put("time_till", timeTill);
+        params.put("time_from", timeFromSeconds);
+        params.put("time_till", timeTillSeconds);
 
         return this.getHistory(params);
     }
 
     /**
      * Method for requesting numeric history from Zabbix on a given hostname and
-     * itemkey including preceding Element to the timeFrom timestamp.
+     * itemkey including preceding Element to the timeFromSeconds timestamp.
      *
      * @param hostName specified hostname on which data is being requested
      * @param itemKey specified itemkey for data
-     * @param timeFrom beginning of the timeframe for data request (in seconds,
+     * @param timeFromSeconds beginning of the timeframe for data request (in
+     * seconds, UNIX timestamp)
+     * @param timeTillSeconds end of the timeframe for data request (in seconds,
      * UNIX timestamp)
-     * @param timeTill end of the timeframe for data request (in seconds, UNIX
-     * timestamp)
      * @return List numeric history data including the preceding history element
      * @throws javax.naming.AuthenticationException
      * @throws java.io.IOException
@@ -743,7 +743,7 @@ public class ZabbixAPIClient {
      * @throws
      * de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException
      */
-    public List<ZabbixHistoryObject> getNumericHistoryWithPrecedingElement(String hostName, String itemKey, long timeFrom, long timeTill) throws AuthenticationException, IllegalArgumentException, InterruptedException, ExecutionException, IOException, InternalErrorException {
+    public List<ZabbixHistoryObject> getNumericHistoryWithPrecedingElement(String hostName, String itemKey, long timeFromSeconds, long timeTillSeconds) throws AuthenticationException, IllegalArgumentException, InterruptedException, ExecutionException, IOException, InternalErrorException {
 
         //request for itemID
         ObjectNode params = this.objectMapper.createObjectNode();
@@ -759,35 +759,35 @@ public class ZabbixAPIClient {
         params.put("history", 3);
         params.put("itemids", itemID);
         params.put("limit", 1);
-        params.put("time_till", timeFrom);
+        params.put("time_till", timeFromSeconds);
         params.put("sortfield", "clock");
         params.put("sortorder", "DESC");
 
         ZabbixHistoryObject precedingElement = this.getHistory(params).get(0);
 
-        //request for item history in between fromTime and tillTime
+        //request for item history in between timeFromSeconds and timeTillSeconds
         params = this.objectMapper.createObjectNode();
         params.put("output", "extend");
         params.put("history", 3);
         params.put("itemids", itemID);
-        params.put("time_from", timeFrom);
-        params.put("time_till", timeTill);
+        params.put("time_from", timeFromSeconds);
+        params.put("time_till", timeTillSeconds);
 
         List<ZabbixHistoryObject> result = this.getHistory(params);
         result.add(0, precedingElement);
 
         return result;
     }
-    
+
     /**
     * Method for adding/removing additional to/from calculated items formula(params).
-    * @param itemKey identification String for the item to be updated
-    * @param addedKey the key that is to be added/removed to/from the formula
+     * @param itemKey identification String for the item to be updated
+     * @param addedKey the key that is to be added/removed to/from the formula
     * @param addParams true: addedKey is to be added to the formula, false: addedKey is to be removed from the formula
-    */
-    private void updateCalculatedItem(String itemKey, String addedKey, boolean addParams) throws IllegalArgumentException, InterruptedException, ExecutionException, AuthenticationException, TemplateNotFoundException, InternalErrorException, IOException{
+     */
+    private void updateCalculatedItem(String itemKey, String addedKey, boolean addParams) throws IllegalArgumentException, InterruptedException, ExecutionException, AuthenticationException, TemplateNotFoundException, InternalErrorException, IOException {
         this.authenticate();
-        
+
         //read out previous value
         ObjectNode params = this.objectMapper.createObjectNode();
         params.put("output", "extend");
@@ -795,7 +795,7 @@ public class ZabbixAPIClient {
         params.with("search").put("key_", itemKey);
         List<ZabbixItem> result = this.getItems(params);
         ZabbixItem calcItem = null;
-        if (result.size() > 0){
+        if (result.size() > 0) {
             calcItem = result.get(0);
         }
         String newFormula = "";
@@ -809,12 +809,12 @@ public class ZabbixAPIClient {
             //delete itemkey from fromula
             String formulaItems[] = calcItem.getParams().split("\\+");
             for (String formulaItem : formulaItems) {
-                if (!formulaItem.equals("last(\""+addedKey+"\")")) {
+                if (!formulaItem.equals("last(\"" + addedKey + "\")")) {
                     newFormula += formulaItem + "+";
                 }
             }
             if (newFormula.endsWith("+")) {
-                newFormula = newFormula.substring(0, newFormula.length()-1);
+                newFormula = newFormula.substring(0, newFormula.length() - 1);
             }
         }
         //update new formula
@@ -823,25 +823,25 @@ public class ZabbixAPIClient {
         params.put("params", newFormula);
         if (this.executeRPC("item.update", params).getStatusCode() != 200) {
             throw new InternalErrorException();
-        }   
+        }
     }
-    
+
     /**
-     *  Method for creating user graph with two legend entries
+     * Method for creating user graph with two legend entries
      * @param graphName Visible name of the graph
      * @param userItemId id of the user item that is to be added to the future graph
      * @param allUsersItemId id of the calculated item for all users
      */
-    private void createGraph(String graphName, int userItemId, int allUsersItemId) throws InternalErrorException, InterruptedException, IllegalArgumentException, ExecutionException, IOException{
+    private void createGraph(String graphName, int userItemId, int allUsersItemId) throws InternalErrorException, InterruptedException, IllegalArgumentException, ExecutionException, IOException {
         ObjectNode params = this.objectMapper.createObjectNode();
         params.put("name", graphName);
         params.put("width", 900);
         params.put("height", 200);
         params.put("ymax_type", 2); // max y in graph limited allUserItemId
-        params.put("ymax_itemid", allUsersItemId); 
+        params.put("ymax_itemid", allUsersItemId);
         params.put("ymin_type", 1); // min y is limited by a fixes value (default:0)
         ObjectNode graphItem = this.objectMapper.createObjectNode();
-        graphItem.put("itemid",userItemId);
+        graphItem.put("itemid", userItemId);
         graphItem.put("color", "00AA00");
         params.withArray("gitems").add(graphItem);
         graphItem = this.objectMapper.createObjectNode();
@@ -850,9 +850,9 @@ public class ZabbixAPIClient {
         params.withArray("gitems").add(graphItem);
         if (this.executeRPC("graph.create", params).getStatusCode() != 200) {
             throw new InternalErrorException();
-        } 
+        }
     }
-    
+
     /**
      * Method for deleting single graph for given id.
      * @param itemIds ids of the graph that are to be removed
@@ -877,7 +877,7 @@ public class ZabbixAPIClient {
             throw new InternalErrorException("Got HTTP status code: " + response.getStatusCode());
         }
     }
-    
+
     /**
      * Kills all connections and stops HTTP client threads.
      */
