@@ -157,17 +157,17 @@ public class FlowTableGetter implements Runnable {
         DatanodeUserConnection connection = null;
         try {
             if (srcPort.equals("50010")) {
-               // if (srcIp.equals("10.0.42.1")) dataNode = "CitProjectAsok05";
-                //else dataNode = "CitProjectOffice";
-                dataNode = getDataNodeByIP(srcIp);
+                if (srcIp.equals("10.0.42.1")) dataNode = "CitProjectAsok05";
+                else dataNode = "CitProjectOffice";
+                //dataNode = getDataNodeByIP(srcIp);
                 String user = dstIp + ":" + dstPort;
                 connection = zabbixApiClient.getUsernameByDataNodeConnection(dataNode, user);
                 ConnectionInfos conInf = new ConnectionInfos(dataNode, connection);
                 return conInf;
             } else if (dstPort.equals("50010")) {
-                //if (dstIp.equals("10.0.42.1")) dataNode = "CitProjectAsok05";
-                //else dataNode = "CitProjectOffice";
-                dataNode = getDataNodeByIP(dstIp);
+                if (dstIp.equals("10.0.42.1")) dataNode = "CitProjectAsok05";
+                else dataNode = "CitProjectOffice";
+//                dataNode = getDataNodeByIP(dstIp);
                 String user = srcIp + ":" + srcPort;
                 connection = zabbixApiClient.getUsernameByDataNodeConnection(dataNode, user);
                 ConnectionInfos conInf = new ConnectionInfos(dataNode, connection);
@@ -196,6 +196,21 @@ public class FlowTableGetter implements Runnable {
 
 
     public FlowInformation createFlowInformation(OFFlowStatisticsReply flow) {
+        int tcpSrcPort = 0xFFFF & flow.getMatch().getTransportSource();
+        int tcpDstPort = 0xFFFF & flow.getMatch().getTransportDestination();
+        String srcPort = Integer.toString(tcpSrcPort);
+        String dstPort = Integer.toString(tcpDstPort);
+        String nw_src = IPv4.fromIPv4Address(flow.getMatch().getNetworkSource());
+        String nw_dst = IPv4.fromIPv4Address(flow.getMatch().getNetworkDestination());
+        String dl_src = HexString.toHexString(flow.getMatch().getDataLayerSource());
+        String dl_dst = HexString.toHexString(flow.getMatch().getDataLayerDestination());
+        long count = flow.getByteCount();
+        int time = flow.getDurationSeconds();
+        FlowInformation flowInf = new FlowInformation(dl_src, dl_dst, nw_src, nw_dst, srcPort, dstPort, count, time);
+        return flowInf;
+    }
+
+    public FlowInformation createFlowInformation(OFFlowRemoved flow) {
         int tcpSrcPort = 0xFFFF & flow.getMatch().getTransportSource();
         int tcpDstPort = 0xFFFF & flow.getMatch().getTransportDestination();
         String srcPort = Integer.toString(tcpSrcPort);

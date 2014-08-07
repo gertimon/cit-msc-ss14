@@ -26,7 +26,7 @@ public class FlowInformation {
         this.srcPort = srcPort;
         this.dstPort = dstPort;
         this.dstMac = dstMac;
-        this.dataSize = (dataSize/1000);
+        this.dataSize = (dataSize);
         this.time = time ;
         bandWidth = computeBandwidth(this.dataSize/this.time);
         hashKey = this.srcIp + this.srcPort + this.dstIp + this.dstPort;

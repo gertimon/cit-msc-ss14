@@ -36,11 +36,7 @@ public class RemoveMessageListener implements IOFMessageListener {
     @Override
     public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
         OFFlowRemoved flow = (OFFlowRemoved) msg;
-        OFFlowStatisticsReply stat = new OFFlowStatisticsReply();
-        stat.setMatch(flow.getMatch());
-        stat.setByteCount(flow.getByteCount());
-        stat.setDurationSeconds(flow.getDurationSeconds());
-        FlowInformation flowInf = flowGetter.createFlowInformation(stat);
+        FlowInformation flowInf = flowGetter.createFlowInformation(flow);
         String hashKey = flowInf.getHashKey();
         if (flowGetter.flowMap.containsKey(hashKey) && flowGetter.conInfMap.containsKey(hashKey)) {
             FlowInformation oldFlow = flowGetter.flowMap.get(hashKey);
