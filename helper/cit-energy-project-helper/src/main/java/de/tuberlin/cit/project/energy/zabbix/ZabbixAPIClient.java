@@ -877,7 +877,7 @@ public class ZabbixAPIClient {
      * @param hostGroupName Name of the HostGroup to look up for Hosts.
      * @return list of hosts belonging to given HostGroup
      */
-    public List<String> getHosts(String hostGroupName) throws IllegalArgumentException, InterruptedException,
+    public List<String> getHostNames(String hostGroupName) throws IllegalArgumentException, InterruptedException,
              ExecutionException, AuthenticationException, InternalErrorException, IOException,
              HostGroupNotFoundException {
 
@@ -904,7 +904,13 @@ public class ZabbixAPIClient {
             throw new InternalErrorException();
         }
     }
-    
+
+    public List<String> getDataNodeHostNames() throws AuthenticationException, IllegalArgumentException,
+            InterruptedException, ExecutionException, InternalErrorException, IOException, HostGroupNotFoundException {
+
+        return getHostNames(ZabbixParams.DATANODE_HOST_GROUP_NAME);
+    }
+
     /**
     * Method for adding/removing additional to/from calculated items formula(params).
      * @param itemKey identification String for the item to be updated
@@ -1042,9 +1048,5 @@ public class ZabbixAPIClient {
      */
     public void quit() {
         this.httpClient.close();
-    }
-
-    public List<String> getHosts() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }
