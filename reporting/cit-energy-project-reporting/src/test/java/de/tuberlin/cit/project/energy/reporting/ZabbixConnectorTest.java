@@ -23,16 +23,16 @@ public class ZabbixConnectorTest {
     }
 
     @Test
-    public void testGetPowerUsageForRange() throws KeyManagementException, NoSuchAlgorithmException, AuthenticationException, ExecutionException, IOException, IllegalArgumentException, InternalErrorException, InterruptedException {
+    public void testGetPowerUsageForRange() throws Exception {
         ZabbixConnector connector = new ZabbixConnector();
         Long now = new Date().getTime() / 1000;
-        Power power = connector.getPower("CitProjectAsok05", now - 86000 * 2, now);
+        Power power = connector.getPowerUsageByRange("CitProjectAsok05", now - 86000 * 2, now);
         Double wattSeconds = Power.getPowerAsWattSeconds(power.getPowerValues(), now - 86000 * 2, now);
         System.out.println(wattSeconds + " watt seconds");
     }
 
     @Test
-    public void testGetUserTraffic() throws KeyManagementException, NoSuchAlgorithmException {
+    public void testGetUserTraffic() throws Exception {
         ZabbixConnector connector = new ZabbixConnector();
         List<ZabbixHistoryObject> result = connector.getUserTraffic("mpjss14", "CitProjectOffice", new Date().getTime() - 86400, new Date().getTime());
         System.out.println(result);
@@ -47,7 +47,7 @@ public class ZabbixConnectorTest {
     }
 
     @Test
-    public void testGetAllUsernames() throws KeyManagementException, NoSuchAlgorithmException {
+    public void testGetAllUsernames() throws Exception {
         ZabbixConnector connector = new ZabbixConnector();
         Assert.assertTrue("Contains user mpjss14", connector.getAllUsernames().contains("mpjss14"));
     }

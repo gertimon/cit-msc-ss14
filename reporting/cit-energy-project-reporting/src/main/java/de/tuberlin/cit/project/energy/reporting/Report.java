@@ -1,12 +1,19 @@
 package de.tuberlin.cit.project.energy.reporting;
 
 import de.tuberlin.cit.project.energy.reporting.model.Power;
+import de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException;
+import de.tuberlin.cit.project.energy.zabbix.exception.TemplateNotFoundException;
+
+import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
+import javax.naming.AuthenticationException;
 
 /**
  *
@@ -39,11 +46,14 @@ public class Report {
         this.power = new HashMap<>();
     }
 
-    private void retrieveHostsList() {
+    private void retrieveHostsList() throws AuthenticationException, IllegalArgumentException, InterruptedException,
+            ExecutionException, InternalErrorException, IOException {
+
         hosts = connector.getDatanodeHosts();
     }
 
-    public void fetchValues() {
+    public void fetchValues() throws AuthenticationException, IllegalArgumentException, InterruptedException,
+            ExecutionException, InternalErrorException, IOException, KeyManagementException, NoSuchAlgorithmException, TemplateNotFoundException {
 
         // get list of available hosts
         retrieveHostsList();
@@ -82,9 +92,12 @@ public class Report {
         return report.toString();
     }
 
-    private void retrieveHostsPowerConsumption() {
+    private void retrieveHostsPowerConsumption() throws AuthenticationException, KeyManagementException,
+            IllegalArgumentException, NoSuchAlgorithmException, ExecutionException, IOException,
+            InternalErrorException, InterruptedException {
+
         for (String hostname : getHosts()) {
-            Power p = connector.getPower(hostname, fromTimeMillis, toTimeMillis);
+            Power p = connector.getPowerUsageByRange(hostname, fromTimeMillis, toTimeMillis);
             Double wattSeconds = Power.getPowerAsWattSeconds(p.getPowerValues(), fromTimeMillis, toTimeMillis);
             Double kwh = Power.wsToKwh(wattSeconds);
             power.put(hostname, kwh);
@@ -92,7 +105,9 @@ public class Report {
         System.out.println("Power Consumption: " + power);
     }
 
-    private void retrieveUserList() {
+    private void retrieveUserList() throws AuthenticationException, IllegalArgumentException, InterruptedException,
+            ExecutionException, InternalErrorException, IOException, TemplateNotFoundException {
+
         users = connector.getAllUsernames();
         System.out.println("Users: " + users);
     }
@@ -109,7 +124,7 @@ public class Report {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    public static void main(String[] args) throws KeyManagementException, NoSuchAlgorithmException {
+    public static void main(String[] args) throws Exception {
         Date begin = new Date();
         Long from = begin.getTime() - 86400000;
         Long to = begin.getTime();
