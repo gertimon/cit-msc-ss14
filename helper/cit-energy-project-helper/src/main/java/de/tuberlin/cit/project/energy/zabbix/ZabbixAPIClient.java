@@ -705,19 +705,35 @@ public class ZabbixAPIClient {
      * @param timeTillSeconds end of the timeframe for data request (in seconds,
      * UNIX timestamp)
      * @return List numeric history data
-     * @throws javax.naming.AuthenticationException
-     * @throws
-     * de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException
-     * @throws java.lang.InterruptedException
-     * @throws java.util.concurrent.ExecutionException
-     * @throws java.io.IOException
      */
-    public List<ZabbixHistoryObject> getNumericHistory(String hostName, String itemKey, long timeFromSeconds, long timeTillSeconds) throws AuthenticationException, IllegalArgumentException, InterruptedException, ExecutionException, IOException, InternalErrorException {
+    public List<ZabbixHistoryObject> getNumericHistory(String hostName, String itemKey, long timeFromSeconds,
+            long timeTillSeconds) throws AuthenticationException, IllegalArgumentException, InterruptedException,
+            ExecutionException, IOException, InternalErrorException {
 
-        //request for itemID
+        return getNumericHistory(new String[]{ hostName }, itemKey, timeFromSeconds, timeTillSeconds);
+    }
+
+    /**
+     * Method for requesting numeric history from Zabbix on a given hostnames and
+     * itemkey.
+     *
+     * @param hostName specified hostname on which data is being requested
+     * @param itemKey specified itemkey for data
+     * @param timeFromSeconds beginning of the timeframe for data request (in
+     * seconds, UNIX timestamp)
+     * @param timeTillSeconds end of the timeframe for data request (in seconds,
+     * UNIX timestamp)
+     * @return List numeric history data
+     */
+    public List<ZabbixHistoryObject> getNumericHistory(String hostNames[], String itemKey, long timeFromSeconds,
+            long timeTillSeconds) throws AuthenticationException, IllegalArgumentException, InterruptedException,
+            ExecutionException, IOException, InternalErrorException {
+
+        // find item id's
         ObjectNode params = this.objectMapper.createObjectNode();
         params.put("output", "extend");
-        params.put("host", hostName);
+        for (String hostname : hostNames)
+            params.withArray("host").add(hostname);
         params.with("search").put("key_", itemKey);
         
         int itemID = -1;
@@ -923,7 +939,7 @@ public class ZabbixAPIClient {
         }
     }
 
-    public Map<String, Integer> getDataNodeHostIds(String hostGroupName) throws AuthenticationException,
+    public Map<String, Integer> getDataNodeHostIds() throws AuthenticationException,
             IllegalArgumentException, InterruptedException, ExecutionException, IOException, InternalErrorException,
             HostGroupNotFoundException {
 
