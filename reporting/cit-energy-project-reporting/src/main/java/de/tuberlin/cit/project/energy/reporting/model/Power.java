@@ -1,7 +1,10 @@
 package de.tuberlin.cit.project.energy.reporting.model;
 
 import de.tuberlin.cit.project.energy.zabbix.model.ZabbixHistoryObject;
+
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -37,24 +40,24 @@ public class Power {
     }
 
     /**
-     * converts wattseconds to kwh. dividing given value through 3600000.
+     * converts wattseconds to kwh. dividing given value through 60*60*1000.
      *
      * @param wattSeconds
      * @return
      */
     public static Double wsToKwh(Double wattSeconds) {
-        return wattSeconds / 3600000;
+        return wattSeconds / 60*60*1000;
     }
 
-    public static Double getPowerAsWattSeconds(List<PowerValue> powerValues, long startTimeMillis, long endTimeMillis) {
+    public static Double getPowerAsWattSeconds(List<PowerValue> powerValues, long startTimeSeconds, long endTimeSeconds) {
         // use seconds for times
-        long lastTimeSeconds = startTimeMillis / 1000;
-        long stopTimeSeconds = endTimeMillis / 1000;
+        long lastTimeSeconds = startTimeSeconds;
         double wattSeconds = 0.0;
         float value;
         if (powerValues != null) {
+            Collections.sort(powerValues);
             for (PowerValue pv : powerValues) {
-                if (pv.timeAsSeconds < stopTimeSeconds) {
+                if (pv.timeAsSeconds < endTimeSeconds) {
                     value = pv.powerAsWatt;
                     wattSeconds += (pv.timeAsSeconds - lastTimeSeconds) * value;
                     lastTimeSeconds = pv.timeAsSeconds;
@@ -72,7 +75,7 @@ public class Power {
         return new PowerValue(timeMillis / 1000, i);
     }
 
-    public class PowerValue {
+    public class PowerValue implements Comparable<PowerValue> {
 
         public long timeAsSeconds;
         public int powerAsWatt;
@@ -82,6 +85,9 @@ public class Power {
             this.powerAsWatt = powerAsWatt;
         }
 
+        @Override
+        public int compareTo(PowerValue other) {
+            return (int) (timeAsSeconds - other.timeAsSeconds);
+        }
     }
-
 }

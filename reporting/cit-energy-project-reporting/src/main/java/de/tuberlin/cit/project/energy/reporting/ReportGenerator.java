@@ -94,6 +94,8 @@ public class ReportGenerator {
                 params.withArray("itemids").add(item.getItemId());
                 itemHostnameMap.put(item.getItemId(), this.hostnames.get(item.getHostId()));
             }
+            params.put("sortfield", "clock");
+            params.put("sortorder", "ASC");
             
             List<ZabbixHistoryObject> historyObjects = client.getHistory(params);
             HashMap<String, Power> powerConsumptionWatt = new HashMap<>(this.hostnames.size());
@@ -106,7 +108,7 @@ public class ReportGenerator {
                     hostConsumption = new Power();
                     powerConsumptionWatt.put(hostname, hostConsumption);
                 }
-                
+
                 hostConsumption.addValue(h.getClock(), h.getIntValue());
             }
             
