@@ -39,6 +39,7 @@ public class FlowTableGetter implements Runnable {
     final static String searchedIpdataNode1 = "10.0.42.1";
     final static String searchedIpdataNode2 = "10.0.42.3";
     final static String dataNodePort = "50010";
+    final static long timeout = 5000;
     HashMap<String, FlowInformation> flowMap;
     HashMap<String, ConnectionInfos> conInfMap;
     private ZabbixAPIClient zabbixApiClient;
@@ -112,10 +113,20 @@ public class FlowTableGetter implements Runnable {
                 } else {
                     if (flowInf.getSrcPort().equals("50010") || flowInf.getDstPort().equals("50010")) {
                         ConnectionInfos conInf = null;
-                        long timeout = System.currentTimeMillis();
+                        long timeoutStop = System.currentTimeMillis();
                         while (conInf == null) {
                             conInf = getConnectionInfos(flowInf.getSrcIp(), flowInf.getSrcPort(), flowInf.getDstIp(), flowInf.getDstPort());
-                            if (System.currentTimeMillis() - timeout >= 5000) break;
+                            if (System.currentTimeMillis() - timeoutStop >= this.timeout) break;
+                            else{
+                                long restTime = System.currentTimeMillis() - timeoutStop;
+                                restTime = this.timeout - restTime;
+                                System.out.println("timeout in: "+restTime + " ms" );
+                                try {
+                                    Thread.sleep(500);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
                         }
                         if (conInf != null) {
                             System.out.println("NEW USER: " + conInf.connection.getUser());
