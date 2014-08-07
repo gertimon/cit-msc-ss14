@@ -9,20 +9,25 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Realm;
 import com.ning.http.client.Realm.AuthScheme;
 import com.ning.http.client.Response;
+
 import de.tuberlin.cit.project.energy.zabbix.asynchttpclient.LooseTrustManager;
+import de.tuberlin.cit.project.energy.zabbix.exception.HostGroupNotFoundException;
 import de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException;
 import de.tuberlin.cit.project.energy.zabbix.exception.TemplateNotFoundException;
 import de.tuberlin.cit.project.energy.zabbix.exception.UserNotFoundException;
 import de.tuberlin.cit.project.energy.zabbix.model.DatanodeUserConnection;
 import de.tuberlin.cit.project.energy.zabbix.model.ZabbixHistoryObject;
 import de.tuberlin.cit.project.energy.zabbix.model.ZabbixItem;
+
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+
 import javax.naming.AuthenticationException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -836,50 +841,52 @@ public class ZabbixAPIClient {
     }
     
     /**
-     * Method for getting all hosts for a given HostGroup.
-     * @param hostGroupName Name of the HostGroup to look up for Hosts.
-     * @return list of hosts belonging to given HostGroup
-     * @throws java.lang.InterruptedException
-     * @throws java.io.IOException
-     * @throws java.util.concurrent.ExecutionException
-     * @throws javax.naming.AuthenticationException
-     * @throws de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException
+     * Implements hostgroup.get from Zabbix API.
      */
-    public List<String> getHosts(String hostGroupName) throws IllegalArgumentException, InterruptedException, ExecutionException, AuthenticationException, InternalErrorException, IOException{
+    public int getHostGroupId(String hostGroupName) throws AuthenticationException, IllegalArgumentException,
+            InterruptedException, ExecutionException, IOException, InternalErrorException, HostGroupNotFoundException {
+
         this.authenticate();
 
-        //get groupid for Host Group "Cit Project Datanodes"
         ObjectNode params = this.objectMapper.createObjectNode();
         params.withArray("output").add("groupid");
-        if(hostGroupName.isEmpty()){
-            //default host group
-            params.with("filter").withArray("name").add("Cit Project Datanodes");
-        }else{
-            params.with("filter").withArray("name").add(hostGroupName);
-        }
+        params.with("filter").withArray("name").add(hostGroupName);
 
         Response response = this.executeRPC("hostgroup.get", params);
         
-        int groupid = 9;  //defaul value for the MPJSS14 Datanodes Group
         if (response.getStatusCode() == 200) {
             JsonNode jsonResponse = objectMapper.readTree(response.getResponseBody());
             if (jsonResponse.get("result").isArray() && jsonResponse.get("result").size() > 0) {
-                //get GroupId
-                groupid = jsonResponse.findValue("groupid").asInt();
+                return jsonResponse.findValue("groupid").asInt();
             } else {
-                //no match for given Group Name
-                return new ArrayList<>(0);
+                throw new HostGroupNotFoundException();
             }
         } else {
             throw new InternalErrorException();
         }
-           
-        //get hosts for received groupid
+    }
+
+    public int getDataNodeHostGroupId() throws AuthenticationException, IllegalArgumentException, InterruptedException,
+            ExecutionException, IOException, InternalErrorException, HostGroupNotFoundException {
+
+        return getHostGroupId(ZabbixParams.DATANODE_HOST_GROUP_NAME);
+    }
+
+    /**
+     * Method for getting all hosts for a given HostGroup.
+     * @param hostGroupName Name of the HostGroup to look up for Hosts.
+     * @return list of hosts belonging to given HostGroup
+     */
+    public List<String> getHosts(String hostGroupName) throws IllegalArgumentException, InterruptedException,
+             ExecutionException, AuthenticationException, InternalErrorException, IOException,
+             HostGroupNotFoundException {
+
+        ObjectNode params = this.objectMapper.createObjectNode();
         params = this.objectMapper.createObjectNode();
-        params.put("groupids",groupid);
+        params.put("groupids", getDataNodeHostGroupId());
         params.withArray("output").add("host");
         
-        response = this.executeRPC("host.get", params);
+        Response response = this.executeRPC("host.get", params);
 
         if (response.getStatusCode() == 200) {
             JsonNode jsonResponse = objectMapper.readTree(response.getResponseBody());
