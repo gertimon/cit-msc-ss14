@@ -5,6 +5,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -61,10 +62,8 @@ public class ReportGenerator {
             addHostsPowerConsumption(report);
 
             // fetch user relevant information
-//          retrieveUserList();
-////          retrieveUserStorage();
-////          retrieveUserTraffic();
-////          retrieveUserProfileChanges();
+            addUserTraffic(report);
+            addUserStorage(report);
 
             return report;
         } catch (Exception e) {
@@ -126,24 +125,100 @@ public class ReportGenerator {
         }
     }
     
-//    private void retrieveUserList() throws AuthenticationException, IllegalArgumentException, InterruptedException,
-//            ExecutionException, InternalErrorException, IOException, TemplateNotFoundException {
-//
-//        users = connector.getAllUsernames();
-//        System.out.println("Users: " + users);
-//    }
-//
-//    private void retrieveUserStorage() {
-//        throw new UnsupportedOperationException("Not supported yet.");
-//    }
-//
-//    private void retrieveUserTraffic() {
-//        throw new UnsupportedOperationException("Not supported yet.");
-//    }
-//
-//    private void retrieveUserProfileChanges() {
-//        throw new UnsupportedOperationException("Not supported yet.");
-//    }
+    private String getUsernameFromKey(String keyPattern, String key) {
+        return key.replaceFirst(String.format(keyPattern, "(.*)"), "$1");
+    }
+
+    private void addUserTraffic(Report report) throws AuthenticationException, KeyManagementException,
+            IllegalArgumentException, NoSuchAlgorithmException, ExecutionException, IOException,
+            InternalErrorException, InterruptedException {
+
+        // lookup item id's
+        // unfortunately, zabbix supports search on keys only with text values, not numeric values.
+        // we have to pull all items and fiter them on client side...
+        ObjectNode params = this.objectMapper.createObjectNode();
+        params.put("output", "extend");
+        params.put("groupids", this.datanodesHostGroupId);
+        List<ZabbixItem> userTrafficItems = new LinkedList<>();
+        for (ZabbixItem item : client.getItems(params)) {
+            if (item.getKey().matches(String.format(ZabbixParams.USER_BANDWIDTH_KEY, "*"))
+                    && !item.getKey().equals(String.format(ZabbixParams.USER_BANDWIDTH_KEY, "all"))
+                    && this.hostnames.containsKey(item.getHostId())) // no template item
+                userTrafficItems.add(item);
+        }
+
+        if (userTrafficItems.size() > 0) {
+            Map<Integer, String> itemHostnameMap = new HashMap<>();
+            Map<Integer, String> itemKeyMap = new HashMap<>();
+
+            params = this.objectMapper.createObjectNode();
+            params.put("history", 3);
+            params.put("time_from", report.getFromTime());
+            params.put("time_till", report.getToTime());
+            for (ZabbixItem item : userTrafficItems) {
+                params.withArray("itemids").add(item.getItemId());
+                itemHostnameMap.put(item.getItemId(), this.hostnames.get(item.getHostId()));
+                itemKeyMap.put(item.getItemId(), item.getKey());
+            }
+            params.put("sortfield", "clock");
+            params.put("sortorder", "ASC");
+
+            List<ZabbixHistoryObject> historyObjects = client.getHistory(params);
+
+            for (ZabbixHistoryObject h : historyObjects) {
+                String username = getUsernameFromKey(ZabbixParams.USER_BANDWIDTH_KEY, itemKeyMap.get(h.getItemId()));
+                String hostname = itemHostnameMap.get(h.getItemId());
+                int bandwidth = h.getIntValue();
+                long clock = h.getClock();
+//                System.out.println("Found: " + h);
+//                System.out.println("Username=" + username + ", hostname=" + hostname);
+            }
+        }
+    }
+
+    private void addUserStorage(Report report) throws AuthenticationException, KeyManagementException,
+            IllegalArgumentException, NoSuchAlgorithmException, ExecutionException, IOException,
+            InternalErrorException, InterruptedException {
+
+        // lookup item id's
+        // unfortunately, zabbix supports search on keys only with text values, not numeric values.
+        // we have to pull all items and fiter them on client side...
+        ObjectNode params = this.objectMapper.createObjectNode();
+        params.put("output", "extend");
+        params.put("groupids", this.datanodesHostGroupId);
+        HashMap<String, ZabbixItem> userStorageItems = new HashMap<>(); // use one key per user
+        for (ZabbixItem item : client.getItems(params)) {
+            if (item.getKey().matches(String.format(ZabbixParams.USER_DATA_USAGE_KEY, "*"))
+                    && !item.getKey().equals(String.format(ZabbixParams.USER_DATA_USAGE_KEY, "all"))
+                    && this.hostnames.containsKey(item.getHostId())) // no template item
+                userStorageItems.put(item.getKey(), item);
+        }
+
+        if (userStorageItems.size() > 0) {
+            Map<Integer, String> itemKeyMap = new HashMap<>();
+
+            params = this.objectMapper.createObjectNode();
+            params.put("history", 3);
+            params.put("time_from", report.getFromTime());
+            params.put("time_till", report.getToTime());
+            for (ZabbixItem item : userStorageItems.values()) {
+                params.withArray("itemids").add(item.getItemId());
+                itemKeyMap.put(item.getItemId(), item.getKey());
+            }
+            params.put("sortfield", "clock");
+            params.put("sortorder", "ASC");
+
+            List<ZabbixHistoryObject> historyObjects = client.getHistory(params);
+
+            for (ZabbixHistoryObject h : historyObjects) {
+                String username = getUsernameFromKey(ZabbixParams.USER_BANDWIDTH_KEY, itemKeyMap.get(h.getItemId()));
+                int storageUsed = h.getIntValue();
+                long clock = h.getClock();
+//                System.out.println("Found: " + h);
+//                System.out.println("Username=" + username);
+            }
+        }
+    }
 
     public void quit() {
         this.client.quit();
@@ -156,8 +231,8 @@ public class ReportGenerator {
         Report report = generator.getReport(now - 60*60*24*31, now);
         System.out.println("Got report: " + report);
         
-        for (String hostname : report.getPower().keySet())
-            System.out.println("Host " + hostname + " used " + report.getPower().get(hostname) + " KWh.");
+//        for (String hostname : report.getPower().keySet())
+//            System.out.println("Host " + hostname + " used " + report.getPower().get(hostname) + " KWh.");
 
         generator.quit();
     }
