@@ -1,4 +1,4 @@
-package de.tuberlin.cit.project.energy.reporting;
+package de.tuberlin.cit.project.energy.reporting.model;
 
 import java.util.List;
 import java.util.Map;
@@ -8,8 +8,6 @@ import java.util.Map;
  * @author Tobias und Sascha
  */
 public class Report {
-
-    ZabbixConnector connector;
 
     private final long fromTime;
     private final long toTime;
