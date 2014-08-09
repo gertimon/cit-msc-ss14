@@ -39,6 +39,7 @@ public class FlowTableGetter implements Runnable {
     final static String searchedIpdataNode1 = "10.0.42.1";
     final static String searchedIpdataNode2 = "10.0.42.3";
     final static String dataNodePort = "50010";
+    final static long timeout = 5000;
     HashMap<String, FlowInformation> flowMap;
     HashMap<String, ConnectionInfos> conInfMap;
     private ZabbixAPIClient zabbixApiClient;
@@ -112,20 +113,30 @@ public class FlowTableGetter implements Runnable {
                 } else {
                     if (flowInf.getSrcPort().equals("50010") || flowInf.getDstPort().equals("50010")) {
                         ConnectionInfos conInf = null;
-                        long timeout = System.currentTimeMillis();
+                        long timeoutStop = System.currentTimeMillis();
                         while (conInf == null) {
                             conInf = getConnectionInfos(flowInf.getSrcIp(), flowInf.getSrcPort(), flowInf.getDstIp(), flowInf.getDstPort());
-                            if (System.currentTimeMillis() - timeout >= 5000) break;
+                            if (System.currentTimeMillis() - timeoutStop >= this.timeout) break;
+                            else{
+                                long restTime = System.currentTimeMillis() - timeoutStop;
+                                restTime = this.timeout - restTime;
+                                System.out.println("timeout in: "+restTime + " ms" );
+                                try {
+                                    Thread.sleep(500);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
                         }
                         if (conInf != null) {
                             System.out.println("NEW USER: " + conInf.connection.getUser());
-                        }
-                        if (conInf != null) {
                             System.out.println("NEW CONNECTIONT: " + flowInf);
                             //TODO Enable to send to Zabbix!
                             flowMap.put(hashKey, flowInf);
                             conInfMap.put(hashKey, conInf);
-                            sendDataToZabbix(flowInf, conInf);
+                            //push first time 0.0
+                            sendDataToZabbix(new FlowInformation(),conInf);
+                          //  sendDataToZabbix(flowInf, conInf);
                         }
                     }
 
@@ -157,16 +168,16 @@ public class FlowTableGetter implements Runnable {
         DatanodeUserConnection connection = null;
         try {
             if (srcPort.equals("50010")) {
-               // if (srcIp.equals("10.0.42.1")) dataNode = "CitProjectAsok05";
-                //else dataNode = "CitProjectOffice";
+//                if (srcIp.equals("10.0.42.1")) dataNode = "CitProjectAsok05";
+//                else dataNode = "CitProjectOffice";
                 dataNode = getDataNodeByIP(srcIp);
                 String user = dstIp + ":" + dstPort;
                 connection = zabbixApiClient.getUsernameByDataNodeConnection(dataNode, user);
                 ConnectionInfos conInf = new ConnectionInfos(dataNode, connection);
                 return conInf;
             } else if (dstPort.equals("50010")) {
-                //if (dstIp.equals("10.0.42.1")) dataNode = "CitProjectAsok05";
-                //else dataNode = "CitProjectOffice";
+//                if (dstIp.equals("10.0.42.1")) dataNode = "CitProjectAsok05";
+//                else dataNode = "CitProjectOffice";
                 dataNode = getDataNodeByIP(dstIp);
                 String user = srcIp + ":" + srcPort;
                 connection = zabbixApiClient.getUsernameByDataNodeConnection(dataNode, user);
@@ -196,6 +207,21 @@ public class FlowTableGetter implements Runnable {
 
 
     public FlowInformation createFlowInformation(OFFlowStatisticsReply flow) {
+        int tcpSrcPort = 0xFFFF & flow.getMatch().getTransportSource();
+        int tcpDstPort = 0xFFFF & flow.getMatch().getTransportDestination();
+        String srcPort = Integer.toString(tcpSrcPort);
+        String dstPort = Integer.toString(tcpDstPort);
+        String nw_src = IPv4.fromIPv4Address(flow.getMatch().getNetworkSource());
+        String nw_dst = IPv4.fromIPv4Address(flow.getMatch().getNetworkDestination());
+        String dl_src = HexString.toHexString(flow.getMatch().getDataLayerSource());
+        String dl_dst = HexString.toHexString(flow.getMatch().getDataLayerDestination());
+        long count = flow.getByteCount();
+        int time = flow.getDurationSeconds();
+        FlowInformation flowInf = new FlowInformation(dl_src, dl_dst, nw_src, nw_dst, srcPort, dstPort, count, time);
+        return flowInf;
+    }
+
+    public FlowInformation createFlowInformation(OFFlowRemoved flow) {
         int tcpSrcPort = 0xFFFF & flow.getMatch().getTransportSource();
         int tcpDstPort = 0xFFFF & flow.getMatch().getTransportDestination();
         String srcPort = Integer.toString(tcpSrcPort);
