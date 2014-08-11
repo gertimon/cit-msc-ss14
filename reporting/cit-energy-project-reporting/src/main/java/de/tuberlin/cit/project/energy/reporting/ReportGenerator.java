@@ -14,6 +14,8 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -114,6 +116,8 @@ public class ReportGenerator {
                 float usedPower = h.getFloatValue();
                 powerUsage.add(new PowerHistoryEntry(timestamp, hostname, usedPower));
             }
+            
+            Collections.sort(powerUsage);
 
             report.setPowerUsage(powerUsage);
         }
@@ -172,6 +176,8 @@ public class ReportGenerator {
 
                 trafficUsage.add(new TrafficHistoryEntry(timestamp, hostname, username, usedBytes));
             }
+            
+            Collections.sort(trafficUsage);
 
             report.setTrafficUsage(trafficUsage);
         }
@@ -236,6 +242,8 @@ public class ReportGenerator {
 
                 storageUsage.add(new StorageHistoryEntry(timestamp, username, storageUsed));
             }
+
+            Collections.sort(storageUsage);
 
             report.setStorageUsage(storageUsage);
         }
