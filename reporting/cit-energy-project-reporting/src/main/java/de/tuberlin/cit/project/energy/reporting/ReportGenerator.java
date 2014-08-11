@@ -152,7 +152,7 @@ public class ReportGenerator {
             Map<Integer, String> itemKeyMap = new HashMap<>();
 
             params = this.objectMapper.createObjectNode();
-            params.put("history", 3);
+            params.put("history", 0);
             params.put("time_from", report.getFromTime());
             params.put("time_till", report.getToTime());
             for (ZabbixItem item : userTrafficItems) {
@@ -169,14 +169,14 @@ public class ReportGenerator {
             for (ZabbixHistoryObject h : historyObjects) {
                 String username = getUsernameFromKey(ZabbixParams.USER_BANDWIDTH_KEY, itemKeyMap.get(h.getItemId()));
                 String hostname = itemHostnameMap.get(h.getItemId());
-                int usedBytes = h.getIntValue();
+                float usedBytes = h.getFloatValue();
                 long timestamp = h.getClock();
 //                System.out.println("TRAFFIC Found: " + h);
 //                System.out.println("Username=" + username + ", hostname=" + hostname);
 
                 trafficUsage.add(new TrafficHistoryEntry(timestamp, hostname, username, usedBytes));
             }
-            
+
             report.setTrafficUsage(trafficUsage);
         }
     }
@@ -217,14 +217,26 @@ public class ReportGenerator {
             params.put("sortorder", "ASC");
 
             List<ZabbixHistoryObject> historyObjects = client.getHistory(params);
+            
+            // now fetch some initial values (last values before current period)
+            params.put("time_till", report.getFromTime() - 1);
+            params.remove("time_from");
+            params.put("sortorder", "DESC");
+            params.put("limit", 1);
+            for (ZabbixItem item : userStorageItems.values()) {
+                params.remove("itemids");
+                params.put("itemids", item.getItemId());
+                historyObjects.addAll(client.getHistory(params));
+            }
+            
             List<StorageHistoryEntry> storageUsage = new LinkedList<>();
 
             for (ZabbixHistoryObject h : historyObjects) {
                 String username = getUsernameFromKey(ZabbixParams.USER_BANDWIDTH_KEY, itemKeyMap.get(h.getItemId()));
-                int storageUsed = h.getIntValue();
+                long storageUsed = h.getLongValue();
                 long timestamp = h.getClock();
 //                System.out.println("STORAGE Found: " + h);
-//                System.out.println("Username=" + username);
+//                System.out.println("Username=" + username + ", timestamp= " + (new Date(timestamp*1000)));
 
                 storageUsage.add(new StorageHistoryEntry(timestamp, username, storageUsed));
             }
@@ -240,20 +252,16 @@ public class ReportGenerator {
     public static void main(String[] args) throws Exception {
         ReportGenerator generator = new ReportGenerator();
 
-        Calendar today = Calendar.getInstance();
-        today.set(Calendar.HOUR_OF_DAY, 0);
-        today.set(Calendar.MINUTE, 0);
-        today.set(Calendar.SECOND, 0);
+        long now = Calendar.getInstance().getTimeInMillis() / 1000;
+//        Calendar today = Calendar.getInstance();
+//        today.set(Calendar.HOUR_OF_DAY, 0);
+//        today.set(Calendar.MINUTE, 0);
+//        today.set(Calendar.SECOND, 0);
+//        long todaySeconds = today.getTimeInMillis() / 1000;
 
-        long todaySeconds = today.getTimeInMillis() / 1000;
-        int days = 1;
+        double days = 0.25;
 
-        // last 7 days
-        UsageReport report = generator.getReport(todaySeconds - 60 * 60 * 24 * days, todaySeconds, 60);
-
-//        for (String hostname : report.getPower().keySet()) {
-//            System.out.println("Host " + hostname + " used " + report.getPower().get(hostname) + " KWh.");
-//        }
+        UsageReport report = generator.getReport((long)(now - 60 * 60 * 24 * days), now, 60*60);
 
         generator.quit();
 

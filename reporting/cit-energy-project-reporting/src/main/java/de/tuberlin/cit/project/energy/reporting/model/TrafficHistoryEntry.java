@@ -3,9 +3,9 @@ package de.tuberlin.cit.project.energy.reporting.model;
 public class TrafficHistoryEntry extends HistoryEntry {
     private final String hostname;
     private final String username;
-    private final long usedBytesPerSeconds;
+    private final float usedBytesPerSeconds;
 
-    public TrafficHistoryEntry(long timestamp, String hostname, String username, long usedBytes) {
+    public TrafficHistoryEntry(long timestamp, String hostname, String username, float usedBytes) {
         super(timestamp);
         this.hostname = hostname;
         this.username = username;
@@ -20,7 +20,7 @@ public class TrafficHistoryEntry extends HistoryEntry {
         return username;
     }
 
-    public long getUsedBytes() {
+    public float getUsedBytes() {
         return usedBytesPerSeconds;
     }
 }

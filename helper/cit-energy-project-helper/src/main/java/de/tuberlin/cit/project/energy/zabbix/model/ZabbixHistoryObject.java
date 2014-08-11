@@ -65,6 +65,10 @@ public class ZabbixHistoryObject {
     public int getIntValue() {
         return Integer.parseInt(this.value);
     }
+    
+    public long getLongValue() {
+        return Long.parseLong(this.value);
+    }
 
     public float getFloatValue() {
         return Float.parseFloat(this.value);
