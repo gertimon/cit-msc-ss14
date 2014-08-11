@@ -73,6 +73,9 @@ public class ReportGenerator {
             // fetch user relevant information
             addUserTraffic(report);
             addUserStorage(report);
+            
+            // now calculate the report
+            report.calculateReport();
 
             return report;
         } catch (Exception e) {
