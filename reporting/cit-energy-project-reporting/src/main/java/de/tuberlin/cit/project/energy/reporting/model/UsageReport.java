@@ -2,6 +2,7 @@ package de.tuberlin.cit.project.energy.reporting.model;
 
 import java.text.DecimalFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -12,25 +13,28 @@ import java.util.TreeMap;
  */
 public class UsageReport {
 
+    /** Start time in seconds since 1970. */
     private final long fromTime;
+    /** End time in seconds since 1970. */
     private final long toTime;
+    /** Resolution in seconds (e.g. 1h). */
+    private final int resolution;
 
     private List<String> hosts;
 
-    private Map<String, Double> power; // hostname:value
-    private Map<String, Double> userTraffic; // hostname:value
-    private Map<String, Double> allUsersTraffic; // hostname:value
-    private Storage userStorage; // dateSeconds:value
+    private HashMap<String, List<PowerHistoryEntry>> powerUsagePerHost;
+    private HashMap<String, List<StorageHistoryEntry>> storageUsagePerUser;
+    private HashMap<String, List<TrafficHistoryEntry>> trafficUsagePerHost;
 
     /**
-     *
-     * @param username
      * @param from in seconds since 1970.
      * @param to in seconds since 1970.
+     * @param resolution in seconds.
      */
-    public UsageReport(long from, long to) {
+    public UsageReport(long from, long to, int resolution) {
         this.fromTime = from;
         this.toTime = to;
+        this.resolution = resolution;
     }
 
     public long getFromTime() {
@@ -41,50 +45,23 @@ public class UsageReport {
         return toTime;
     }
 
-    public void setPower(Map<String, Double> power) {
-        this.power = power;
+    public int getResolution() {
+        return resolution;
     }
 
-    public Map<String, Double> getPower() {
-        return power;
+    public void setPowerUsagePerHost(HashMap<String, List<PowerHistoryEntry>> powerUsagePerHost) {
+        this.powerUsagePerHost = powerUsagePerHost;
+    }
+    
+    public void setStorageUsagePerUser(HashMap<String, List<StorageHistoryEntry>> storageUsagePerUser) {
+        this.storageUsagePerUser = storageUsagePerUser;
     }
 
-    public void setTraffic(Map<String, Double> traffic) {
-        this.userTraffic = traffic;
+    public void setTrafficUsagePerHost(HashMap<String, List<TrafficHistoryEntry>> trafficUsagePerHost) {
+        this.trafficUsagePerHost = trafficUsagePerHost;
     }
 
-    public Map<String, Double> getTraffic() {
-        return userTraffic;
-    }
-
-    public List<String> getHosts() {
-        return hosts;
-    }
-
-    public void setHosts(List<String> hosts) {
-        this.hosts = hosts;
-    }
-
-    public Map<String, Double> getUserTraffic() {
-        return userTraffic;
-    }
-
-    public void setUserTraffic(Map<String, Double> userTraffic) {
-        this.userTraffic = userTraffic;
-    }
-
-    public Map<String, Double> getAllUsersTraffic() {
-        return allUsersTraffic;
-    }
-
-    public void setAllUsersTraffic(Map<String, Long> allUsersTraffic) {
-//        this.allUsersTraffic = allUsersTraffic;
-    }
-
-    public void setUserStorage(TreeMap<Long, Double> userStorage) {
-        this.userStorage = new Storage(userStorage);
-    }
-
+    
     /**
      * @see
      * http://stackoverflow.com/questions/3263892/format-file-size-as-mb-gb-etc
@@ -120,7 +97,7 @@ public class UsageReport {
             // fast userTraffic for user
             // cheap userTraffic for user
             // user storage median
-            sb.append("\n- Storage Mean: ").append(readableFileSize(userStorage.calculateWeigthedHarmonicMedian(fromTime, toTime)));
+            // sb.append("\n- Storage Mean: ").append(readableFileSize(userStorage.calculateWeigthedHarmonicMedian(fromTime, toTime)));
             sb.append("\n# Report finished\n");
         } catch (Exception ex) {
             ex.printStackTrace();

@@ -2,16 +2,22 @@ package de.tuberlin.cit.project.energy.reporting;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import de.tuberlin.cit.project.energy.reporting.model.Power;
+import de.tuberlin.cit.project.energy.reporting.model.PowerHistoryEntry;
+import de.tuberlin.cit.project.energy.reporting.model.StorageHistoryEntry;
+import de.tuberlin.cit.project.energy.reporting.model.TrafficHistoryEntry;
 import de.tuberlin.cit.project.energy.reporting.model.UsageReport;
 import de.tuberlin.cit.project.energy.zabbix.ZabbixAPIClient;
 import de.tuberlin.cit.project.energy.zabbix.ZabbixParams;
 import de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException;
 import de.tuberlin.cit.project.energy.zabbix.model.ZabbixHistoryObject;
 import de.tuberlin.cit.project.energy.zabbix.model.ZabbixItem;
+
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -19,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
+
 import javax.naming.AuthenticationException;
 
 /**
@@ -54,10 +61,11 @@ public class ReportGenerator {
      *
      * @param from in seconds since 1970.
      * @param to in seconds since 1970.
+     * @param resolution time in seconds.
      */
-    public UsageReport getUserReport(long from, long to) {
+    public UsageReport getReport(long from, long to, int resolution) {
         try {
-            UsageReport report = new UsageReport(from, to);
+            UsageReport report = new UsageReport(from, to, resolution);
 
             // calculate host oriented values
             addHostsPowerConsumption(report);
@@ -73,8 +81,8 @@ public class ReportGenerator {
     }
 
     private void addHostsPowerConsumption(UsageReport report) throws AuthenticationException, KeyManagementException,
-        IllegalArgumentException, NoSuchAlgorithmException, ExecutionException, IOException,
-        InternalErrorException, InterruptedException {
+            IllegalArgumentException, NoSuchAlgorithmException, ExecutionException, IOException,
+            InternalErrorException, InterruptedException {
 
         // lookup item id's
         ObjectNode params = this.objectMapper.createObjectNode();
@@ -88,7 +96,7 @@ public class ReportGenerator {
 
             params = this.objectMapper.createObjectNode();
             params.put("output", "extend");
-            params.put("history", 3);
+            params.put("history", 0); // float value
             params.put("time_from", report.getFromTime());
             params.put("time_till", report.getToTime());
             for (ZabbixItem item : powerConsumptionItems) {
@@ -99,30 +107,21 @@ public class ReportGenerator {
             params.put("sortorder", "ASC");
 
             List<ZabbixHistoryObject> historyObjects = client.getHistory(params);
-            HashMap<String, Power> powerConsumptionWatt = new HashMap<>(this.hostnames.size());
+            HashMap<String, List<PowerHistoryEntry>> powerUsagePerHost = new HashMap<>(this.hostnames.size());
 
             for (ZabbixHistoryObject h : historyObjects) {
                 String hostname = itemHostnameMap.get(h.getItemId());
 
-                Power hostConsumption = powerConsumptionWatt.get(hostname);
+                List<PowerHistoryEntry> hostConsumption = powerUsagePerHost.get(hostname);
                 if (hostConsumption == null) {
-                    hostConsumption = new Power();
-                    powerConsumptionWatt.put(hostname, hostConsumption);
+                    hostConsumption = new LinkedList<>();
+                    powerUsagePerHost.put(hostname, hostConsumption);
                 }
 
-                hostConsumption.addValue(h.getClock(), h.getIntValue());
+                hostConsumption.add(new PowerHistoryEntry(h.getClock(), hostname, h.getFloatValue()));
             }
 
-            HashMap<String, Double> powerConsumptionKWh = new HashMap<>(powerConsumptionWatt.size());
-
-            for (String hostname : powerConsumptionWatt.keySet()) {
-                Power p = powerConsumptionWatt.get(hostname);
-                double ws = Power.getPowerAsWattSeconds(p.getPowerValues(), report.getFromTime(), report.getToTime());
-                double kwh = Power.wsToKwh(ws);
-                powerConsumptionKWh.put(hostname, kwh);
-            }
-
-            report.setPower(powerConsumptionKWh);
+            report.setPowerUsagePerHost(powerUsagePerHost);
         }
     }
 
@@ -131,8 +130,8 @@ public class ReportGenerator {
     }
 
     private void addUserTraffic(UsageReport report) throws AuthenticationException, KeyManagementException,
-        IllegalArgumentException, NoSuchAlgorithmException, ExecutionException, IOException,
-        InternalErrorException, InterruptedException {
+            IllegalArgumentException, NoSuchAlgorithmException, ExecutionException, IOException,
+            InternalErrorException, InterruptedException {
 
         // lookup item id's
         // unfortunately, zabbix supports search on keys only with text values, not numeric values.
@@ -167,22 +166,34 @@ public class ReportGenerator {
             params.put("sortorder", "ASC");
 
             List<ZabbixHistoryObject> historyObjects = client.getHistory(params);
+            HashMap<String, List<TrafficHistoryEntry>> trafficUsagePerHost = new HashMap<>();
 
             for (ZabbixHistoryObject h : historyObjects) {
                 String username = getUsernameFromKey(ZabbixParams.USER_BANDWIDTH_KEY, itemKeyMap.get(h.getItemId()));
                 String hostname = itemHostnameMap.get(h.getItemId());
                 int bandwidth = h.getIntValue();
-                long clock = h.getClock();
-                System.out.println("TRAFFIC Found: " + h);
-                System.out.println("Username=" + username + ", hostname=" + hostname);
+                long timestamp = h.getClock();
+//                System.out.println("TRAFFIC Found: " + h);
+//                System.out.println("Username=" + username + ", hostname=" + hostname);
+                
+                List<TrafficHistoryEntry> hostTraffic = trafficUsagePerHost.get(hostname);
+                if (hostname == null) {
+                    hostTraffic = new LinkedList<>();
+                    trafficUsagePerHost.put(hostname, hostTraffic);
+                }
+                
+                hostTraffic.add(new TrafficHistoryEntry(timestamp, username, bandwidth));
             }
+            
+            report.setTrafficUsagePerHost(trafficUsagePerHost);
         }
     }
 
+    // TODO retrieve one earlier created element too
     private void addUserStorage(UsageReport report) throws AuthenticationException, KeyManagementException,
-        IllegalArgumentException, NoSuchAlgorithmException, ExecutionException, IOException,
-        InternalErrorException, InterruptedException {
-// TODO retrieve one earlier created element too
+            IllegalArgumentException, NoSuchAlgorithmException, ExecutionException, IOException,
+            InternalErrorException, InterruptedException {
+
         // lookup item id's
         // unfortunately, zabbix supports search on keys only with text values, not numeric values.
         // we have to pull all items and fiter them on client side...
@@ -214,15 +225,25 @@ public class ReportGenerator {
             params.put("sortorder", "ASC");
 
             List<ZabbixHistoryObject> historyObjects = client.getHistory(params);
-            TreeMap<Long, Double> userStorage = new TreeMap<>();
+            HashMap<String, List<StorageHistoryEntry>> storageUsagePerUser = new HashMap<>();
+
             for (ZabbixHistoryObject h : historyObjects) {
                 String username = getUsernameFromKey(ZabbixParams.USER_BANDWIDTH_KEY, itemKeyMap.get(h.getItemId()));
                 int storageUsed = h.getIntValue();
-                long clock = h.getClock();
-                System.out.println("STORAGE Found: " + h);
-                System.out.println("Username=" + username);
+                long timestamp = h.getClock();
+//                System.out.println("STORAGE Found: " + h);
+//                System.out.println("Username=" + username);
+                
+                List<StorageHistoryEntry> userStorage = storageUsagePerUser.get(username);
+                if (userStorage == null) {
+                    userStorage = new LinkedList<>();
+                    storageUsagePerUser.put(username, userStorage);
+                }
+                
+                userStorage.add(new StorageHistoryEntry(timestamp, username, storageUsed));
             }
-            report.setUserStorage(userStorage);
+
+            report.setStorageUsagePerUser(storageUsagePerUser);
         }
     }
 
@@ -233,12 +254,20 @@ public class ReportGenerator {
     public static void main(String[] args) throws Exception {
         ReportGenerator generator = new ReportGenerator();
 
-        long now = (new Date()).getTime() / 1000;
-        UsageReport report = generator.getUserReport(now - 60 * 60 * 24 * 31, now);
+        Calendar today = Calendar.getInstance();
+        today.set(Calendar.HOUR_OF_DAY, 0);
+        today.set(Calendar.MINUTE, 0);
+        today.set(Calendar.SECOND, 0);
 
-        for (String hostname : report.getPower().keySet()) {
-            System.out.println("Host " + hostname + " used " + report.getPower().get(hostname) + " KWh.");
-        }
+        long todaySeconds = today.getTimeInMillis() / 1000;
+        int days = 1;
+
+        // last 7 days
+        UsageReport report = generator.getReport(todaySeconds - 60 * 60 * 24 * days, todaySeconds, 60);
+
+//        for (String hostname : report.getPower().keySet()) {
+//            System.out.println("Host " + hostname + " used " + report.getPower().get(hostname) + " KWh.");
+//        }
 
         generator.quit();
 
