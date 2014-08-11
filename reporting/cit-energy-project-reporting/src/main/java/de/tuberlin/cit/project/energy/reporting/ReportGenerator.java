@@ -107,21 +107,16 @@ public class ReportGenerator {
             params.put("sortorder", "ASC");
 
             List<ZabbixHistoryObject> historyObjects = client.getHistory(params);
-            HashMap<String, List<PowerHistoryEntry>> powerUsagePerHost = new HashMap<>(this.hostnames.size());
+            List<PowerHistoryEntry> powerUsage = new LinkedList<>();
 
             for (ZabbixHistoryObject h : historyObjects) {
                 String hostname = itemHostnameMap.get(h.getItemId());
-
-                List<PowerHistoryEntry> hostConsumption = powerUsagePerHost.get(hostname);
-                if (hostConsumption == null) {
-                    hostConsumption = new LinkedList<>();
-                    powerUsagePerHost.put(hostname, hostConsumption);
-                }
-
-                hostConsumption.add(new PowerHistoryEntry(h.getClock(), hostname, h.getFloatValue()));
+                long timestamp = h.getClock();
+                float usedPower = h.getFloatValue();
+                powerUsage.add(new PowerHistoryEntry(timestamp, hostname, usedPower));
             }
 
-            report.setPowerUsagePerHost(powerUsagePerHost);
+            report.setPowerUsage(powerUsage);
         }
     }
 
@@ -166,26 +161,20 @@ public class ReportGenerator {
             params.put("sortorder", "ASC");
 
             List<ZabbixHistoryObject> historyObjects = client.getHistory(params);
-            HashMap<String, List<TrafficHistoryEntry>> trafficUsagePerHost = new HashMap<>();
+            List<TrafficHistoryEntry> trafficUsage = new LinkedList<>();
 
             for (ZabbixHistoryObject h : historyObjects) {
                 String username = getUsernameFromKey(ZabbixParams.USER_BANDWIDTH_KEY, itemKeyMap.get(h.getItemId()));
                 String hostname = itemHostnameMap.get(h.getItemId());
-                int bandwidth = h.getIntValue();
+                int usedBytes = h.getIntValue();
                 long timestamp = h.getClock();
 //                System.out.println("TRAFFIC Found: " + h);
 //                System.out.println("Username=" + username + ", hostname=" + hostname);
-                
-                List<TrafficHistoryEntry> hostTraffic = trafficUsagePerHost.get(hostname);
-                if (hostname == null) {
-                    hostTraffic = new LinkedList<>();
-                    trafficUsagePerHost.put(hostname, hostTraffic);
-                }
-                
-                hostTraffic.add(new TrafficHistoryEntry(timestamp, username, bandwidth));
+
+                trafficUsage.add(new TrafficHistoryEntry(timestamp, hostname, username, usedBytes));
             }
             
-            report.setTrafficUsagePerHost(trafficUsagePerHost);
+            report.setTrafficUsage(trafficUsage);
         }
     }
 
@@ -225,7 +214,7 @@ public class ReportGenerator {
             params.put("sortorder", "ASC");
 
             List<ZabbixHistoryObject> historyObjects = client.getHistory(params);
-            HashMap<String, List<StorageHistoryEntry>> storageUsagePerUser = new HashMap<>();
+            List<StorageHistoryEntry> storageUsage = new LinkedList<>();
 
             for (ZabbixHistoryObject h : historyObjects) {
                 String username = getUsernameFromKey(ZabbixParams.USER_BANDWIDTH_KEY, itemKeyMap.get(h.getItemId()));
@@ -233,17 +222,11 @@ public class ReportGenerator {
                 long timestamp = h.getClock();
 //                System.out.println("STORAGE Found: " + h);
 //                System.out.println("Username=" + username);
-                
-                List<StorageHistoryEntry> userStorage = storageUsagePerUser.get(username);
-                if (userStorage == null) {
-                    userStorage = new LinkedList<>();
-                    storageUsagePerUser.put(username, userStorage);
-                }
-                
-                userStorage.add(new StorageHistoryEntry(timestamp, username, storageUsed));
+
+                storageUsage.add(new StorageHistoryEntry(timestamp, username, storageUsed));
             }
 
-            report.setStorageUsagePerUser(storageUsagePerUser);
+            report.setStorageUsage(storageUsage);
         }
     }
 

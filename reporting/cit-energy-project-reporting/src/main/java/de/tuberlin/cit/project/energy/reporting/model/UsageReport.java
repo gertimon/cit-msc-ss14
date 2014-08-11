@@ -3,6 +3,7 @@ package de.tuberlin.cit.project.energy.reporting.model;
 import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -22,9 +23,9 @@ public class UsageReport {
 
     private List<String> hosts;
 
-    private HashMap<String, List<PowerHistoryEntry>> powerUsagePerHost;
-    private HashMap<String, List<StorageHistoryEntry>> storageUsagePerUser;
-    private HashMap<String, List<TrafficHistoryEntry>> trafficUsagePerHost;
+    private List<PowerHistoryEntry> powerUsage;
+    private List<StorageHistoryEntry> storageUsage;
+    private List<TrafficHistoryEntry> trafficUsage;
 
     /**
      * @param from in seconds since 1970.
@@ -48,19 +49,18 @@ public class UsageReport {
     public int getResolution() {
         return resolution;
     }
-
-    public void setPowerUsagePerHost(HashMap<String, List<PowerHistoryEntry>> powerUsagePerHost) {
-        this.powerUsagePerHost = powerUsagePerHost;
+    
+    public void setPowerUsage(List<PowerHistoryEntry> powerUsage) {
+        this.powerUsage = powerUsage;
     }
     
-    public void setStorageUsagePerUser(HashMap<String, List<StorageHistoryEntry>> storageUsagePerUser) {
-        this.storageUsagePerUser = storageUsagePerUser;
+    public void setStorageUsage(List<StorageHistoryEntry> storageUsage) {
+        this.storageUsage = storageUsage;
     }
-
-    public void setTrafficUsagePerHost(HashMap<String, List<TrafficHistoryEntry>> trafficUsagePerHost) {
-        this.trafficUsagePerHost = trafficUsagePerHost;
+    
+    public void setTrafficUsage(List<TrafficHistoryEntry> trafficUsage) {
+        this.trafficUsage = trafficUsage;
     }
-
     
     /**
      * @see
