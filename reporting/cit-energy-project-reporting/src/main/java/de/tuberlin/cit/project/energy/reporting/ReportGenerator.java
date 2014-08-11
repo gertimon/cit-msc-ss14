@@ -3,11 +3,7 @@ package de.tuberlin.cit.project.energy.reporting;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import de.tuberlin.cit.project.energy.reporting.model.Power;
-import de.tuberlin.cit.project.energy.reporting.model.PowerHistoryEntry;
-import de.tuberlin.cit.project.energy.reporting.model.StorageHistoryEntry;
-import de.tuberlin.cit.project.energy.reporting.model.TrafficHistoryEntry;
-import de.tuberlin.cit.project.energy.reporting.model.UsageReport;
+import de.tuberlin.cit.project.energy.reporting.model.*;
 import de.tuberlin.cit.project.energy.zabbix.ZabbixAPIClient;
 import de.tuberlin.cit.project.energy.zabbix.ZabbixParams;
 import de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException;
@@ -75,7 +71,7 @@ public class ReportGenerator {
             addUserStorage(report);
             
             // now calculate the report
-            report.calculateReport();
+            report.calculateReport(from,to,resolution);
 
             return report;
         } catch (Exception e) {

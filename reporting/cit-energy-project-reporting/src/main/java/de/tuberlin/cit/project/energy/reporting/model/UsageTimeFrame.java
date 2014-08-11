@@ -16,7 +16,7 @@ public class UsageTimeFrame {
     private final List<PowerHistoryEntry> powerUsage;
     private final List<StorageHistoryEntry> storageUsage;
     private final List<TrafficHistoryEntry> trafficUsage;
-    
+
     public UsageTimeFrame(long startTime, long durationInSeconds) {
         this.startTime = startTime;
         this.durationInSeconds = durationInSeconds;
@@ -45,4 +45,17 @@ public class UsageTimeFrame {
     public void addTrafficUsage(TrafficHistoryEntry trafficEntry) {
         this.trafficUsage.add(trafficEntry);
     }
+
+    public List<TrafficHistoryEntry> getTrafficUsage() {
+        return trafficUsage;
+    }
+
+    public List<StorageHistoryEntry> getStorageUsage() {
+        return storageUsage;
+    }
+
+    public List<PowerHistoryEntry> getPowerUsage() {
+        return powerUsage;
+    }
+
 }

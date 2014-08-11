@@ -10,33 +10,43 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- *
  * @author Tobias und Sascha
  */
 public class UsageReport {
 
-    /** Start time in seconds since 1970. */
+    /**
+     * Start time in seconds since 1970.
+     */
     private final long fromTime;
-    /** End time in seconds since 1970. */
+    /**
+     * End time in seconds since 1970.
+     */
     private final long toTime;
-    /** Resolution in seconds (e.g. 1h). */
+    /**
+     * Resolution in seconds (e.g. 1h).
+     */
     private final int resolution;
 
     private List<PowerHistoryEntry> powerUsage;
     private List<StorageHistoryEntry> storageUsage;
     private List<TrafficHistoryEntry> trafficUsage;
-    
+
+    public List<UsageTimeFrame> getUsageTimeFrames() {
+        return usageTimeFrames;
+    }
+
     private List<UsageTimeFrame> usageTimeFrames;
 
     /**
-     * @param from in seconds since 1970.
-     * @param to in seconds since 1970.
+     * @param from       in seconds since 1970.
+     * @param to         in seconds since 1970.
      * @param resolution in seconds.
      */
     public UsageReport(long from, long to, int resolution) {
         this.fromTime = from;
         this.toTime = to;
         this.resolution = resolution;
+        this.usageTimeFrames = new LinkedList<>();
     }
 
     public long getFromTime() {
@@ -50,69 +60,76 @@ public class UsageReport {
     public int getResolution() {
         return resolution;
     }
-    
+
     public void setPowerUsage(List<PowerHistoryEntry> powerUsage) {
         this.powerUsage = powerUsage;
     }
-    
+
     public void setStorageUsage(List<StorageHistoryEntry> storageUsage) {
         this.storageUsage = storageUsage;
     }
-    
+
     public void setTrafficUsage(List<TrafficHistoryEntry> trafficUsage) {
         this.trafficUsage = trafficUsage;
     }
-    
-    public void calculateReport() {
-        this.usageTimeFrames = new LinkedList<>();
+
+    public void calculateReport(long from, long to, int resolution) {
+
+
         Iterator<PowerHistoryEntry> powerIterator = this.powerUsage.iterator();
         Iterator<StorageHistoryEntry> storageIterator = this.storageUsage.iterator();
         Iterator<TrafficHistoryEntry> trafficIterator = this.trafficUsage.iterator();
-        
-        long currentStart = this.fromTime;
-        long currentEnd = this.fromTime + this.resolution - 1;
+
+        long currentStart = from;
+        long currentEnd = from + this.resolution - 1;
         UsageTimeFrame currentTimeFrame = new UsageTimeFrame(currentStart, this.resolution);
         this.usageTimeFrames.add(currentTimeFrame);
-        PowerHistoryEntry powerEntry = powerIterator.next();
-        currentTimeFrame.addPowerUsage(powerEntry);
-        StorageHistoryEntry storageEntry = storageIterator.next();
-        currentTimeFrame.addStorageUsage(storageEntry);
-        TrafficHistoryEntry trafficEntry = trafficIterator.next();
-        currentTimeFrame.addTrafficUsage(trafficEntry);
-        
-        while(powerIterator.hasNext() && storageIterator.hasNext() && trafficIterator.hasNext()) {
+
+
+        while (powerIterator.hasNext()) {
+            PowerHistoryEntry powerEntry = powerIterator.next();
+            powerIterator.remove();
             if (powerEntry.getTimestamp() < currentEnd) {
                 powerEntry = powerIterator.next();
                 currentTimeFrame.addPowerUsage(powerEntry);
+            } else {
+                powerUsage.add(0, powerEntry);
+                break;
             }
-            
-            if (storageEntry.getTimestamp() < currentEnd) {
-                storageEntry = storageIterator.next();
-                currentTimeFrame.addStorageUsage(storageEntry);
-            }
-
+        }
+        while (trafficIterator.hasNext()) {
+            TrafficHistoryEntry trafficEntry = trafficIterator.next();
+            trafficIterator.remove();
             if (trafficEntry.getTimestamp() < currentEnd) {
                 trafficEntry = trafficIterator.next();
                 currentTimeFrame.addTrafficUsage(trafficEntry);
-            }
-            
-            // next frame if all iterator reach current end
-            if (powerEntry.getTimestamp() > currentEnd && storageEntry.getTimestamp() > currentEnd && trafficEntry.getTimestamp() > currentEnd) {
-                currentTimeFrame = new UsageTimeFrame(currentStart, this.resolution);
-                currentTimeFrame.addPowerUsage(powerEntry);
-                currentTimeFrame.addStorageUsage(storageEntry);
-                currentTimeFrame.addTrafficUsage(trafficEntry);
-                this.usageTimeFrames.add(currentTimeFrame);
+            } else {
+                trafficUsage.add(0, trafficEntry);
+                break;
             }
         }
+        while (storageIterator.hasNext()) {
+            StorageHistoryEntry storageEntry = storageIterator.next();
+            storageIterator.remove();
+            if (storageEntry.getTimestamp() < currentEnd) {
+                storageEntry = storageIterator.next();
+                currentTimeFrame.addStorageUsage(storageEntry);
+            } else {
+                storageUsage.add(0, storageEntry);
+                break;
+            }
+        }
+        if (from + resolution <= to - resolution) {
+            calculateReport(from + resolution, to, resolution);
+        }
+
     }
 
-    
+
     /**
-     * @see
-     * http://stackoverflow.com/questions/3263892/format-file-size-as-mb-gb-etc
      * @param size
      * @return
+     * @see http://stackoverflow.com/questions/3263892/format-file-size-as-mb-gb-etc
      */
     public static String readableFileSize(double size) {
 
