@@ -10,7 +10,7 @@ import java.util.TreeMap;
  *
  * @author Tobias und Sascha
  */
-public class UserReport {
+public class UsageReport {
 
     private final long fromTime;
     private final long toTime;
@@ -18,7 +18,6 @@ public class UserReport {
     private List<String> hosts;
 
     private Map<String, Double> power; // hostname:value
-    private final String username;
     private Map<String, Double> userTraffic; // hostname:value
     private Map<String, Double> allUsersTraffic; // hostname:value
     private Storage userStorage; // dateSeconds:value
@@ -29,8 +28,7 @@ public class UserReport {
      * @param from in seconds since 1970.
      * @param to in seconds since 1970.
      */
-    public UserReport(String username, long from, long to) {
-        this.username = username;
+    public UsageReport(long from, long to) {
         this.fromTime = from;
         this.toTime = to;
     }
@@ -87,10 +85,6 @@ public class UserReport {
         this.userStorage = new Storage(userStorage);
     }
 
-    public String getUsername() {
-        return username;
-    }
-
     /**
      * @see
      * http://stackoverflow.com/questions/3263892/format-file-size-as-mb-gb-etc
@@ -116,7 +110,6 @@ public class UserReport {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("\n# Report range: from ").append(new Date(fromTime * 1000)).append(" to ").append(new Date(toTime * 1000));
-        sb.append("\n- Username: ").append(getUsername());
 
         try {
             // interesting values

@@ -3,7 +3,7 @@ package de.tuberlin.cit.project.energy.reporting;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.tuberlin.cit.project.energy.reporting.model.Power;
-import de.tuberlin.cit.project.energy.reporting.model.UserReport;
+import de.tuberlin.cit.project.energy.reporting.model.UsageReport;
 import de.tuberlin.cit.project.energy.zabbix.ZabbixAPIClient;
 import de.tuberlin.cit.project.energy.zabbix.ZabbixParams;
 import de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException;
@@ -52,13 +52,12 @@ public class ReportGenerator {
     /**
      * Generates a new report.
      *
-     * @param username
      * @param from in seconds since 1970.
      * @param to in seconds since 1970.
      */
-    public UserReport getUserReport(String username, long from, long to) {
+    public UsageReport getUserReport(long from, long to) {
         try {
-            UserReport report = new UserReport(username, from, to);
+            UsageReport report = new UsageReport(from, to);
 
             // calculate host oriented values
             addHostsPowerConsumption(report);
@@ -73,7 +72,7 @@ public class ReportGenerator {
         }
     }
 
-    private void addHostsPowerConsumption(UserReport report) throws AuthenticationException, KeyManagementException,
+    private void addHostsPowerConsumption(UsageReport report) throws AuthenticationException, KeyManagementException,
         IllegalArgumentException, NoSuchAlgorithmException, ExecutionException, IOException,
         InternalErrorException, InterruptedException {
 
@@ -131,7 +130,7 @@ public class ReportGenerator {
         return key.replaceFirst(String.format(keyPattern, "(.*)"), "$1");
     }
 
-    private void addUserTraffic(UserReport report) throws AuthenticationException, KeyManagementException,
+    private void addUserTraffic(UsageReport report) throws AuthenticationException, KeyManagementException,
         IllegalArgumentException, NoSuchAlgorithmException, ExecutionException, IOException,
         InternalErrorException, InterruptedException {
 
@@ -169,8 +168,6 @@ public class ReportGenerator {
 
             List<ZabbixHistoryObject> historyObjects = client.getHistory(params);
 
-            String reportUser = report.getUsername();
-
             for (ZabbixHistoryObject h : historyObjects) {
                 String username = getUsernameFromKey(ZabbixParams.USER_BANDWIDTH_KEY, itemKeyMap.get(h.getItemId()));
                 String hostname = itemHostnameMap.get(h.getItemId());
@@ -178,14 +175,11 @@ public class ReportGenerator {
                 long clock = h.getClock();
                 System.out.println("TRAFFIC Found: " + h);
                 System.out.println("Username=" + username + ", hostname=" + hostname);
-//                if (username.equals(reportUser)) {
-//                    report.addUserStorage(clock, new Long(h.getValue()));
-//                }
             }
         }
     }
 
-    private void addUserStorage(UserReport report) throws AuthenticationException, KeyManagementException,
+    private void addUserStorage(UsageReport report) throws AuthenticationException, KeyManagementException,
         IllegalArgumentException, NoSuchAlgorithmException, ExecutionException, IOException,
         InternalErrorException, InterruptedException {
 // TODO retrieve one earlier created element too
@@ -220,7 +214,6 @@ public class ReportGenerator {
             params.put("sortorder", "ASC");
 
             List<ZabbixHistoryObject> historyObjects = client.getHistory(params);
-            String reportUser = report.getUsername();
             TreeMap<Long, Double> userStorage = new TreeMap<>();
             for (ZabbixHistoryObject h : historyObjects) {
                 String username = getUsernameFromKey(ZabbixParams.USER_BANDWIDTH_KEY, itemKeyMap.get(h.getItemId()));
@@ -228,10 +221,6 @@ public class ReportGenerator {
                 long clock = h.getClock();
                 System.out.println("STORAGE Found: " + h);
                 System.out.println("Username=" + username);
-                if (username.matches("user\\." + reportUser + "\\.dataUsage")) {
-                    Double value = new Double(h.getValue());
-                    userStorage.put(clock, value);
-                }
             }
             report.setUserStorage(userStorage);
         }
@@ -245,7 +234,7 @@ public class ReportGenerator {
         ReportGenerator generator = new ReportGenerator();
 
         long now = (new Date()).getTime() / 1000;
-        UserReport report = generator.getUserReport("mpjss14", now - 60 * 60 * 24 * 31, now);
+        UsageReport report = generator.getUserReport(now - 60 * 60 * 24 * 31, now);
 
         for (String hostname : report.getPower().keySet()) {
             System.out.println("Host " + hostname + " used " + report.getPower().get(hostname) + " KWh.");
