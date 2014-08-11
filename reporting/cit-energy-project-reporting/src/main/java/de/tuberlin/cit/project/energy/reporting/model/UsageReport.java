@@ -84,23 +84,28 @@ public class UsageReport {
         long currentEnd = from + this.resolution - 1;
         UsageTimeFrame currentTimeFrame = new UsageTimeFrame(currentStart, this.resolution);
         this.usageTimeFrames.add(currentTimeFrame);
-
-
-        while (powerIterator.hasNext()) {
-            PowerHistoryEntry powerEntry = powerIterator.next();
-            powerIterator.remove();
-            if (powerEntry.getTimestamp() < currentEnd) {
+        PowerHistoryEntry powerEntry = powerIterator.next();
+        currentTimeFrame.addPowerUsage(powerEntry);
+        StorageHistoryEntry storageEntry = storageIterator.next();
+        currentTimeFrame.addStorageUsage(storageEntry);
+        TrafficHistoryEntry trafficEntry = trafficIterator.next();
+        currentTimeFrame.addTrafficUsage(trafficEntry);
+        
+        while(powerIterator.hasNext() && storageIterator.hasNext() && trafficIterator.hasNext()) {
+            if (powerEntry.getTimestamp() <= currentEnd) {
                 powerEntry = powerIterator.next();
                 currentTimeFrame.addPowerUsage(powerEntry);
             } else {
                 powerUsage.add(0, powerEntry);
                 break;
             }
-        }
-        while (trafficIterator.hasNext()) {
-            TrafficHistoryEntry trafficEntry = trafficIterator.next();
-            trafficIterator.remove();
-            if (trafficEntry.getTimestamp() < currentEnd) {
+            
+            if (storageEntry.getTimestamp() <= currentEnd) {
+                storageEntry = storageIterator.next();
+                currentTimeFrame.addStorageUsage(storageEntry);
+            }
+
+            if (trafficEntry.getTimestamp() <= currentEnd) {
                 trafficEntry = trafficIterator.next();
                 currentTimeFrame.addTrafficUsage(trafficEntry);
             } else {
@@ -114,9 +119,10 @@ public class UsageReport {
             if (storageEntry.getTimestamp() < currentEnd) {
                 storageEntry = storageIterator.next();
                 currentTimeFrame.addStorageUsage(storageEntry);
-            } else {
-                storageUsage.add(0, storageEntry);
-                break;
+                currentTimeFrame.addTrafficUsage(trafficEntry);
+                this.usageTimeFrames.add(currentTimeFrame);
+                currentStart = currentStart + this.resolution;
+                currentEnd = currentStart + this.resolution - 1;
             }
         }
         if (from + resolution <= to - resolution) {
