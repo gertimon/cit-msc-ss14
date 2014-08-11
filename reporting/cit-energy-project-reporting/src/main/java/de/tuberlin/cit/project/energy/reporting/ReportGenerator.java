@@ -3,7 +3,10 @@ package de.tuberlin.cit.project.energy.reporting;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import de.tuberlin.cit.project.energy.reporting.model.*;
+import de.tuberlin.cit.project.energy.reporting.model.PowerHistoryEntry;
+import de.tuberlin.cit.project.energy.reporting.model.StorageHistoryEntry;
+import de.tuberlin.cit.project.energy.reporting.model.TrafficHistoryEntry;
+import de.tuberlin.cit.project.energy.reporting.model.UsageReport;
 import de.tuberlin.cit.project.energy.zabbix.ZabbixAPIClient;
 import de.tuberlin.cit.project.energy.zabbix.ZabbixParams;
 import de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException;
@@ -14,14 +17,11 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 
 import javax.naming.AuthenticationException;
