@@ -46,7 +46,7 @@ public class Power {
      * @return
      */
     public static Double wsToKwh(Double wattSeconds) {
-        return wattSeconds / 60*60*1000;
+        return wattSeconds / 60 * 60 * 1000;
     }
 
     public static Double getPowerAsWattSeconds(List<PowerValue> powerValues, long startTimeSeconds, long endTimeSeconds) {
@@ -66,7 +66,7 @@ public class Power {
                     break;
                 }
             }
-            return wattSeconds;
+            return wattSeconds / (endTimeSeconds - startTimeSeconds);
         }
         return null;
     }
