@@ -11,15 +11,13 @@ import java.util.TreeMap;
  */
 public class Storage {
 
-    private final TreeMap<Long, Double> storageValues; // at least one value earlier than fromTimeMillis
+    private final TreeMap<Long, Double> storageValues; // at least one value earlier than fromTimeSeconds
 
     /**
      * To initialize Storage, create a Map with time stamps (Long) and storage
      * amount values (Double).
      *
      * @param storageValues
-     * @param fromTimeMillis
-     * @param toTimeMillis
      */
     public Storage(TreeMap<Long, Double> storageValues) {
         this.storageValues = storageValues;
@@ -29,19 +27,20 @@ public class Storage {
      * calculate median for given range of time. Needs at least one entry in
      * storageValues with a smaller or equal time value than requested.
      *
-     * @param fromTimeMillis
-     * @param toTimeMillis
+     * @param fromTimeSeconds
+     * @param toTimeSeconds
      * @return
      * @throws Exception
      */
-    public double calculateWeigthedHarmonicMedian(long fromTimeMillis, long toTimeMillis) throws Exception {
+    public double calculateWeigthedHarmonicMedian(long fromTimeSeconds, long toTimeSeconds) throws Exception {
         // create ordered list of all given time stamps
-        List<Long> times = new LinkedList<Long>(storageValues.keySet());
+        List<Long> times = new LinkedList<>(storageValues.keySet());
         int size = times.size();
 
-        // test that there is an key existing smaller fromTimeMillis
-        if (size == 0 || times.get(0) > fromTimeMillis) {
+        // test that there is an key existing smaller fromTimeSeconds
+        if (size == 0 || times.get(0) > fromTimeSeconds) {
             times.add(0, 0l);
+            size++;
         }
 
         long lastTime = 0;
@@ -51,18 +50,20 @@ public class Storage {
 
         for (long time : times) {
 
-            if (time >= fromTimeMillis) {
+            if (time >= fromTimeSeconds) {
                 // given value after start time
                 // retrieve weight for value
-                if (lastTime < fromTimeMillis) {
+                if (lastTime < fromTimeSeconds) {
                     // first run, calculate time from given range
-                    duration = time - fromTimeMillis;
+                    duration = time - fromTimeSeconds;
                 } else {
                     // not first run, calculate difference to last entry
                     duration = time - lastTime;
                 }
                 // retrieve storage value
-                value = storageValues.get(lastTime);
+                if (lastTime != 0l) {
+                    value = storageValues.get(lastTime);
+                }
 
                 // add values to lists
                 weights += (duration * value);
@@ -72,15 +73,18 @@ public class Storage {
             lastTime = time;
         }
         // add last row
-        if (lastTime < toTimeMillis) {
-            duration = toTimeMillis - lastTime;
+        if (lastTime < toTimeSeconds) {
+            duration = toTimeSeconds - lastTime;
             value = storageValues.get(lastTime);
             // add values to lists
             weights += (duration * value);
             durations += duration;
         }
 
-        return weights / durations;
+        if (durations != 0l) {
+            return weights / durations;
+        }
+        return 0.0;
     }
 
 }
