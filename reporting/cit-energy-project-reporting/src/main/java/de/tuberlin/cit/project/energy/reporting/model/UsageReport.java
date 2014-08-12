@@ -116,17 +116,16 @@ public class UsageReport {
                 trafficUsage.add(0, trafficEntry);
                 break;
             }
-        }
-        while (storageIterator.hasNext()) {
-            StorageHistoryEntry storageEntry = storageIterator.next();
-            storageIterator.remove();
-            if (storageEntry.getTimestamp() < currentEnd) {
-                storageEntry = storageIterator.next();
+            
+            // next frame if all iterator reach current end
+            if (powerEntry.getTimestamp() > currentEnd && storageEntry.getTimestamp() > currentEnd && trafficEntry.getTimestamp() > currentEnd) {
+                currentStart = currentStart + this.resolution;
+                currentEnd = currentStart + this.resolution - 1;
+                currentTimeFrame = new UsageTimeFrame(currentStart, this.resolution);
+                currentTimeFrame.addPowerUsage(powerEntry);
                 currentTimeFrame.addStorageUsage(storageEntry);
                 currentTimeFrame.addTrafficUsage(trafficEntry);
                 this.usageTimeFrames.add(currentTimeFrame);
-                currentStart = currentStart + this.resolution;
-                currentEnd = currentStart + this.resolution - 1;
             }
         }
         if (from + resolution <= to - resolution) {
