@@ -9,6 +9,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 /**
  * @author Tobias und Sascha
  */
@@ -174,5 +178,21 @@ public class UsageReport {
 
         //
         return sb.toString();
+    }
+    
+    public ObjectNode toJson() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode output = objectMapper.createObjectNode();
+        output.put("from", this.fromTime);
+        output.put("to", this.toTime);
+        output.put("resolution", this.resolution);
+        ArrayNode timeFrameNodes = output.withArray("timeFrames");
+        for (UsageTimeFrame timeFrame : this.usageTimeFrames) {
+            ObjectNode timeFrameNode = objectMapper.createObjectNode();
+            timeFrameNode.put("startTime", timeFrame.getStartTime());
+            timeFrameNodes.add(timeFrameNode);
+        }
+        
+        return output;
     }
 }
