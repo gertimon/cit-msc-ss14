@@ -5,11 +5,11 @@ package de.tuberlin.cit.project.energy.reporting.model;
  */
 public class Bill {
     final String user;
-    final Double powerUsagePerHour;
+    final float powerUsagePerHour;
     final Double traffic;
     final Double price;
 
-    public Bill(String user, Double powerUsagePerHour, Double traffic, Double price) {
+    public Bill(String user, float powerUsagePerHour, Double traffic, Double price) {
         this.user = user;
         this.powerUsagePerHour = powerUsagePerHour;
         this.traffic = traffic;
@@ -24,7 +24,7 @@ public class Bill {
         return traffic;
     }
 
-    public Double getPowerUsagePerHour() {
+    public float getPowerUsagePerHour() {
         return powerUsagePerHour;
     }
 

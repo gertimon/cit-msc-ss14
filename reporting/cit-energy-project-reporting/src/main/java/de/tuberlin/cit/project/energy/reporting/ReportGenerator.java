@@ -208,7 +208,7 @@ public class ReportGenerator {
             Map<Integer, String> itemKeyMap = new HashMap<>();
 
             params = this.objectMapper.createObjectNode();
-            params.put("history", 3);
+            params.put("history", 0);
             params.put("time_from", report.getFromTime());
             params.put("time_till", report.getToTime());
             for (ZabbixItem item : userStorageItems.values()) {

@@ -49,15 +49,16 @@ public class UserBillCalculator {
         UsageReport report = generator.getReport(todaySeconds - 60 * 60 * 24 * days, todaySeconds, 60*60);
 
         generator.quit();
-        System.err.println("Windowcount: " + report.getUsageTimeFrames().size());
+       // System.err.println("Windowcount: " + report.getUsageTimeFrames().size());
         int size = report.getUsageTimeFrames().size();
         List<UsageTimeFrame> importantFrames = report.getUsageTimeFrames().subList(size-timeWindows-1,size-1);
-        System.err.println(importantFrames.size());
-        makeBill(importantFrames, user);
+       // System.err.println(importantFrames.size());
+        List<Bill> billList = makeBill(importantFrames, user);
+        System.err.println("Size: " + billList.size()+ "Price : " + billList.get(0).getPrice());
         return null;
     }
 
-    private void makeBill(List<UsageTimeFrame> importantFrames, String user) {
+    private List<Bill> makeBill(List<UsageTimeFrame> importantFrames, String user) {
 
         List<Bill> billList = new LinkedList<Bill>();
         for (UsageTimeFrame frame : importantFrames){
@@ -66,15 +67,64 @@ public class UserBillCalculator {
             genPowerArray(office,asok,frame);
             UserTraffics usersTraffic = generateUserTrafficMap(frame);
             HashMap<String, long[]> userStorage = generateUserStrorageMap(frame);
-            billList.add(computeBill(office,asok,usersTraffic,userStorage));
+            billList.add(computeBill(office,asok,usersTraffic,userStorage,user));
         }
-
+        return billList;
     }
 
-    private Bill computeBill(float[] office, float[] asok, UserTraffics usersTraffic, HashMap<String, long[]> userStorage) {
+    private Bill computeBill(float[] office, float[] asok, UserTraffics usersTraffic, HashMap<String, long[]> userStorage, String user) {
         //OFFICE
-        for (int i = 0)
-        return null;
+        long[] userStore = userStorage.get(user);
+        float[] userTrafficAsok = usersTraffic.getUserTrafficAsok().get(user);
+        float[] userTrafficOffice = usersTraffic.getUserTrafficOffice().get(user);
+
+        float[] pricePart = new float[3600];
+        for (int i = 0; i < 3600; i++){
+            if (userTrafficOffice[i] == 0){
+                Set<String> keys = userStorage.keySet();
+                if (keys.size() > 1){
+                    long userPart = userStorage.get(user)[i]/2;
+                    long rest = 0;
+                    for (String k : keys){
+                        if (!k.equals(user))
+                        rest += userStorage.get(k)[i]/2;
+                    }
+                    if (rest != 0) pricePart[i] = (userPart/rest)*office[i];
+                    else pricePart[i] = office[i];
+                }
+
+            }else{
+                Set<String> keys = userStorage.keySet();
+                if (keys.size() > 1){
+                    long userPart = userStorage.get(user)[i]/2;
+                    long rest = 0;
+                    for (String k : keys){
+                        if (!k.equals(user))
+                            rest += userStorage.get(k)[i]/2;
+                    }
+                    if (rest != 0) pricePart[i] = (userPart/rest)*office[i];
+                    else pricePart[i] = 50;
+                }else pricePart[i] = 50;
+                keys = usersTraffic.getUserTrafficOffice().keySet();
+                if (keys.size()>1){
+                    float userPart = userTrafficOffice[i];
+                    float rest = 0;
+                    for (String k : keys){
+                        if (!k.equals(user))
+                            rest += usersTraffic.getUserTrafficOffice().get(k)[i];
+                    }
+                    if (rest != 0) pricePart[i] += (userPart/rest)*(office[i] - 50);
+                    else pricePart[i] += office[i] - 50;
+                }pricePart[i] += office[i] - 50;
+            }
+        }
+        float sum = 0;
+        for (float x : pricePart){
+            sum += x;
+        }
+        double price = sum/1000 * 0.2;
+        Bill bill = new Bill(user,sum,null,price);
+        return bill;
     }
 
     private HashMap<String, long[]> generateUserStrorageMap(UsageTimeFrame frame) {
