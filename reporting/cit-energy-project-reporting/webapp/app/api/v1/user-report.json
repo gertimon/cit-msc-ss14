@@ -1,0 +1,11 @@
+{
+    "from":1407777445,
+    "to":1407799045,
+    "resolution":3600,
+    "timeFrames": [
+        {"startTime":1407777445, "storage": { "mpjss14": 0.8, "klaus": 0.3 }, "traffic": { "mpjss14": 0.4, "klaus": 0.25 } },
+        {"startTime":1407781045, "storage": { "mpjss14": 0.9, "klaus": 0.3 }, "traffic": { "mpjss14": 0.5, "klaus": 0.25 } },
+        {"startTime":1407784645, "storage": { "mpjss14": 0.8, "klaus": 0.3 }, "traffic": { "mpjss14": 0.2 } },
+        {"startTime":1407788245, "storage": { "mpjss14": 0.7, "klaus": 0.3 }, "traffic": { "mpjss14": 0.1 } }
+    ]
+}
