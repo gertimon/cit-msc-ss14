@@ -73,7 +73,7 @@ public class ReportGenerator {
             addUserStorage(report);
             
             // now calculate the report
-            report.calculateReport(from,to,resolution);
+            report.calculateReport();
 
             return report;
         } catch (Exception e) {
