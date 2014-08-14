@@ -51,8 +51,10 @@ public class UserBillCalculator {
         generator.quit();
        // System.err.println("Windowcount: " + report.getUsageTimeFrames().size());
         int size = report.getUsageTimeFrames().size();
-        List<UsageTimeFrame> importantFrames = report.getUsageTimeFrames().subList(size-timeWindows-1,size-1);
-       // System.err.println(importantFrames.size());
+        System.err.println("Size: " + size);
+        List<UsageTimeFrame> importantFrames = new LinkedList<UsageTimeFrame>();
+        importantFrames.add(report.getUsageTimeFrames().get(0));
+        System.err.println(importantFrames.size());
         List<Bill> billList = makeBill(importantFrames, user);
         System.err.println("Size: " + billList.size()+ "Price : " + billList.get(0).getPrice());
         return null;
@@ -77,6 +79,7 @@ public class UserBillCalculator {
         long[] userStore = userStorage.get(user);
         float[] userTrafficAsok = usersTraffic.getUserTrafficAsok().get(user);
         float[] userTrafficOffice = usersTraffic.getUserTrafficOffice().get(user);
+        System.err.println(usersTraffic.getUserTrafficOffice().values().size());
 
         float[] pricePart = new float[3600];
         for (int i = 0; i < 3600; i++){
@@ -169,6 +172,7 @@ public class UserBillCalculator {
 
         for (TrafficHistoryEntry entry : frame.getTrafficUsage()){
             float[] userArray = null;
+            System.err.println(entry.getUsername());
             if (entry.getHostname().equals("CitProjectAsok05")){
                 if (userTrafficAsok.containsKey(entry.getUsername())){
                     userArray = userTrafficAsok.get(entry.getUsername());

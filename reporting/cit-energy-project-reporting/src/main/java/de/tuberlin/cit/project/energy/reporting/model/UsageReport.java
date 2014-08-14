@@ -88,43 +88,49 @@ public class UsageReport {
         long currentEnd = from + this.resolution - 1;
         UsageTimeFrame currentTimeFrame = new UsageTimeFrame(currentStart, this.resolution);
         this.usageTimeFrames.add(currentTimeFrame);
-        PowerHistoryEntry powerEntry = powerIterator.next();
-        currentTimeFrame.addPowerUsage(powerEntry);
-        StorageHistoryEntry storageEntry = storageIterator.next();
-        currentTimeFrame.addStorageUsage(storageEntry);
-        TrafficHistoryEntry trafficEntry = trafficIterator.next();
-        currentTimeFrame.addTrafficUsage(trafficEntry);
-        
-        while(powerIterator.hasNext() && storageIterator.hasNext() && trafficIterator.hasNext()) {
-            if (powerEntry.getTimestamp() <= currentEnd) {
-                powerEntry = powerIterator.next();
+
+
+
+        try{
+        while(powerIterator.hasNext() || storageIterator.hasNext() || trafficIterator.hasNext()) {
+
+            while (powerIterator.hasNext()){
+                PowerHistoryEntry powerEntry = powerIterator.next();
+                powerIterator.remove();
                 currentTimeFrame.addPowerUsage(powerEntry);
             } else {
                 powerUsage.add(0, powerEntry);
                 break;
             }
-            
-            if (storageEntry.getTimestamp() <= currentEnd) {
-                storageEntry = storageIterator.next();
+
+            while(storageIterator.hasNext()){
+                StorageHistoryEntry storageEntry = storageIterator.next();
+                storageIterator.remove();
                 currentTimeFrame.addStorageUsage(storageEntry);
+                if (storageEntry.getTimestamp() <= currentEnd) {
+                    storageEntry = storageIterator.next();
+                    storageIterator.remove();
+                    currentTimeFrame.addStorageUsage(storageEntry);
+                }
             }
 
-            if (trafficEntry.getTimestamp() <= currentEnd) {
-                trafficEntry = trafficIterator.next();
+            while(trafficIterator.hasNext()){
+                TrafficHistoryEntry trafficEntry = trafficIterator.next();
                 currentTimeFrame.addTrafficUsage(trafficEntry);
             } else {
                 trafficUsage.add(0, trafficEntry);
                 break;
             }
+
             
             // next frame if all iterator reach current end
             if (powerEntry.getTimestamp() > currentEnd && storageEntry.getTimestamp() > currentEnd && trafficEntry.getTimestamp() > currentEnd) {
                 currentStart = currentStart + this.resolution;
                 currentEnd = currentStart + this.resolution - 1;
                 currentTimeFrame = new UsageTimeFrame(currentStart, this.resolution);
-                currentTimeFrame.addPowerUsage(powerEntry);
-                currentTimeFrame.addStorageUsage(storageEntry);
-                currentTimeFrame.addTrafficUsage(trafficEntry);
+               // currentTimeFrame.addPowerUsage(powerEntry);
+                //currentTimeFrame.addStorageUsage(storageEntry);
+                //currentTimeFrame.addTrafficUsage(trafficEntry);
                 this.usageTimeFrames.add(currentTimeFrame);
             }
         }
