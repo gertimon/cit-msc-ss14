@@ -9,7 +9,7 @@ public class PowerHistoryEntry extends HistoryEntry {
         this.hostname = hostname;
         this.usedPower = usedPower;
     }
-    
+
     public String getHostname() {
         return hostname;
     }

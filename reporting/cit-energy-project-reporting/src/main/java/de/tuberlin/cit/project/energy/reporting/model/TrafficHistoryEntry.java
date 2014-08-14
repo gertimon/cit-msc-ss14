@@ -5,13 +5,13 @@ public class TrafficHistoryEntry extends HistoryEntry {
     private final String username;
     private final float usedBytesPerSeconds;
 
-    public TrafficHistoryEntry(long timestamp, String hostname, String username, float usedBytes) {
+    public TrafficHistoryEntry(long timestamp, String hostname, String username, float usedBytesPerSeconds) {
         super(timestamp);
         this.hostname = hostname;
         this.username = username;
-        this.usedBytesPerSeconds = usedBytes;
+        this.usedBytesPerSeconds = usedBytesPerSeconds;
     }
-    
+
     public String getHostname() {
         return hostname;
     }
