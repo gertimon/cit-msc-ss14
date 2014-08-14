@@ -258,6 +258,7 @@ module.exports = function (grunt) {
         'htmlmin:dist',
         'concat',
         'less:production',
+        'cssmin',
         'uglify',
         'copy',
         'filerev',
