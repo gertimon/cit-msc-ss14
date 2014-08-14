@@ -59,11 +59,13 @@ public class ReportGenerator {
      *
      * @param from in seconds since 1970.
      * @param to in seconds since 1970.
-     * @param resolution time in seconds.
+     * @param intervalSize time in seconds.
      */
-    public UsageReport getReport(long from, long to, int resolution) {
+    public UsageReport getReport(long from, long to, int intervalSize) {
         try {
-            UsageReport report = new UsageReport(from, to, resolution);
+            long startTime = from - (from % intervalSize);
+            int intervalCount = (int)((to - startTime) / intervalSize);
+            UsageReport report = new UsageReport(startTime, intervalCount, intervalSize);
 
             // calculate host oriented values
             addHostsPowerConsumption(report);
@@ -98,8 +100,8 @@ public class ReportGenerator {
             params = this.objectMapper.createObjectNode();
             params.put("output", "extend");
             params.put("history", 0); // float value
-            params.put("time_from", report.getFromTime());
-            params.put("time_till", report.getToTime());
+            params.put("time_from", report.getStartTime());
+            params.put("time_till", report.getEndTime());
             for (ZabbixItem item : powerConsumptionItems) {
                 params.withArray("itemids").add(item.getItemId());
                 itemHostnameMap.put(item.getItemId(), this.hostnames.get(item.getHostId()));
@@ -153,8 +155,8 @@ public class ReportGenerator {
 
             params = this.objectMapper.createObjectNode();
             params.put("history", 0);
-            params.put("time_from", report.getFromTime());
-            params.put("time_till", report.getToTime());
+            params.put("time_from", report.getStartTime());
+            params.put("time_till", report.getEndTime());
             for (ZabbixItem item : userTrafficItems) {
                 params.withArray("itemids").add(item.getItemId());
                 itemHostnameMap.put(item.getItemId(), this.hostnames.get(item.getHostId()));
@@ -209,9 +211,9 @@ public class ReportGenerator {
             Map<Integer, String> itemKeyMap = new HashMap<>();
 
             params = this.objectMapper.createObjectNode();
-            params.put("history", 0);
-            params.put("time_from", report.getFromTime());
-            params.put("time_till", report.getToTime());
+            params.put("history", 3);
+            params.put("time_from", report.getStartTime());
+            params.put("time_till", report.getEndTime());
             for (ZabbixItem item : userStorageItems.values()) {
                 params.withArray("itemids").add(item.getItemId());
                 itemKeyMap.put(item.getItemId(), item.getKey());
@@ -222,7 +224,7 @@ public class ReportGenerator {
             List<ZabbixHistoryObject> historyObjects = client.getHistory(params);
             
             // now fetch some initial values (last values before current period)
-            params.put("time_till", report.getFromTime() - 1);
+            params.put("time_till", report.getStartTime() - 1);
             params.remove("time_from");
             params.put("sortorder", "DESC");
             params.put("limit", 1);
