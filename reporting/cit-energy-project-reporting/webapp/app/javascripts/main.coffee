@@ -1,34 +1,47 @@
 $ ->
+    shortDateFormatter = d3.time.format('%d.%m.%Y %X')
+
+    extractDataFromTimeFrame = (report, field) ->
+        dataByKey = {}
+        for frame in report.timeFrames
+            for key, value of frame[field]
+                dataByKey[key] ||= []
+                dataByKey[key].push x: frame.startTime, y: value, startTime: new Date(frame.startTime * 1000), endTime: new Date(frame.endTime * 1000)
+        for key, data of dataByKey
+            { key: key, values: data }
+
     report = $.ajax
         dataType: "json",
-        url: '/api/v1/user-report.json',
-        error: (jqXHR, textStatus, errorThrown) ->
-            console.log "Ups", jqXHR, textStatus, errorThrown, errorThrown
+        url: "http://#{location.hostname}:50201/api/v1/user-report.json#{location.search}",
+        beforeSend: -> console.debug "[#{new Date()}] Loading report."
+        error: (jqXHR, textStatus, errorThrown) -> console.log "Ups", jqXHR, textStatus, errorThrown, errorThrown
         success: (report) ->
-            console.log "[#{new Date()}] Got report:", report
-            header = "#{new Date(report.from * 1000)} - #{new Date(report.to * 1000)} (Auflösung #{report.resolution / 60}min)"
-            $("#date-container").text(header)
+            console.debug "[#{new Date()}] Got report!"
+            window.report = report # debug
+
+            # ### nav/header ###
+            reportStartTime = shortDateFormatter(new Date(report.startTime * 1000))
+            reportEndTime = shortDateFormatter(new Date(report.endTime * 1000))
+            $('#date-container').text("#{reportStartTime} - #{reportEndTime} (Auflösung #{report.intervalSize / 60}min)")
+            $("#nav-mode-#{report.mode}").addClass('active')
+
+            # ### power ###
+            powerUsage = extractDataFromTimeFrame(report, "powerUsage")
+
+            powerUsagePieChart = nv.models.pieChart()
+                .x((d) -> d.key).y((d) -> d3.sum(d.values.map((v) -> v.y)))
+                .valueFormat((d) -> d3.format('.2f')(d) + 'KWh')
+            d3.select("#power-pie-chart").datum(powerUsage).call(powerUsagePieChart)
+
+            powerUsageLineChart = nv.models.multiBarChart().stacked(true)
+                .tooltipContent (key, x, y, e, graph) ->
+                    "<h3>#{key}</h3><p>#{y} at #{d3.time.format('%d.%m.%Y %H:%M')(e.point.startTime)}-#{d3.time.format('%H:%M')(e.point.endTime)}</p>"
+            powerUsageLineChart.yAxis.tickFormat (d) -> d3.format(',.2f')(d) + 'KWh'
+            powerUsageLineChart.xAxis.tickFormat (d,e,f) ->
+                d3.time.format('%H:%M-')(new Date(d*1000)) + d3.time.format('%H:%M')(new Date((d+report.intervalSize-1)*1000))
+            d3.select("#power-line-chart").datum(powerUsage).transition().duration(500).call(powerUsageLineChart)
 
             # ### storage ###
-            storageDataByUser = {}
-            for frame in report.timeFrames
-                for user, value of frame.storage
-                    storageDataByUser[user] ||= []
-                    storageDataByUser[user].push { x: new Date(frame.startTime*1000), y: value }
-            storageData = []
-            for user, data of storageDataByUser
-                storageData.push { key: user, values: data }
 
-            storageChart = nv.addGraph () ->
-                chart = nv.models.multiBarChart()
-                chart.xAxis.tickFormat(d3.time.format('%d.%m.%Y %HUhr'))
-                chart.yAxis.tickFormat(d3.format(',.1f'))
-                d3.select('#storage-chart svg')
-                    .datum(storageData)
-                    .transition().duration(500)
-                    .call(chart)
-                nv.utils.windowResize(chart.update)
-                chart
             $(".loading-banner").hide()
-    console.log "[#{new Date()}] Loading report"
 

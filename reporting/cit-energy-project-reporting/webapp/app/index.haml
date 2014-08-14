@@ -19,7 +19,22 @@
             %a.navbar-brand(href="#")
               CIT-Energy-Project Report
           %p.navbar-text#date-container
+          %ul.nav.navbar-nav.navbar-right
+            %li#nav-mode-offline
+              %a(href="?mode=offline") Offline
+            %li#nav-mode-online
+              %a(href="?mode=online") Online
     .container#main-container
+      .container
+        %h2 Power usage
+      .container.chart
+        %p.loading-banner
+          Loading...
+        %svg.col-xs-4#power-pie-chart
+        -# we need a additional div here, otherwise popups calculating wrong positions
+        .col-xs-8
+          %div
+            %svg#power-line-chart
       .container
         %h2 Storage usage
       .container.chart#storage-chart
