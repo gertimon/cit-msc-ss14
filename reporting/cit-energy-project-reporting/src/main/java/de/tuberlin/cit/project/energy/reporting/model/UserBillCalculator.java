@@ -46,7 +46,7 @@ public class UserBillCalculator {
         long todaySeconds = today.getTimeInMillis() / 1000;
         int days = 1;
         // last 7 days
-        UsageReport report = generator.getReport(todaySeconds - 60 * 60 * 24 * days, todaySeconds, 60*60);
+        UsageReport report = generator.getReport(todaySeconds - 60 * 60 * 2 * days, todaySeconds, 60*60);
 
         generator.quit();
        // System.err.println("Windowcount: " + report.getUsageTimeFrames().size());

@@ -89,10 +89,22 @@ public class UsageReport {
         UsageTimeFrame currentTimeFrame = new UsageTimeFrame(currentStart, this.resolution);
         this.usageTimeFrames.add(currentTimeFrame);
 
+//        while (powerIterator.hasNext()){
+//            PowerHistoryEntry powerEntry = powerIterator.next();
+//            System.err.println("Power: " + powerEntry.getHostname() + ", " + powerEntry.getUsedPower()+ ", " + powerEntry.getTimestamp());
+//        }
+//        while(storageIterator.hasNext()) {
+//            StorageHistoryEntry storageEntry = storageIterator.next();
+//            System.err.println("Storage: " + storageEntry.getUsername() + ", " + storageEntry.getUsedBytes() + ", " + storageEntry.getTimestamp());
+//        }
 
+        while(trafficIterator.hasNext()) {
+            TrafficHistoryEntry trafficEntry = trafficIterator.next();
+            System.err.println("Traffic: " + trafficEntry.getHostname() + ", " + trafficEntry.getUsername() + ", " + trafficEntry.getUsedBytes() + ", " +trafficEntry.getTimestamp());
+        }
 
         try{
-        while(powerIterator.hasNext() || storageIterator.hasNext() || trafficIterator.hasNext()) {
+        while(currentEnd <= toTime) {
 
             while (powerIterator.hasNext()){
                 PowerHistoryEntry powerEntry = powerIterator.next();

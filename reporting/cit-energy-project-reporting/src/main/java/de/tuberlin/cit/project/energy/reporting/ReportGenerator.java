@@ -169,10 +169,11 @@ public class ReportGenerator {
             for (ZabbixHistoryObject h : historyObjects) {
                 String username = getUsernameFromKey(ZabbixParams.USER_BANDWIDTH_KEY, itemKeyMap.get(h.getItemId()));
                 String hostname = itemHostnameMap.get(h.getItemId());
+                System.err.println(username);
                 float usedBytes = h.getFloatValue();
                 long timestamp = h.getClock();
-//                System.out.println("TRAFFIC Found: " + h);
-//                System.out.println("Username=" + username + ", hostname=" + hostname);
+//              System.out.println("TRAFFIC Found: " + h);
+//               System.out.println("Username=" + username + ", hostname=" + hostname);
 
                 trafficUsage.add(new TrafficHistoryEntry(timestamp, hostname, username, usedBytes));
             }
