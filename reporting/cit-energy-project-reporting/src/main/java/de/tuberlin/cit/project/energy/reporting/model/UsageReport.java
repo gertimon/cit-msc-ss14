@@ -2,12 +2,9 @@ package de.tuberlin.cit.project.energy.reporting.model;
 
 import java.text.DecimalFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -53,24 +50,36 @@ public class UsageReport {
         this.usageTimeFrames = new LinkedList<>();
     }
 
-    public long getFromTime() {
-        return fromTime;
+    public long getStartTime() {
+        return startTime;
     }
 
-    public long getToTime() {
-        return toTime;
+    public long getEndTime() {
+        return this.startTime + this.intervalCount*this.intervalSize - 1;
     }
 
-    public int getResolution() {
-        return resolution;
+    public long getIntervalCount() {
+        return intervalCount;
+    }
+
+    public int getIntervalSize() {
+        return intervalSize;
     }
 
     public void setPowerUsage(List<PowerHistoryEntry> powerUsage) {
         this.powerUsage = powerUsage;
     }
+    
+    public List<PowerHistoryEntry> getPowerUsage() {
+        return powerUsage;
+    }
 
     public void setStorageUsage(List<StorageHistoryEntry> storageUsage) {
         this.storageUsage = storageUsage;
+    }
+    
+    public List<StorageHistoryEntry> getStorageUsage() {
+        return storageUsage;
     }
 
     public void setTrafficUsage(List<TrafficHistoryEntry> trafficUsage) {
@@ -151,8 +160,7 @@ public class UsageReport {
         }
 
     }
-
-
+    
     /**
      * @param size
      * @return
@@ -176,7 +184,8 @@ public class UsageReport {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("\n# Report range: from ").append(new Date(fromTime * 1000)).append(" to ").append(new Date(toTime * 1000));
+        sb.append("\n# Report range: from ").append(new Date(this.startTime * 1000))
+          .append(" to ").append(new Date((this.startTime + this.intervalCount*this.intervalSize - 1) * 1000));
 
         try {
             // interesting values
@@ -200,16 +209,17 @@ public class UsageReport {
     public ObjectNode toJson() {
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode output = objectMapper.createObjectNode();
-        output.put("from", this.fromTime);
-        output.put("to", this.toTime);
-        output.put("resolution", this.resolution);
+        output.put("startTime", this.startTime);
+        output.put("endTime", this.getEndTime());
+        output.put("intervalCount", this.intervalCount);
+        output.put("intervalSize", this.intervalSize);
+
         ArrayNode timeFrameNodes = output.withArray("timeFrames");
         for (UsageTimeFrame timeFrame : this.usageTimeFrames) {
-            ObjectNode timeFrameNode = objectMapper.createObjectNode();
-            timeFrameNode.put("startTime", timeFrame.getStartTime());
-            timeFrameNodes.add(timeFrameNode);
+            timeFrameNodes.add(timeFrame.toJson(objectMapper));
         }
         
         return output;
     }
+
 }
