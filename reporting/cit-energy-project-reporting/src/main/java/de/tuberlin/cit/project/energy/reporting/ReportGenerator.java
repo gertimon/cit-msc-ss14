@@ -237,11 +237,11 @@ public class ReportGenerator {
             List<StorageHistoryEntry> storageUsage = new LinkedList<>();
 
             for (ZabbixHistoryObject h : historyObjects) {
-                String username = getUsernameFromKey(ZabbixParams.USER_BANDWIDTH_KEY, itemKeyMap.get(h.getItemId()));
+                String username = getUsernameFromKey(ZabbixParams.USER_DATA_USAGE_KEY, itemKeyMap.get(h.getItemId()));
                 long storageUsed = h.getLongValue();
                 long timestamp = h.getClock();
 //                System.out.println("STORAGE Found: " + h);
-//                System.out.println("Username=" + username + ", timestamp= " + (new Date(timestamp*1000)));
+//                System.out.println("Username=" + username);
 
                 storageUsage.add(new StorageHistoryEntry(timestamp, username, storageUsed));
             }
