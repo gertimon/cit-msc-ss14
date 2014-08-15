@@ -54,7 +54,7 @@ public class BillForAllServers {
     public String toString(){
         Date from = new Date(startTime *1000);
         Date to = new Date(endTime *1000);
-        return from + " till " + to + ":\n" + "Asok: " + asok.getUser() + " Price: " + asok.getPrice() + "\n" + "Office: " + office.getUser() + " Price: " + office.getPrice();
+        return from + " till " + to + ":\n" + "Asok: " + asok.getUser() + " Price: " + asok.getPrice() + " €\n" + "Office: " + office.getUser() + " Price: " + office.getPrice() + " € \n";
     }
 
 

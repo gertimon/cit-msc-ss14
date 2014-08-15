@@ -1,5 +1,8 @@
 package de.tuberlin.cit.project.energy.reporting.model;
 
+import de.tuberlin.cit.project.energy.reporting.*;
+import de.tuberlin.cit.project.energy.reporting.Properties;
+
 import java.util.*;
 
 /**
@@ -143,7 +146,7 @@ public class UserBillCalculator {
             averageStorage += userStore[i];
         }
         float kWhOfUser = (sum/3600)/1000;
-        double price = kWhOfUser * 0.2;
+        double price = kWhOfUser * Properties.KWH_PRICE;
 
         averageTraffic = averageTraffic / 3600;
         averageStorage = averageStorage/3600;
