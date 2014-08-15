@@ -9,9 +9,10 @@ import java.util.*;
  */
 public class UserBillCalculator {
 
-    ReportGenerator generator;
+
     long firstPowerOccurenceOffice = 0;
     long firstPowerOccurenceAsok = 0;
+    List<UsageTimeFrame> timeFrames;
 
     private class UserTraffics{
         HashMap<String, float[]> userTrafficOffice;
@@ -23,6 +24,7 @@ public class UserBillCalculator {
         }
 
         public HashMap<String, float[]> getUserTrafficAsok() {
+
             return userTrafficAsok;
         }
 
@@ -33,100 +35,122 @@ public class UserBillCalculator {
     }
 
 
-    public UserBillCalculator(){
-        generator = new ReportGenerator();
+    public UserBillCalculator(LinkedList<UsageTimeFrame> frames){
+        timeFrames = frames;
+
     }
 
-    public Bill getBill(String user, int timeWindows){
+    public List<BillForAllServers> getBill(String user){
         Calendar today = Calendar.getInstance();
         today.set(Calendar.HOUR_OF_DAY, 0);
         today.set(Calendar.MINUTE, 0);
         today.set(Calendar.SECOND, 0);
 
         long todaySeconds = today.getTimeInMillis() / 1000;
-        int days = 1;
-        // last 7 days
-        UsageReport report = generator.getReport(todaySeconds - 60 * 60 * 2 * days, todaySeconds, 60*60);
+        int size = timeFrames.size();
 
-        generator.quit();
-       // System.err.println("Windowcount: " + report.getUsageTimeFrames().size());
-        int size = report.getUsageTimeFrames().size();
-        System.err.println("Size: " + size);
-        List<UsageTimeFrame> importantFrames = new LinkedList<UsageTimeFrame>();
-        importantFrames.add(report.getUsageTimeFrames().get(0));
-        System.err.println(importantFrames.size());
-        List<Bill> billList = makeBill(importantFrames, user);
-        System.err.println("Size: " + billList.size()+ "Price : " + billList.get(0).getPrice());
-        return null;
+
+        List<BillForAllServers> billList = makeBill(timeFrames, user);
+
+        return billList;
     }
 
-    private List<Bill> makeBill(List<UsageTimeFrame> importantFrames, String user) {
+    private List<BillForAllServers> makeBill(List<UsageTimeFrame> importantFrames, String user) {
 
-        List<Bill> billList = new LinkedList<Bill>();
+        List<BillForAllServers> billList = new LinkedList<BillForAllServers>();
         for (UsageTimeFrame frame : importantFrames){
             float[] office = new float[3600];
             float[] asok = new float[3600];
             genPowerArray(office,asok,frame);
             UserTraffics usersTraffic = generateUserTrafficMap(frame);
             HashMap<String, long[]> userStorage = generateUserStrorageMap(frame);
-            billList.add(computeBill(office,asok,usersTraffic,userStorage,user));
+            BillForAllServers bills = computeBill(office,asok,usersTraffic,userStorage,user);
+            bills.setFromTime(frame.getStartTime());
+            bills.setToTime(frame.getEndTime());
+            billList.add(bills);
         }
         return billList;
     }
 
-    private Bill computeBill(float[] office, float[] asok, UserTraffics usersTraffic, HashMap<String, long[]> userStorage, String user) {
+    private BillForAllServers computeBill(float[] office, float[] asok, UserTraffics usersTraffic, HashMap<String, long[]> userStorage, String user) {
         //OFFICE
         long[] userStore = userStorage.get(user);
+        if (userStore == null){
+            userStore = new long[3600];
+            Arrays.fill(userStore,0);
+        }
         float[] userTrafficAsok = usersTraffic.getUserTrafficAsok().get(user);
+        if (userTrafficAsok == null){
+            userTrafficAsok = new float[3600];
+            Arrays.fill(userTrafficAsok,0);
+        }
         float[] userTrafficOffice = usersTraffic.getUserTrafficOffice().get(user);
-        System.err.println(usersTraffic.getUserTrafficOffice().values().size());
+        if (userTrafficOffice == null){
+            userTrafficOffice = new float[3600];
+            Arrays.fill(userTrafficOffice,0);
+        }
+        Bill asokBill = computePrice("CitPrijectAsok05",asok,400,userTrafficAsok,userStore,usersTraffic.getUserTrafficAsok(),userStorage,user);
+        Bill officeBill = computePrice("CitProjectOffice",office,75,userTrafficOffice,userStore,usersTraffic.getUserTrafficOffice(),userStorage,user);
+        BillForAllServers compBill = new BillForAllServers(asokBill,officeBill);
+        return compBill;
+    }
 
+    private Bill computePrice(String serverName, float[] server, int idlePower,float[] userTrafficForServer,long[] userStore ,HashMap<String, float[]> usersTrafficForServer, HashMap<String, long[]> usersStorage, String user) {
         float[] pricePart = new float[3600];
         for (int i = 0; i < 3600; i++){
-            if (userTrafficOffice[i] == 0){
-                Set<String> keys = userStorage.keySet();
+            if (userTrafficForServer[i] == 0){
+                Set<String> keys = usersStorage.keySet();
                 if (keys.size() > 1){
-                    long userPart = userStorage.get(user)[i]/2;
+                    long userPart = userStore[i];
                     long rest = 0;
                     for (String k : keys){
                         if (!k.equals(user))
-                        rest += userStorage.get(k)[i]/2;
+                            rest += usersStorage.get(k)[i];
                     }
-                    if (rest != 0) pricePart[i] = (userPart/rest)*office[i];
-                    else pricePart[i] = office[i];
+                    if (rest != 0) pricePart[i] = (userPart/rest)*server[i];
+                    else pricePart[i] = server[i];
                 }
-
             }else{
-                Set<String> keys = userStorage.keySet();
+                Set<String> keys = usersStorage.keySet();
                 if (keys.size() > 1){
-                    long userPart = userStorage.get(user)[i]/2;
+                    long userPart = userStore[i];
                     long rest = 0;
                     for (String k : keys){
                         if (!k.equals(user))
-                            rest += userStorage.get(k)[i]/2;
+                            rest += usersStorage.get(k)[i];
                     }
-                    if (rest != 0) pricePart[i] = (userPart/rest)*office[i];
-                    else pricePart[i] = 50;
-                }else pricePart[i] = 50;
-                keys = usersTraffic.getUserTrafficOffice().keySet();
+                    if (rest != 0) pricePart[i] = (userPart/rest)*server[i];
+                    else pricePart[i] = idlePower;
+                }else pricePart[i] = idlePower;
+                keys = usersTrafficForServer.keySet();
                 if (keys.size()>1){
-                    float userPart = userTrafficOffice[i];
+                    float userPart = userTrafficForServer[i];
                     float rest = 0;
                     for (String k : keys){
                         if (!k.equals(user))
-                            rest += usersTraffic.getUserTrafficOffice().get(k)[i];
+                            rest += usersTrafficForServer.get(k)[i];
                     }
-                    if (rest != 0) pricePart[i] += (userPart/rest)*(office[i] - 50);
-                    else pricePart[i] += office[i] - 50;
-                }pricePart[i] += office[i] - 50;
+                    if (rest != 0) pricePart[i] += (userPart/rest)*(server[i] - idlePower);
+                    else pricePart[i] += server[i] - idlePower;
+                }pricePart[i] += server[i] - idlePower;
             }
         }
         float sum = 0;
-        for (float x : pricePart){
-            sum += x;
+        float averageTraffic = 0;
+        long averageStorage = 0;
+
+        for (int i = 0;i<3600;i++){
+            sum += pricePart[i];
+            averageTraffic += userTrafficForServer[i];
+            averageStorage += userStore[i];
         }
-        double price = sum/1000 * 0.2;
-        Bill bill = new Bill(user,sum,null,price);
+        float kWhOfUser = (sum/3600)/1000;
+        double price = kWhOfUser * 0.2;
+
+        averageTraffic = averageTraffic / 3600;
+        averageStorage = averageStorage/3600;
+
+        Bill bill = new Bill(serverName,user,kWhOfUser,averageTraffic,averageStorage,price);
         return bill;
     }
 
@@ -147,21 +171,17 @@ public class UserBillCalculator {
                 }
 
         }
-        fillRestOfStorageArray(userStorage);
+        fillRestOfStorageArray(userStorage,frame.getInitialStorageEntry().getUsedBytes());
         return userStorage;
     }
 
-    private void fillRestOfStorageArray(HashMap<String, long[]> userStorage) {
-        for (long[] traffArry : userStorage.values()){
-            int i = 3600-1;
-            long lastValue = traffArry[i];
-            if (lastValue < 0) lastValue = 0;
-            for (i = 3600 -2; i >= 0; i--){
-                if (traffArry[i] == -1){
-                    traffArry[i] = lastValue;
-                }else if(traffArry[i] > -1){
-                    lastValue = traffArry[i];
-                }
+    private void fillRestOfStorageArray(HashMap<String, long[]> userStorage, long startValue) {
+        for (long[] traffArray : userStorage.values()){
+            long current = startValue;
+            for (int i = 0; i < 3600; i++){
+                if (traffArray[i] == -1) {
+                    traffArray[i] = current;
+                }else current = traffArray[i];
             }
         }
     }
@@ -172,7 +192,6 @@ public class UserBillCalculator {
 
         for (TrafficHistoryEntry entry : frame.getTrafficUsage()){
             float[] userArray = null;
-            System.err.println(entry.getUsername());
             if (entry.getHostname().equals("CitProjectAsok05")){
                 if (userTrafficAsok.containsKey(entry.getUsername())){
                     userArray = userTrafficAsok.get(entry.getUsername());
@@ -183,7 +202,8 @@ public class UserBillCalculator {
                 }
                 long diff = entry.getTimestamp() - firstPowerOccurenceAsok;
                 if (diff >= 0){
-                    userArray[(int)diff] = entry.getUsedBytes();
+                    if (userArray[(int)diff] >= 0) userArray[(int)diff] += entry.getUsedBytes();
+                    else userArray[(int)diff] = entry.getUsedBytes();
                 }
             }else if (entry.getHostname().equals("CitProjectOffice")){
                 if (userTrafficOffice.containsKey(entry.getUsername())){
@@ -195,13 +215,14 @@ public class UserBillCalculator {
                 }
                 long diff = entry.getTimestamp() - firstPowerOccurenceOffice;
                 if (diff >= 0){
-                    userArray[(int)diff] = entry.getUsedBytes();
+                    if (userArray[(int)diff] >= 0) userArray[(int)diff] += entry.getUsedBytes();
+                    else userArray[(int)diff] = entry.getUsedBytes();
                 }
             }
         }
         fillRestOfArray(userTrafficOffice);
         fillRestOfArray(userTrafficAsok);
-        return new UserTraffics(userTrafficOffice,userTrafficAsok);
+        return new UserTraffics(userTrafficAsok,userTrafficOffice);
     }
 
     private void fillRestOfArray(HashMap<String, float[]> userTraffic) {
@@ -252,31 +273,24 @@ public class UserBillCalculator {
         for (PowerHistoryEntry entry : frame.getPowerUsage()){
             if (entry.getHostname().equals("CitProjectOffice")){
                 long currentTime = entry.getTimestamp();
-                long diff = lastTimeOffice - currentTime;
+                long diff = currentTime - lastTimeOffice;
                 for (int k = 0; k < diff; k++){
                     if (i+k < 3600) office[i+k] = entry.getUsedPower();
                 }
                 i += diff;
+                lastTimeOffice = currentTime;
             }
             if (entry.getHostname().equals("CitProjectAsok05")){
                 long currentTime = entry.getTimestamp();
-                long diff = lastTimeAsok - currentTime;
+                long diff = currentTime - lastTimeAsok;
                 for (int k = 0; k < diff; k++){
                     if (j+k < 3600) asok[j+k] = entry.getUsedPower();
                 }
                 j += diff;
+                lastTimeAsok = currentTime;
             }
         }
-        for (int k = 0; k < 3600; k++){
-            if (asok[k] == 0) asok[k] = 400;
-            if (office[k] == 0) office[k] = 500;
-        }
-
     }
 
-    public static void main(String[] args){
-       UserBillCalculator calc = new UserBillCalculator();
-       Bill test = calc.getBill("mpjss14", 1);
-    }
 
 }

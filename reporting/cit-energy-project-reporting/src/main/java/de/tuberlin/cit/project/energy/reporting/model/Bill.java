@@ -4,33 +4,45 @@ package de.tuberlin.cit.project.energy.reporting.model;
  * Created by fubezz on 11.08.14.
  */
 public class Bill {
-    final String user;
-    final float powerUsagePerHour;
-    final Double traffic;
-    final Double price;
+    private final String server;
+    private final String user;
+    private final float kWhOFUser;
+    private final float averageTraffic;
+    private final float averageStorage;
+    private final Double price;
 
-    public Bill(String user, float powerUsagePerHour, Double traffic, Double price) {
+
+    public Bill(String server, String user, float kWhOfUser, float averageTraffic, long averageStorage, double price) {
+        this.server = server;
         this.user = user;
-        this.powerUsagePerHour = powerUsagePerHour;
-        this.traffic = traffic;
+        this.kWhOFUser = kWhOfUser;
+        this.averageTraffic = averageTraffic;
+        this.averageStorage = averageStorage;
         this.price = price;
     }
 
-    public Double getPrice() {
-        return price;
+    public float getAverageStorage() {
+        return averageStorage;
     }
 
-    public Double getTraffic() {
-        return traffic;
-    }
-
-    public float getPowerUsagePerHour() {
-        return powerUsagePerHour;
+    public String getServer() {
+        return server;
     }
 
     public String getUser() {
         return user;
     }
 
+    public float getkWhOFUser() {
+        return kWhOFUser;
+    }
+
+    public float getAverageTraffic() {
+        return averageTraffic;
+    }
+
+    public Double getPrice() {
+        return price;
+    }
 
 }

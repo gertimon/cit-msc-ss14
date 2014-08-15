@@ -18,7 +18,9 @@ public class UsageTimeFrame {
     private final long startTime;
     /** Interval size in seconds. */
     private final long frameDuration;
-    
+
+
+
     private final List<PowerHistoryEntry> powerUsage;
     private final List<StorageHistoryEntry> storageUsage;
     private final List<TrafficHistoryEntry> trafficUsage;
@@ -131,5 +133,21 @@ public class UsageTimeFrame {
         result.with("statistic").with("count").put("traffic", this.trafficUsage.size());
         
         return result;
+    }
+
+    public StorageHistoryEntry getInitialStorageEntry() {
+        return initialStorageEntry;
+    }
+
+    public List<StorageHistoryEntry> getStorageUsage() {
+        return storageUsage;
+    }
+
+    public List<TrafficHistoryEntry> getTrafficUsage() {
+        return trafficUsage;
+    }
+
+    public Map<String, Double> getPowerUsageByHost() {
+        return powerUsageByHost;
     }
 }

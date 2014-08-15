@@ -32,11 +32,12 @@ public class UsageReport {
     private List<StorageHistoryEntry> storageUsage;
     private List<TrafficHistoryEntry> trafficUsage;
 
-    public List<UsageTimeFrame> getUsageTimeFrames() {
+    public LinkedList<UsageTimeFrame> getUsageTimeFrames() {
         return usageTimeFrames;
     }
 
-    private List<UsageTimeFrame> usageTimeFrames;
+    /** Usage time frames ordered by frame start time. */
+    private LinkedList<UsageTimeFrame> usageTimeFrames;
 
     /**
      * @param from       in seconds since 1970.
@@ -86,7 +87,20 @@ public class UsageReport {
         this.trafficUsage = trafficUsage;
     }
 
-    public void calculateReport(long from, long to, int resolution) {
+    @SuppressWarnings("unchecked")
+    public void calculateReport() {
+        LinkedList<UsageTimeFrame> timeFrames = initializeUsageTimeFrames();
+        List<HistoryEntry> dataLists[] = new List[]{ this.powerUsage, this.storageUsage, this.trafficUsage };
+        assignDataToTimeFrames(this.startTime, this.getEndTime(), timeFrames, dataLists);
+        for (UsageTimeFrame frame : timeFrames)
+            frame.calculateSummary();
+        this.usageTimeFrames = timeFrames;
+        UserBillCalculator calc = new UserBillCalculator(usageTimeFrames);
+        List<BillForAllServers> test = calc.getBill("mpjss14");
+        for (BillForAllServers bills :test){
+            System.out.println(bills);
+        }
+    }
 
 
         Iterator<PowerHistoryEntry> powerIterator = this.powerUsage.iterator();
