@@ -6,7 +6,7 @@ $ ->
         for frame in report.timeFrames
             for key, value of frame[field]
                 dataByKey[key] ||= []
-                dataByKey[key].push x: frame.startTime, y: value, startTime: new Date(frame.startTime * 1000), endTime: new Date(frame.endTime * 1000)
+                dataByKey[key].push x: (frame.endTime + frame.startTime + 1) / 2, y: value, startTime: new Date(frame.startTime * 1000), endTime: new Date(frame.endTime * 1000)
         for key, data of dataByKey
             { key: key, values: data }
 
@@ -30,18 +30,21 @@ $ ->
 
             powerUsagePieChart = nv.models.pieChart()
                 .x((d) -> d.key).y((d) -> d3.sum(d.values.map((v) -> v.y)))
-                .valueFormat((d) -> d3.format('.2f')(d) + 'KWh')
+                .valueFormat((d) -> d3.format('.3f')(d) + 'KWh')
             d3.select("#power-pie-chart").datum(powerUsage).call(powerUsagePieChart)
+            nv.utils.windowResize(powerUsagePieChart.update)
 
             powerUsageLineChart = nv.models.multiBarChart().stacked(true)
-                .tooltipContent (key, x, y, e, graph) ->
-                    "<h3>#{key}</h3><p>#{y} at #{d3.time.format('%d.%m.%Y %H:%M')(e.point.startTime)}-#{d3.time.format('%H:%M')(e.point.endTime)}</p>"
-            powerUsageLineChart.yAxis.tickFormat (d) -> d3.format(',.2f')(d) + 'KWh'
+                 .tooltipContent (key, x, y, e, graph) ->
+                     "<h3>#{key}</h3><p>#{y} at #{d3.time.format('%d.%m.%Y %H:%M')(e.point.startTime)}-#{d3.time.format('%H:%M')(e.point.endTime)}</p>"
+            powerUsageLineChart.yAxis.tickFormat (d) -> d3.format(',.3f')(d) + 'KWh'
             powerUsageLineChart.xAxis.tickFormat (d,e,f) ->
-                d3.time.format('%H:%M-')(new Date(d*1000)) + d3.time.format('%H:%M')(new Date((d+report.intervalSize-1)*1000))
+                d3.time.format('%H:%M')(new Date(d*1000))
             d3.select("#power-line-chart").datum(powerUsage).transition().duration(500).call(powerUsageLineChart)
+            nv.utils.windowResize(powerUsageLineChart.update)
 
             # ### storage ###
 
+            # ### hide loading banner ###
             $(".loading-banner").hide()
 

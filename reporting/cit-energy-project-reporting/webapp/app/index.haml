@@ -24,26 +24,25 @@
               %a(href="?mode=offline") Offline
             %li#nav-mode-online
               %a(href="?mode=online") Online
-    .container#main-container
-      .container
-        %h2 Power usage
-      .container.chart
-        %p.loading-banner
-          Loading...
+
+      %h2 Power usage
+      %p.loading-banner
+        Loading...
+      .row.chart
         %svg.col-xs-4#power-pie-chart
         -# we need a additional div here, otherwise popups calculating wrong positions
         .col-xs-8
           %div
             %svg#power-line-chart
-      .container
-        %h2 Storage usage
-      .container.chart#storage-chart
+
+      %h2 Storage usage
+      .chart#storage-chart
         %p.loading-banner
           Loading...
         %svg
-      .container
-        %h2 Traffic usage
-      .container.chart#traffic-chart
+
+      %h2 Traffic usage
+      .chart#traffic-chart
         %p.loading-banner
           Loading...
         %svg
