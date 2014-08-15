@@ -6,7 +6,7 @@ public class StorageHistoryEntry extends HistoryEntry {
 
     public StorageHistoryEntry(long timestamp, String username, long usedBytes) {
         super(timestamp);
-        this.username = username.split("\\.")[1];
+        this.username = username;
         this.usedBytes = usedBytes;
     }
 

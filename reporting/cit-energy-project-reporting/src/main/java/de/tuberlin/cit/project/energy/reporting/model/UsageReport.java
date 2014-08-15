@@ -32,6 +32,7 @@ public class UsageReport {
     private List<StorageHistoryEntry> storageUsage;
     private List<TrafficHistoryEntry> trafficUsage;
 
+
     public LinkedList<UsageTimeFrame> getUsageTimeFrames() {
         return usageTimeFrames;
     }
@@ -96,8 +97,8 @@ public class UsageReport {
             frame.calculateSummary();
         this.usageTimeFrames = timeFrames;
         UserBillCalculator calc = new UserBillCalculator(usageTimeFrames);
-        List<BillForAllServers> test = calc.getBill("mpjss14");
-        for (BillForAllServers bills :test){
+        billList = calc.getBill("mpjss14");
+        for (BillForAllServers bills :billList){
             System.out.println(bills);
         }
     }

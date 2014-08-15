@@ -1,7 +1,5 @@
 package de.tuberlin.cit.project.energy.reporting.model;
 
-import de.tuberlin.cit.project.energy.reporting.ReportGenerator;
-
 import java.util.*;
 
 /**
@@ -64,9 +62,9 @@ public class UserBillCalculator {
             genPowerArray(office,asok,frame);
             UserTraffics usersTraffic = generateUserTrafficMap(frame);
             HashMap<String, long[]> userStorage = generateUserStrorageMap(frame);
-            BillForAllServers bills = computeBill(office,asok,usersTraffic,userStorage,user);
-            bills.setFromTime(frame.getStartTime());
-            bills.setToTime(frame.getEndTime());
+            BillForAllServers bills = computeBill(office, asok, usersTraffic, userStorage, user);
+            bills.setStartTime(frame.getStartTime());
+            bills.setEndTime(frame.getEndTime());
             billList.add(bills);
         }
         return billList;
@@ -109,7 +107,7 @@ public class UserBillCalculator {
                     }
                     if (rest != 0) pricePart[i] = (userPart/rest)*server[i];
                     else pricePart[i] = server[i];
-                }
+                }else pricePart[i] = server[i];
             }else{
                 Set<String> keys = usersStorage.keySet();
                 if (keys.size() > 1){
@@ -132,7 +130,7 @@ public class UserBillCalculator {
                     }
                     if (rest != 0) pricePart[i] += (userPart/rest)*(server[i] - idlePower);
                     else pricePart[i] += server[i] - idlePower;
-                }pricePart[i] += server[i] - idlePower;
+                }else pricePart[i] += server[i] - idlePower;
             }
         }
         float sum = 0;
@@ -156,8 +154,9 @@ public class UserBillCalculator {
 
     private HashMap<String, long[]> generateUserStrorageMap(UsageTimeFrame frame) {
         HashMap<String,long[]> userStorage = new HashMap<String,long[]>();
-        for (StorageHistoryEntry entry : frame.getStorageUsage()) {
-            long[] userArray = null;
+        if (frame.getStorageUsage().size() > 0) {
+            for (StorageHistoryEntry entry : frame.getStorageUsage()) {
+                long[] userArray = null;
                 if (userStorage.containsKey(entry.getUsername())) {
                     userArray = userStorage.get(entry.getUsername());
                 } else {
@@ -170,8 +169,13 @@ public class UserBillCalculator {
                     userArray[(int) diff] = entry.getUsedBytes();
                 }
 
+            }
+            fillRestOfStorageArray(userStorage,frame.getInitialStorageEntry().getUsedBytes());
+        }else{
+            long[] userArray = new long[3600];
+            Arrays.fill(userArray,frame.getInitialStorageEntry().getUsedBytes());
+            userStorage.put(frame.getInitialStorageEntry().getUsername(),userArray);
         }
-        fillRestOfStorageArray(userStorage,frame.getInitialStorageEntry().getUsedBytes());
         return userStorage;
     }
 
@@ -179,7 +183,7 @@ public class UserBillCalculator {
         for (long[] traffArray : userStorage.values()){
             long current = startValue;
             for (int i = 0; i < 3600; i++){
-                if (traffArray[i] == -1) {
+                if (traffArray[i] < 0) {
                     traffArray[i] = current;
                 }else current = traffArray[i];
             }

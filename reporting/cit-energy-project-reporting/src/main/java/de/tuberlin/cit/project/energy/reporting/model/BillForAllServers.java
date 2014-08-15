@@ -1,6 +1,8 @@
 package de.tuberlin.cit.project.energy.reporting.model;
 
-import java.util.Calendar;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import java.util.Date;
 
 /**
@@ -9,14 +11,14 @@ import java.util.Date;
 public class BillForAllServers {
     private final Bill asok;
     private final Bill office;
-    private long fromTime;
-    private long toTime;
+    private long startTime;
+    private long endTime;
 
     public BillForAllServers(long from, long to, Bill asok, Bill office) {
         this.asok = asok;
         this.office = office;
-        fromTime = from;
-        toTime = to;
+        startTime = from;
+        endTime = to;
     }
 
     public BillForAllServers(Bill asok, Bill office) {
@@ -24,20 +26,20 @@ public class BillForAllServers {
         this.office = office;
     }
 
-    public void setToTime(long toTime) {
-        this.toTime = toTime;
+    public void setEndTime(long endTime) {
+        this.endTime = endTime;
     }
 
-    public void setFromTime(long fromTime) {
-        this.fromTime = fromTime;
+    public void setStartTime(long startTime) {
+        this.startTime = startTime;
     }
 
-    public long getToTime() {
-        return toTime;
+    public long getEndTime() {
+        return endTime;
     }
 
-    public long getFromTime() {
-        return fromTime;
+    public long getStartTime() {
+        return startTime;
     }
 
     public Bill getOffice() {
@@ -50,8 +52,8 @@ public class BillForAllServers {
 
     @Override
     public String toString(){
-        Date from = new Date(fromTime*1000);
-        Date to = new Date(toTime*1000);
+        Date from = new Date(startTime *1000);
+        Date to = new Date(endTime *1000);
         return from + " till " + to + ":\n" + "Asok: " + asok.getUser() + " Price: " + asok.getPrice() + "\n" + "Office: " + office.getUser() + " Price: " + office.getPrice();
     }
 
