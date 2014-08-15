@@ -64,7 +64,7 @@ public class ReportGenerator {
     public UsageReport getReport(long from, long to, int intervalSize) {
         try {
             long startTime = from - (from % intervalSize);
-            int intervalCount = (int)((to - startTime) / intervalSize);
+            int intervalCount = (int)((to - startTime) / intervalSize) + 1;
             UsageReport report = new UsageReport(startTime, intervalCount, intervalSize);
 
             // calculate host oriented values
