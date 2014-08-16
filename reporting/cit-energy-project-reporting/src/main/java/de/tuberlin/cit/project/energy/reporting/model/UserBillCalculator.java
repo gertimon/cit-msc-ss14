@@ -244,36 +244,38 @@ public class UserBillCalculator {
 
     private HashMap<String, float[]> genPowerArray(Iterator<String> dataNodeIt, UsageTimeFrame frame) {
         HashMap<String, float[]> dataNodesPowers = new HashMap<String, float[]>();
-        while (dataNodeIt.hasNext()) {
-            String dataNodeName = dataNodeIt.next();
-            float[] dataNodePower = new float[3600];
-            int i = 0;
-            long lastTimeServer = 0;
-            Iterator<PowerHistoryEntry> it = frame.getPowerUsage().iterator();
+        List<PowerHistoryEntry> powerEntries = frame.getPowerUsage();
+        for (PowerHistoryEntry entry : powerEntries) {
+            float hostPower[] = dataNodesPowers.get(entry.getHostname());
 
-            while (it.hasNext()) {
-                PowerHistoryEntry entry = it.next();
-                if (entry.getHostname().equals(dataNodeName)) {
-                    dataNodePower[0] = entry.getUsedPower();
-                    it.remove();
-                    i++;
-                    lastTimeServer = entry.getTimestamp();
-                    break;
-                }
+            if (hostPower == null) {
+                hostPower = new float[3600];
+                Arrays.fill(hostPower, -1);
+                dataNodesPowers.put(entry.getHostname(), hostPower);
             }
-            for (PowerHistoryEntry entry : frame.getPowerUsage()) {
-                if (entry.getHostname().equals(dataNodeName)) {
-                    long currentTime = entry.getTimestamp();
-                    long diff = currentTime - lastTimeServer;
-                    for (int k = 0; k < diff; k++) {
-                        if (i + k < 3600) dataNodePower[i + k] = entry.getUsedPower();
-                    }
-                    i += diff;
-                    lastTimeServer = currentTime;
-                }
-            }
-            dataNodesPowers.put(dataNodeName, dataNodePower);
+
+            int offset = (int) (entry.getTimestamp() - frame.getStartTime());
+            hostPower[offset] = entry.getUsedPower();
         }
+
+        // find initial values and fill empty values with previous values
+        for (String hostname : dataNodesPowers.keySet()) {
+            float hostPower[] = dataNodesPowers.get(hostname);
+            int i;
+
+            for (i = 0; i < hostPower.length && hostPower[i] == -1; i++) {
+            }
+            hostPower[0] = hostPower[i];
+
+            float lastValue = hostPower[0];
+            for (i = 1; i < hostPower.length; i++) {
+                if (hostPower[i] == -1)
+                    hostPower[i] = lastValue;
+                else
+                    lastValue = hostPower[i];
+            }
+        }
+
         return dataNodesPowers;
     }
 }
