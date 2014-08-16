@@ -152,28 +152,33 @@ public class UserBillCalculator {
 
     private HashMap<String, long[]> generateUserStrorageMap(UsageTimeFrame frame) {
         HashMap<String,long[]> userStorage = new HashMap<String,long[]>();
-        if (frame.getStorageUsage().size() > 0) {
-            for (StorageHistoryEntry entry : frame.getStorageUsage()) {
-                long[] userArray = null;
-                if (userStorage.containsKey(entry.getUsername())) {
-                    userArray = userStorage.get(entry.getUsername());
-                } else {
-                    userArray = new long[3600];
-                    Arrays.fill(userArray, -1);
-                    userStorage.put(entry.getUsername(), userArray);
-                }
-                long diff = entry.getTimestamp() - firstOccurencesServer.get("CitProjectOffice");
-                if (diff >= 0) {
-                    userArray[(int) diff] = entry.getUsedBytes();
-                }
 
+        for (StorageHistoryEntry entry : frame.getStorageUsage()) {
+            long[] userArray = userStorage.get(entry.getUsername());
+
+            if (userArray == null) {
+                userArray = new long[3600];
+                Arrays.fill(userArray, -1);
+                userStorage.put(entry.getUsername(), userArray);
             }
-            fillRestOfStorageArray(userStorage,frame.getInitialStorageEntry().getUsedBytes());
-        }else{
-            long[] userArray = new long[3600];
-            Arrays.fill(userArray,frame.getInitialStorageEntry().getUsedBytes());
-            userStorage.put(frame.getInitialStorageEntry().getUsername(),userArray);
+
+            long offset = entry.getTimestamp() - firstOccurencesServer.get("CitProjectOffice");
+            if (offset >= 0) {
+                userArray[(int) offset] = entry.getUsedBytes();
+            }
+
         }
+
+        for (String username : frame.getInitialStorageEntries().keySet()) {
+            if (userStorage.containsKey(username)) {
+                fillRestOfStorageArray(userStorage, frame.getInitialStorageEntries().get(username));
+            } else {
+                long[] userArray = new long[3600];
+                Arrays.fill(userArray, frame.getInitialStorageEntries().get(username));
+                userStorage.put(username, userArray);
+            }
+        }
+
         return userStorage;
     }
 
@@ -181,9 +186,10 @@ public class UserBillCalculator {
         for (long[] traffArray : userStorage.values()){
             long current = startValue;
             for (int i = 0; i < 3600; i++){
-                if (traffArray[i] < 0) {
+                if (traffArray[i] < 0)
                     traffArray[i] = current;
-                }else current = traffArray[i];
+                else
+                    current = traffArray[i];
             }
         }
     }

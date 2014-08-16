@@ -25,7 +25,12 @@ public class UsageTimeFrame {
     private final List<StorageHistoryEntry> storageUsage;
     private final List<TrafficHistoryEntry> trafficUsage;
 
-    private StorageHistoryEntry initialStorageEntry;
+    /**
+     * Contains a username <-> initial storage mapping. If storageUsage list
+     * contains a username, this map contains at an entry too.
+     * => It's safe to iterate over usernames in storageUsage an pull an initial value from this map.
+     */
+    private HashMap<String, Long> initialStorageEntries;
 
     // statistics
     private Map<String, Double> powerUsageByHost;
@@ -61,16 +66,25 @@ public class UsageTimeFrame {
     
     public void addStorageUsage(StorageHistoryEntry storageEntry) {
         this.storageUsage.add(storageEntry);
+
+        if (!this.initialStorageEntries.containsKey(storageEntry.getUsername()))
+            this.initialStorageEntries.put(storageEntry.getUsername(), 0l);
     }
 
-    public void setInitialStorageEntry(StorageHistoryEntry initialStorageEntry) {
-        this.initialStorageEntry = initialStorageEntry;
+    public void setInitialStorageEntries(HashMap<String, Long> initialStorageEntries) {
+        this.initialStorageEntries = initialStorageEntries;
     }
-    
-    public boolean hasInitialStorageEntry() {
-        return this.initialStorageEntry != null;
+
+    @SuppressWarnings("unchecked")
+    public HashMap<String, Long> getLastStorageEntries() {
+        HashMap<String, Long> result = (HashMap<String, Long>) this.initialStorageEntries.clone();
+
+        for (StorageHistoryEntry entry : this.storageUsage)
+            result.put(entry.getUsername(), entry.getUsedBytes());
+
+        return result;
     }
-    
+
     public void addTrafficUsage(TrafficHistoryEntry trafficEntry) {
         this.trafficUsage.add(trafficEntry);
     }
@@ -129,14 +143,14 @@ public class UsageTimeFrame {
         // some debug informations
         result.with("statistic").with("count").put("power", this.powerUsage.size());
         result.with("statistic").with("count").put("storage", this.storageUsage.size());
-        result.with("statistic").with("count").put("initStorage", this.hasInitialStorageEntry());
+        result.with("statistic").with("count").put("initStorageEntries", this.initialStorageEntries.size());
         result.with("statistic").with("count").put("traffic", this.trafficUsage.size());
         
         return result;
     }
 
-    public StorageHistoryEntry getInitialStorageEntry() {
-        return initialStorageEntry;
+    public HashMap<String, Long> getInitialStorageEntries() {
+        return initialStorageEntries;
     }
 
     public List<StorageHistoryEntry> getStorageUsage() {

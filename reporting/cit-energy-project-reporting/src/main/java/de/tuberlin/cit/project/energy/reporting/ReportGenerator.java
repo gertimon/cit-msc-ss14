@@ -224,6 +224,7 @@ public class ReportGenerator {
             List<ZabbixHistoryObject> historyObjects = client.getHistory(params);
             
             // now fetch some initial values (last values before current period)
+            // TODO: we have to collect an initial value of all users!
             params.put("time_till", report.getStartTime() - 1);
             params.remove("time_from");
             params.put("sortorder", "DESC");

@@ -112,31 +112,52 @@ public class UsageReport {
         UsageTimeFrame currentTimeFrame = new UsageTimeFrame(currentStart, this.resolution);
         this.usageTimeFrames.add(currentTimeFrame);
 
-//        while (powerIterator.hasNext()){
-//            PowerHistoryEntry powerEntry = powerIterator.next();
-//            System.err.println("Power: " + powerEntry.getHostname() + ", " + powerEntry.getUsedPower()+ ", " + powerEntry.getTimestamp());
-//        }
-//        while(storageIterator.hasNext()) {
-//            StorageHistoryEntry storageEntry = storageIterator.next();
-//            System.err.println("Storage: " + storageEntry.getUsername() + ", " + storageEntry.getUsedBytes() + ", " + storageEntry.getTimestamp());
-//        }
+        for (List<HistoryEntry> list : dataLists) {
+            if (!list.isEmpty()) {
+                Iterator<HistoryEntry> entryIterator = list.iterator();
+                HistoryEntry lastEntry = entryIterator.next();
+                HistoryEntry entry = lastEntry;
+                Iterator<UsageTimeFrame> timeFrameIterator = timeFrames.iterator();
+                UsageTimeFrame frame = timeFrameIterator.next();
+                HashMap<String, Long> lastEntryByUser = new HashMap<>();
 
-        while(trafficIterator.hasNext()) {
-            TrafficHistoryEntry trafficEntry = trafficIterator.next();
-            System.err.println("Traffic: " + trafficEntry.getHostname() + ", " + trafficEntry.getUsername() + ", " + trafficEntry.getUsedBytes() + ", " +trafficEntry.getTimestamp());
-        }
+                // find last initial storage value
+                if (lastEntry instanceof StorageHistoryEntry) {
+                    StorageHistoryEntry storageEntry = (StorageHistoryEntry) entry;
+                    lastEntryByUser.put(storageEntry.getUsername(), storageEntry.getUsedBytes());
 
-        try{
-        while(currentEnd <= toTime) {
+                    while(storageEntry.getTimestamp() < this.startTime && entryIterator.hasNext()) {
+                        lastEntryByUser.put(storageEntry.getUsername(), storageEntry.getUsedBytes());
+                        storageEntry = (StorageHistoryEntry) entryIterator.next();
+                    }
 
-            while (powerIterator.hasNext()){
-                PowerHistoryEntry powerEntry = powerIterator.next();
-                powerIterator.remove();
-                currentTimeFrame.addPowerUsage(powerEntry);
-            } else {
-                powerUsage.add(0, powerEntry);
-                break;
-            }
+                    frame.setInitialStorageEntries(lastEntryByUser);
+                    entry = storageEntry;
+                }
+
+                // assign entries to usage time frames
+                while(entryIterator.hasNext() && entry.getTimestamp() <= reportEndTime) {
+                    // usage time frame
+                    if (entry.getTimestamp() > frame.getEndTime() && timeFrameIterator.hasNext()) {
+                        // add initial value as last state
+                        if (lastEntry instanceof StorageHistoryEntry) {
+                            lastEntryByUser = frame.getLastStorageEntries();
+                            frame = timeFrameIterator.next();
+                            frame.setInitialStorageEntries(lastEntryByUser);
+                        } else
+                            frame = timeFrameIterator.next();
+                    }
+
+                    // history entry
+                    if (entry.getTimestamp() >= frame.getStartTime() && entry.getTimestamp() <= frame.getEndTime()) {
+                        frame.addUsageEntry(entry);
+                    }
+
+                    if (entry.getTimestamp() <= frame.getEndTime()) {
+                        lastEntry = entry;
+                        entry = entryIterator.next();
+                    }
+                }
 
             while(storageIterator.hasNext()){
                 StorageHistoryEntry storageEntry = storageIterator.next();
@@ -149,24 +170,16 @@ public class UsageReport {
                 }
             }
 
-            while(trafficIterator.hasNext()){
-                TrafficHistoryEntry trafficEntry = trafficIterator.next();
-                currentTimeFrame.addTrafficUsage(trafficEntry);
-            } else {
-                trafficUsage.add(0, trafficEntry);
-                break;
-            }
-
-            
-            // next frame if all iterator reach current end
-            if (powerEntry.getTimestamp() > currentEnd && storageEntry.getTimestamp() > currentEnd && trafficEntry.getTimestamp() > currentEnd) {
-                currentStart = currentStart + this.resolution;
-                currentEnd = currentStart + this.resolution - 1;
-                currentTimeFrame = new UsageTimeFrame(currentStart, this.resolution);
-               // currentTimeFrame.addPowerUsage(powerEntry);
-                //currentTimeFrame.addStorageUsage(storageEntry);
-                //currentTimeFrame.addTrafficUsage(trafficEntry);
-                this.usageTimeFrames.add(currentTimeFrame);
+                // fix initial values if we don't reach the last usage time frame
+                if (entry instanceof StorageHistoryEntry) {
+                    if (frame.getStartTime() != this.startTime + (this.intervalCount - 1) * this.intervalSize) {
+                        while(timeFrameIterator.hasNext()) {
+                            lastEntryByUser = frame.getLastStorageEntries();
+                            frame = timeFrameIterator.next();
+                            frame.setInitialStorageEntries(lastEntryByUser);
+                        }
+                    }
+                }
             }
         }
         if (from + resolution <= to - resolution) {
