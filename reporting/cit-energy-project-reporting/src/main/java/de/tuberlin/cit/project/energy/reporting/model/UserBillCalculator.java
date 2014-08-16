@@ -52,7 +52,7 @@ public class UserBillCalculator {
             Iterator<String> nodeIt = dataNodes.iterator();
             HashMap<String,float[]> dataNodePower = genPowerArray(nodeIt ,frame);
             List<UserTrafficOfServer> usersTraffic = generateUserTrafficMap(frame);
-            HashMap<String, long[]> userStorage = generateUserStrorageMap(frame);
+            HashMap<String, long[]> userStorage = generateUserStorageMap(frame);
             Iterator<String> users = userStorage.keySet().iterator();
             HashMap<String,BillForAllServers> billforUserOfServers = new HashMap<>();
             while(users.hasNext()){
@@ -148,45 +148,41 @@ public class UserBillCalculator {
         return bill;
     }
 
-    private HashMap<String, long[]> generateUserStrorageMap(UsageTimeFrame frame) {
+    private HashMap<String, long[]> generateUserStorageMap(UsageTimeFrame frame) {
         HashMap<String,long[]> userStorage = new HashMap<String,long[]>();
 
         for (StorageHistoryEntry entry : frame.getStorageUsage()) {
-            long[] userArray = userStorage.get(entry.getUsername());
+            long[] storageValues = userStorage.get(entry.getUsername());
 
-            if (userArray == null) {
-                userArray = new long[3600];
-                Arrays.fill(userArray, -1);
-                userStorage.put(entry.getUsername(), userArray);
+            if (storageValues == null) {
+                storageValues = new long[3600];
+                Arrays.fill(storageValues, -1);
+                userStorage.put(entry.getUsername(), storageValues);
             }
 
             int offset = (int) (entry.getTimestamp() - frame.getStartTime());
-            userArray[offset] = entry.getUsedBytes();
+            storageValues[offset] = entry.getUsedBytes();
         }
 
         for (String username : frame.getInitialStorageEntries().keySet()) {
             if (userStorage.containsKey(username)) {
-                fillRestOfStorageArray(userStorage, frame.getInitialStorageEntries().get(username));
+                long[] storageValues = userStorage.get(username);
+                long lastValue = frame.getInitialStorageEntries().get(username);
+                for (int i = 0; i < storageValues.length; i++) {
+                    if (storageValues[i] == -1)
+                        storageValues[i] = lastValue;
+                    else
+                        lastValue = storageValues[i];
+                }
+
             } else {
-                long[] userArray = new long[3600];
-                Arrays.fill(userArray, frame.getInitialStorageEntries().get(username));
-                userStorage.put(username, userArray);
+                long[] storageValues = new long[3600];
+                Arrays.fill(storageValues, frame.getInitialStorageEntries().get(username));
+                userStorage.put(username, storageValues);
             }
         }
 
         return userStorage;
-    }
-
-    private void fillRestOfStorageArray(HashMap<String, long[]> userStorage, long startValue) {
-        for (long[] traffArray : userStorage.values()){
-            long current = startValue;
-            for (int i = 0; i < 3600; i++){
-                if (traffArray[i] < 0)
-                    traffArray[i] = current;
-                else
-                    current = traffArray[i];
-            }
-        }
     }
 
     private List<UserTrafficOfServer> generateUserTrafficMap(UsageTimeFrame frame) {
