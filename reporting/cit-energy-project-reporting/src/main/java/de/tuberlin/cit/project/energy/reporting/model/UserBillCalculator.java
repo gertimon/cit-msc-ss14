@@ -9,9 +9,6 @@ import java.util.*;
  */
 public class UserBillCalculator {
 
-
-//    long firstPowerOccurenceOffice = 0;
-//    long firstPowerOccurenceAsok = 0;
     HashMap<String,Integer> idlePowers;
     HashMap<String,Long> firstOccurencesServer;
     List<UsageTimeFrame> timeFrames;
@@ -19,7 +16,6 @@ public class UserBillCalculator {
     private class UserTrafficOfServer {
         String name;
         HashMap<String, float[]> userTraffic;
-        // HashMap<String, float[]> userTrafficAsok;
 
         private UserTrafficOfServer(String name) {
             this.name = name;
@@ -43,22 +39,10 @@ public class UserBillCalculator {
         idlePowers = new HashMap<>();
         idlePowers.put("CitProjectAsok05",400);
         idlePowers.put("CitProjectOffice",75);
-
     }
 
     public List<HashMap<String, BillForAllServers>> getBill(){
-        Calendar today = Calendar.getInstance();
-        today.set(Calendar.HOUR_OF_DAY, 0);
-        today.set(Calendar.MINUTE, 0);
-        today.set(Calendar.SECOND, 0);
-
-        long todaySeconds = today.getTimeInMillis() / 1000;
-        int size = timeFrames.size();
-
-
-        List<HashMap<String, BillForAllServers>> billList = makeBill(timeFrames);
-
-        return billList;
+        return makeBill(this.timeFrames);
     }
 
     private List<HashMap<String, BillForAllServers>> makeBill(List<UsageTimeFrame> importantFrames) {
@@ -68,8 +52,6 @@ public class UserBillCalculator {
         for (UsageTimeFrame frame : importantFrames){
             Set<String> dataNodes = frame.getPowerUsageByHost().keySet();
             Iterator<String> nodeIt = dataNodes.iterator();
-//            float[] office = new float[3600];
-//            float[] asok = new float[3600];
             HashMap<String,float[]> dataNodePower = genPowerArray(nodeIt ,frame);
             List<UserTrafficOfServer> usersTraffic = generateUserTrafficMap(frame);
             HashMap<String, long[]> userStorage = generateUserStrorageMap(frame);
@@ -105,18 +87,6 @@ public class UserBillCalculator {
             Bill serverBill = computePrice(serverName,serverPowers.get(serverName),idlePowers.get(serverName),userTrafficOFServer,userStore,traffic.getUserTraffic(),userStorage,user);
             userBillsForServer.add(serverBill);
         }
-//        float[] userTrafficAsok = usersTraffic.getUserTrafficAsok().get(user);
-//        if (userTrafficAsok == null){
-//            userTrafficAsok = new float[3600];
-//            Arrays.fill(userTrafficAsok,0);
-//        }
-//        float[] userTrafficOffice = usersTraffic.getUserTrafficOffice().get(user);
-//        if (userTrafficOffice == null){
-//            userTrafficOffice = new float[3600];
-//            Arrays.fill(userTrafficOffice,0);
-//        }
-//        Bill asokBill = computePrice("CitProjectAsok05",asok,400,userTrafficAsok,userStore,usersTraffic.getUserTrafficAsok(),userStorage,user);
-//        Bill officeBill = computePrice("CitProjectOffice",office,75,userTrafficOffice,userStore,usersTraffic.getUserTrafficOffice(),userStorage,user);
         BillForAllServers compBill = new BillForAllServers(userBillsForServer);
         return compBill;
     }
@@ -146,7 +116,6 @@ public class UserBillCalculator {
                 }
                 pricePart[i] = (userPart/rest)*idlePower;
                 keys = usersTrafficForServer.keySet();
-//                if (keys.size()>1){
                 float userPart2 = userTrafficForServer[i];
                 float rest2 = 0;
                 for (String k : keys){
@@ -248,43 +217,6 @@ public class UserBillCalculator {
             serverList.add(userTraffic);
         }
         return serverList;
-//
-//        HashMap<String,float[]> userTrafficOffice = new HashMap<String,float[]>();
-//        HashMap<String,float[]> userTrafficAsok = new HashMap<String,float[]>();
-//
-//        for (TrafficHistoryEntry entry : frame.getTrafficUsage()){
-//            float[] userArray = null;
-//            if (entry.getHostname().equals("CitProjectAsok05")){
-//                if (userTrafficAsok.containsKey(entry.getUsername())){
-//                    userArray = userTrafficAsok.get(entry.getUsername());
-//                }else{
-//                    userArray = new float[3600];
-//                    Arrays.fill(userArray,-1);
-//                    userTrafficAsok.put(entry.getUsername(), userArray);
-//                }
-//                long diff = entry.getTimestamp() - firstPowerOccurenceAsok;
-//                if (diff >= 0){
-//                    if (userArray[(int)diff] >= 0) userArray[(int)diff] += entry.getUsedBytes();
-//                    else userArray[(int)diff] = entry.getUsedBytes();
-//                }
-//            }else if (entry.getHostname().equals("CitProjectOffice")){
-//                if (userTrafficOffice.containsKey(entry.getUsername())){
-//                    userArray = userTrafficOffice.get(entry.getUsername());
-//                }else{
-//                    userArray = new float[3600];
-//                    Arrays.fill(userArray,-1);
-//                    userTrafficOffice.put(entry.getUsername(), userArray);
-//                }
-//                long diff = entry.getTimestamp() - firstPowerOccurenceOffice;
-//                if (diff >= 0){
-//                    if (userArray[(int)diff] >= 0) userArray[(int)diff] += entry.getUsedBytes();
-//                    else userArray[(int)diff] = entry.getUsedBytes();
-//                }
-//            }
-//        }
-//        fillRestOfArray(userTrafficOffice);
-//        fillRestOfArray(userTrafficAsok);
-//        return new UserTraffics(userTrafficAsok,userTrafficOffice);
     }
 
     private void fillRestOfArray(HashMap<String, float[]> userTraffic) {
@@ -340,54 +272,4 @@ public class UserBillCalculator {
         return dataNodesPowers;
     }
 }
-//        int i = 0;
-//        int j = 0;
-//        long lastTimeOffice = 0;
-//        long lastTimeAsok = 0;
-//        boolean foundFirstOffice = false;
-//        boolean foundFirstAsok = false;
-//        Iterator<PowerHistoryEntry> it = frame.getPowerUsage().iterator();
-//        while (it.hasNext()){
-//            PowerHistoryEntry entry = it.next();
-//            if (entry.getHostname().equals("CitProjectOffice") && !foundFirstOffice){
-//                office[0] = entry.getUsedPower();
-//                it.remove();
-//                i++;
-//                firstPowerOccurenceOffice = entry.getTimestamp();
-//                lastTimeOffice = entry.getTimestamp();
-//                foundFirstOffice = true;
-//            }
-//            if (entry.getHostname().equals("CitProjectAsok05") && !foundFirstAsok){
-//                asok[0] = entry.getUsedPower();
-//                it.remove();
-//                j++;
-//                firstPowerOccurenceAsok = entry.getTimestamp();
-//                lastTimeAsok = entry.getTimestamp();
-//                foundFirstAsok = true;
-//            }
-//            if (foundFirstAsok && foundFirstOffice) break;
-//        }
-//        for (PowerHistoryEntry entry : frame.getPowerUsage()){
-//            if (entry.getHostname().equals("CitProjectOffice")){
-//                long currentTime = entry.getTimestamp();
-//                long diff = currentTime - lastTimeOffice;
-//                for (int k = 0; k < diff; k++){
-//                    if (i+k < 3600) office[i+k] = entry.getUsedPower();
-//                }
-//                i += diff;
-//                lastTimeOffice = currentTime;
-//            }
-//            if (entry.getHostname().equals("CitProjectAsok05")){
-//                long currentTime = entry.getTimestamp();
-//                long diff = currentTime - lastTimeAsok;
-//                for (int k = 0; k < diff; k++){
-//                    if (j+k < 3600) asok[j+k] = entry.getUsedPower();
-//                }
-//                j += diff;
-//                lastTimeAsok = currentTime;
-//            }
-//        }
-//    }
 
-
-//}
