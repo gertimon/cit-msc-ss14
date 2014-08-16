@@ -10,7 +10,6 @@ import java.util.*;
 public class UserBillCalculator {
 
     HashMap<String,Integer> idlePowers;
-    HashMap<String,Long> firstOccurencesServer;
     List<UsageTimeFrame> timeFrames;
 
     private class UserTrafficOfServer {
@@ -35,7 +34,6 @@ public class UserBillCalculator {
 
     public UserBillCalculator(LinkedList<UsageTimeFrame> frames){
         timeFrames = frames;
-        firstOccurencesServer = new HashMap<String,Long>();
         idlePowers = new HashMap<>();
         idlePowers.put("CitProjectAsok05",400);
         idlePowers.put("CitProjectOffice",75);
@@ -162,7 +160,7 @@ public class UserBillCalculator {
                 userStorage.put(entry.getUsername(), userArray);
             }
 
-            long offset = entry.getTimestamp() - firstOccurencesServer.get("CitProjectOffice");
+            long offset = entry.getTimestamp() - frame.getStartTime();
             if (offset >= 0) {
                 userArray[(int) offset] = entry.getUsedBytes();
             }
@@ -211,10 +209,12 @@ public class UserBillCalculator {
                         Arrays.fill(userArray, -1);
                         userTrafficForServer.put(entry.getUsername(), userArray);
                     }
-                    long diff = entry.getTimestamp() - firstOccurencesServer.get(serverName);
-                    if (diff >= 0) {
-                        if (userArray[(int) diff] >= 0) userArray[(int) diff] += entry.getUsedBytes();
-                        else userArray[(int) diff] = entry.getUsedBytes();
+                    long offset = entry.getTimestamp() - frame.getStartTime();
+                    if (offset >= 0) {
+                        if (userArray[(int) offset] >= 0)
+                            userArray[(int) offset] += entry.getUsedBytes();
+                        else
+                            userArray[(int) offset] = entry.getUsedBytes();
                     }
                 }
             }
@@ -257,7 +257,6 @@ public class UserBillCalculator {
                     dataNodePower[0] = entry.getUsedPower();
                     it.remove();
                     i++;
-                    firstOccurencesServer.put(dataNodeName, entry.getTimestamp());
                     lastTimeServer = entry.getTimestamp();
                     break;
                 }
