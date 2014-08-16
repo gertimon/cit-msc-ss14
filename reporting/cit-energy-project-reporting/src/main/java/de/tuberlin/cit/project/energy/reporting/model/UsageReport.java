@@ -29,7 +29,6 @@ public class UsageReport {
     private List<StorageHistoryEntry> storageUsage;
     private List<TrafficHistoryEntry> trafficUsage;
 
-
     public LinkedList<UsageTimeFrame> getUsageTimeFrames() {
         return usageTimeFrames;
     }
@@ -93,12 +92,14 @@ public class UsageReport {
         for (UsageTimeFrame frame : timeFrames)
             frame.calculateSummary();
         this.usageTimeFrames = timeFrames;
-        UserBillCalculator calc = new UserBillCalculator(usageTimeFrames);
-        billList = calc.getBill();
-        for (HashMap<String, BillForAllServers> bills :billList){
-           for (BillForAllServers billsss : bills.values()){
-               System.out.println(billsss);
-           }
+
+        // dump bills
+        for (UsageTimeFrame frame : timeFrames) {
+            HashMap<String, BillForAllServers> bills = frame.getBillByUser();
+
+            for (BillForAllServers billsss : bills.values()) {
+                System.out.println(billsss);
+            }
         }
     }
 

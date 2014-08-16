@@ -26,7 +26,7 @@ $ ->
             $("#nav-mode-#{report.mode}").addClass('active')
 
             # ### power ###
-            powerUsage = extractDataFromTimeFrame(report, "powerUsage")
+            powerUsage = extractDataFromTimeFrame(report, "powerUsageSum")
 
             powerUsagePieChart = nv.models.pieChart()
                 .x((d) -> d.key).y((d) -> d3.sum(d.values.map((v) -> v.y)))
