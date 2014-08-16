@@ -160,11 +160,8 @@ public class UserBillCalculator {
                 userStorage.put(entry.getUsername(), userArray);
             }
 
-            long offset = entry.getTimestamp() - frame.getStartTime();
-            if (offset >= 0) {
-                userArray[(int) offset] = entry.getUsedBytes();
-            }
-
+            int offset = (int) (entry.getTimestamp() - frame.getStartTime());
+            userArray[offset] = entry.getUsedBytes();
         }
 
         for (String username : frame.getInitialStorageEntries().keySet()) {
@@ -209,19 +206,20 @@ public class UserBillCalculator {
                         Arrays.fill(userArray, -1);
                         userTrafficForServer.put(entry.getUsername(), userArray);
                     }
-                    long offset = entry.getTimestamp() - frame.getStartTime();
-                    if (offset >= 0) {
-                        if (userArray[(int) offset] >= 0)
-                            userArray[(int) offset] += entry.getUsedBytes();
-                        else
-                            userArray[(int) offset] = entry.getUsedBytes();
-                    }
+
+                    int offset = (int) (entry.getTimestamp() - frame.getStartTime());
+                    if (userArray[offset] >= 0)
+                        userArray[offset] += entry.getUsedBytes();
+                    else
+                        userArray[offset] = entry.getUsedBytes();
                 }
             }
+
             fillRestOfArray(userTrafficForServer);
             userTraffic.setUserTraffic(userTrafficForServer);
             serverList.add(userTraffic);
         }
+
         return serverList;
     }
 
@@ -263,8 +261,7 @@ public class UserBillCalculator {
             float hostPower[] = dataNodesPowers.get(hostname);
             int i;
 
-            for (i = 0; i < hostPower.length && hostPower[i] == -1; i++) {
-            }
+            for (i = 0; i < hostPower.length && hostPower[i] == -1; i++);
             hostPower[0] = hostPower[i];
 
             float lastValue = hostPower[0];
