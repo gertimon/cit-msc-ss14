@@ -101,7 +101,7 @@ public class UserBillCalculator {
                 for (String k : keys){
                     rest += usersStorage.get(k)[i];
                 }
-                pricePart[i] = (userPart/rest)*server[i];
+                pricePart[i] = (userPart/rest)*idlePower;
                 allStorage += rest;
             }
             else{
