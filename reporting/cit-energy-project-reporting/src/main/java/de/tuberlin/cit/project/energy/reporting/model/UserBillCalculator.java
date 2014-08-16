@@ -63,25 +63,26 @@ public class UserBillCalculator {
 
     private List<HashMap<String, BillForAllServers>> makeBill(List<UsageTimeFrame> importantFrames) {
 
-        List<HashMap<String,BillForAllServers>> billList = new LinkedList<>();
+        List<HashMap<String, BillForAllServers>> billList = new LinkedList<>();
 
-        for (UsageTimeFrame frame : importantFrames){
-            Set<String> dataNodes = frame.getPowerUsageByHost().keySet();
-            Iterator<String> nodeIt = dataNodes.iterator();
-            HashMap<String,float[]> dataNodePower = genPowerArray(nodeIt ,frame);
+        for (UsageTimeFrame frame : importantFrames) {
+            HashMap<String, float[]> dataNodePower = generatePowerMap(frame);
             HashMap<String, ServerTraffic> usersTraffic = generateUserTrafficMap(frame);
             HashMap<String, long[]> userStorage = generateUserStorageMap(frame);
             Iterator<String> users = userStorage.keySet().iterator();
-            HashMap<String,BillForAllServers> billforUserOfServers = new HashMap<>();
-            while(users.hasNext()){
+            HashMap<String, BillForAllServers> billforUserOfServers = new HashMap<>();
+
+            while (users.hasNext()) {
                 String userName = users.next();
                 BillForAllServers bills = computeBill(dataNodePower, usersTraffic, userStorage, userName);
                 bills.setStartTime(frame.getStartTime());
                 bills.setEndTime(frame.getEndTime());
-                billforUserOfServers.put(userName,bills);
+                billforUserOfServers.put(userName, bills);
             }
+
             billList.add(billforUserOfServers);
         }
+
         return billList;
     }
 
@@ -166,6 +167,7 @@ public class UserBillCalculator {
         return bill;
     }
 
+    /** Generates an user -> traffic mapping. */
     private HashMap<String, long[]> generateUserStorageMap(UsageTimeFrame frame) {
         HashMap<String,long[]> userStorage = new HashMap<String,long[]>();
 
@@ -182,6 +184,7 @@ public class UserBillCalculator {
             storageValues[offset] = entry.getUsedBytes();
         }
 
+        // fill empty values with previous / initial values
         for (String username : frame.getInitialStorageEntries().keySet()) {
             if (userStorage.containsKey(username)) {
                 long[] storageValues = userStorage.get(username);
@@ -203,7 +206,7 @@ public class UserBillCalculator {
         return userStorage;
     }
 
-    /** Produces a Server->User->Traffic mapping. */
+    /** Generates a server -> user -> traffic mapping. */
     private HashMap<String, ServerTraffic> generateUserTrafficMap(UsageTimeFrame frame) {
         HashMap<String, ServerTraffic> trafficByHost = new HashMap<>();
         List<TrafficHistoryEntry> trafficEntries = frame.getTrafficUsage();
@@ -222,9 +225,11 @@ public class UserBillCalculator {
         return trafficByHost;
     }
 
-    private HashMap<String, float[]> genPowerArray(Iterator<String> dataNodeIt, UsageTimeFrame frame) {
+    /** Generates a server -> power usage mapping. */
+    private HashMap<String, float[]> generatePowerMap(UsageTimeFrame frame) {
         HashMap<String, float[]> dataNodesPowers = new HashMap<String, float[]>();
         List<PowerHistoryEntry> powerEntries = frame.getPowerUsage();
+
         for (PowerHistoryEntry entry : powerEntries) {
             float hostPower[] = dataNodesPowers.get(entry.getHostname());
 
