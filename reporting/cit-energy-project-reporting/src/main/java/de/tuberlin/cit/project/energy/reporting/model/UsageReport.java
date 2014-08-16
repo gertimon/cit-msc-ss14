@@ -1,10 +1,7 @@
 package de.tuberlin.cit.project.energy.reporting.model;
 
 import java.text.DecimalFormat;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -97,9 +94,11 @@ public class UsageReport {
             frame.calculateSummary();
         this.usageTimeFrames = timeFrames;
         UserBillCalculator calc = new UserBillCalculator(usageTimeFrames);
-        billList = calc.getBill("mpjss14");
-        for (BillForAllServers bills :billList){
-            System.out.println(bills);
+        billList = calc.getBill();
+        for (HashMap<String, BillForAllServers> bills :billList){
+           for (BillForAllServers billsss : bills.values()){
+               System.out.println(billsss);
+           }
         }
     }
 

@@ -10,15 +10,19 @@ public class Bill {
     private final float averageTraffic;
     private final float averageStorage;
     private final Double price;
+    private final double partitialStorageInPercent;
+    private final double partitialTrafficInPercent;
 
 
-    public Bill(String server, String user, float kWhOfUser, float averageTraffic, long averageStorage, double price) {
+    public Bill(String server, String user, float kWhOfUser, float averageTraffic, long averageStorage, double price, double amountOfStorageInHour, double amountOfTrafficInHour) {
         this.server = server;
         this.user = user;
         this.kWhOFUser = kWhOfUser;
         this.averageTraffic = averageTraffic;
         this.averageStorage = averageStorage;
         this.price = price;
+        this.partitialStorageInPercent = Math.round(amountOfStorageInHour);
+        this.partitialTrafficInPercent = Math.round(amountOfTrafficInHour);
     }
 
     public float getAverageStorage() {
@@ -43,6 +47,14 @@ public class Bill {
 
     public Double getPrice() {
         return price;
+    }
+
+    public double getPartitialStorageInPercent() {
+        return partitialStorageInPercent;
+    }
+
+    public double getPartitialTrafficInPercent() {
+        return partitialTrafficInPercent;
     }
 
 }
