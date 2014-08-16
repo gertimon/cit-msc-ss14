@@ -12,22 +12,40 @@ public class UserBillCalculator {
     HashMap<String,Integer> idlePowers;
     List<UsageTimeFrame> timeFrames;
 
-    private class UserTrafficOfServer {
-        String name;
-        HashMap<String, float[]> userTraffic;
+    private class ServerTraffic {
+        private final UsageTimeFrame timeFrame;
+        private final HashMap<String, float[]> userTraffic;
+        private final HashMap<String, Integer> lastUserTrafficEnd;
 
-        private UserTrafficOfServer(String name) {
-            this.name = name;
+        private ServerTraffic(UsageTimeFrame timeFrame) {
+            this.timeFrame = timeFrame;
+            this.userTraffic = new HashMap<>();
+            this.lastUserTrafficEnd = new HashMap<>();
         }
 
-        public void setUserTraffic(HashMap<String,float[]> userTraffic) {
-            this.userTraffic = userTraffic;
-        }
         public HashMap<String, float[]> getUserTraffic() {
             return userTraffic;
         }
-        public String getServerName(){
-            return this.name;
+
+        public void addEntry(TrafficHistoryEntry entry) {
+            float traffic[] = this.userTraffic.get(entry.getUsername());
+            int rangeStart;
+            int rangeEnd = (int) (this.timeFrame.getStartTime() - entry.getTimestamp());
+
+            if (traffic == null) {
+                traffic = new float[(int) this.timeFrame.getDurationInSeconds()];
+                this.userTraffic.put(entry.getUsername(), traffic);
+                rangeStart = 0;
+
+            } else {
+                rangeStart = this.lastUserTrafficEnd.get(entry.getUsername()) + 1;
+            }
+
+            for (int i = rangeStart; i <= rangeEnd; i++) {
+                traffic[i] = entry.getUsedBytes();
+            }
+
+            this.lastUserTrafficEnd.put(entry.getUsername(), rangeEnd);
         }
     }
 
@@ -51,7 +69,7 @@ public class UserBillCalculator {
             Set<String> dataNodes = frame.getPowerUsageByHost().keySet();
             Iterator<String> nodeIt = dataNodes.iterator();
             HashMap<String,float[]> dataNodePower = genPowerArray(nodeIt ,frame);
-            List<UserTrafficOfServer> usersTraffic = generateUserTrafficMap(frame);
+            HashMap<String, ServerTraffic> usersTraffic = generateUserTrafficMap(frame);
             HashMap<String, long[]> userStorage = generateUserStorageMap(frame);
             Iterator<String> users = userStorage.keySet().iterator();
             HashMap<String,BillForAllServers> billforUserOfServers = new HashMap<>();
@@ -67,7 +85,7 @@ public class UserBillCalculator {
         return billList;
     }
 
-    private BillForAllServers computeBill(HashMap<String,float[]> serverPowers, List<UserTrafficOfServer> usersTraffic, HashMap<String, long[]> userStorage, String user) {
+    private BillForAllServers computeBill(HashMap<String,float[]> serverPowers, HashMap<String, ServerTraffic> usersTraffic, HashMap<String, long[]> userStorage, String user) {
 
         long[] userStore = userStorage.get(user);
         if (userStore == null){
@@ -75,8 +93,8 @@ public class UserBillCalculator {
             Arrays.fill(userStore,0);
         }
         List<Bill> userBillsForServer = new LinkedList<>();
-        for (UserTrafficOfServer traffic : usersTraffic){
-            String serverName = traffic.getServerName();
+        for (String serverName : usersTraffic.keySet()) {
+            ServerTraffic traffic = usersTraffic.get(serverName);
             float[] userTrafficOFServer = traffic.getUserTraffic().get(user);
             if (userTrafficOFServer == null){
                 userTrafficOFServer = new float[3600];
@@ -185,55 +203,23 @@ public class UserBillCalculator {
         return userStorage;
     }
 
-    private List<UserTrafficOfServer> generateUserTrafficMap(UsageTimeFrame frame) {
-        List<UserTrafficOfServer> serverList = new LinkedList<>();
-        Iterator<String> server = frame.getPowerUsageByHost().keySet().iterator();
-        while (server.hasNext()){
-            String serverName = server.next();
-            UserTrafficOfServer userTraffic = new UserTrafficOfServer(serverName);
-            HashMap<String,float[]> userTrafficForServer = new HashMap<String,float[]>();
-            for (TrafficHistoryEntry entry : frame.getTrafficUsage()) {
-                float[] userArray = null;
-                if (entry.getHostname().equals(serverName)) {
-                    if (userTrafficForServer.containsKey(entry.getUsername())) {
-                        userArray = userTrafficForServer.get(entry.getUsername());
-                    } else {
-                        userArray = new float[3600];
-                        Arrays.fill(userArray, -1);
-                        userTrafficForServer.put(entry.getUsername(), userArray);
-                    }
+    /** Produces a Server->User->Traffic mapping. */
+    private HashMap<String, ServerTraffic> generateUserTrafficMap(UsageTimeFrame frame) {
+        HashMap<String, ServerTraffic> trafficByHost = new HashMap<>();
+        List<TrafficHistoryEntry> trafficEntries = frame.getTrafficUsage();
 
-                    int offset = (int) (entry.getTimestamp() - frame.getStartTime());
-                    if (userArray[offset] >= 0)
-                        userArray[offset] += entry.getUsedBytes();
-                    else
-                        userArray[offset] = entry.getUsedBytes();
-                }
+        for (TrafficHistoryEntry entry : trafficEntries) {
+            ServerTraffic serverTraffic = trafficByHost.get(entry.getHostname());
+
+            if (serverTraffic == null) {
+                serverTraffic = new ServerTraffic(frame);
+                trafficByHost.put(entry.getHostname(), serverTraffic);
             }
 
-            fillRestOfArray(userTrafficForServer);
-            userTraffic.setUserTraffic(userTrafficForServer);
-            serverList.add(userTraffic);
+            serverTraffic.addEntry(entry);
         }
 
-        return serverList;
-    }
-
-    private void fillRestOfArray(HashMap<String, float[]> userTraffic) {
-        for (float[] traffArry : userTraffic.values()){
-            int i = 3600-1;
-            float lastValue = traffArry[i];
-            if (lastValue < 0) lastValue = 0;
-            for (i = 3600 -2; i >= 0; i--){
-                if (traffArry[i] == -1 && lastValue == 0){
-                    traffArry[i] = 0;
-                }else if(traffArry[i] == -1 && lastValue > 0){
-                    traffArry[i] = lastValue;
-                }else if(traffArry[i] > -1){
-                    lastValue = traffArry[i];
-                }
-            }
-        }
+        return trafficByHost;
     }
 
     private HashMap<String, float[]> genPowerArray(Iterator<String> dataNodeIt, UsageTimeFrame frame) {
