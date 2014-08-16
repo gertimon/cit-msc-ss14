@@ -178,6 +178,7 @@ public class UserBillCalculator {
                 storageValues = new long[3600];
                 Arrays.fill(storageValues, -1);
                 userStorage.put(entry.getUsername(), storageValues);
+                storageValues[0] = frame.getInitialStorageEntries().get(entry.getUsername());
             }
 
             int offset = (int) (entry.getTimestamp() - frame.getStartTime());
@@ -187,9 +188,9 @@ public class UserBillCalculator {
         // fill empty values with previous / initial values
         for (String username : frame.getInitialStorageEntries().keySet()) {
             if (userStorage.containsKey(username)) {
-                long[] storageValues = userStorage.get(username);
-                long lastValue = frame.getInitialStorageEntries().get(username);
-                for (int i = 0; i < storageValues.length; i++) {
+                long storageValues[] = userStorage.get(username);
+                long lastValue = storageValues[0];
+                for (int i = 1; i < storageValues.length; i++) {
                     if (storageValues[i] == -1)
                         storageValues[i] = lastValue;
                     else
@@ -227,7 +228,7 @@ public class UserBillCalculator {
 
     /** Generates a server -> power usage mapping. */
     private HashMap<String, float[]> generatePowerMap(UsageTimeFrame frame) {
-        HashMap<String, float[]> dataNodesPowers = new HashMap<String, float[]>();
+        HashMap<String, float[]> dataNodesPowers = new HashMap<>();
         List<PowerHistoryEntry> powerEntries = frame.getPowerUsage();
 
         for (PowerHistoryEntry entry : powerEntries) {
@@ -237,6 +238,7 @@ public class UserBillCalculator {
                 hostPower = new float[3600];
                 Arrays.fill(hostPower, -1);
                 dataNodesPowers.put(entry.getHostname(), hostPower);
+                hostPower[0] = entry.getUsedPower(); // initial value
             }
 
             int offset = (int) (entry.getTimestamp() - frame.getStartTime());
@@ -246,13 +248,8 @@ public class UserBillCalculator {
         // find initial values and fill empty values with previous values
         for (String hostname : dataNodesPowers.keySet()) {
             float hostPower[] = dataNodesPowers.get(hostname);
-            int i;
-
-            for (i = 0; i < hostPower.length && hostPower[i] == -1; i++);
-            hostPower[0] = hostPower[i];
-
             float lastValue = hostPower[0];
-            for (i = 1; i < hostPower.length; i++) {
+            for (int i = 1; i < hostPower.length; i++) {
                 if (hostPower[i] == -1)
                     hostPower[i] = lastValue;
                 else
