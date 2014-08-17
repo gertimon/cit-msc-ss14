@@ -25,9 +25,26 @@ In our system we use Software Defined Networking to measure the file transaction
  
  When the controller find a flow like this, it calculates the current bandwidth every five seconds and sends it to the monitoring system. With this data the admins of the file system are able to oversee all transaction and to calculate a very specific power usage of each user. 
  
- \subsection{Implementation}               
+ \subsection{Implementation and Connection Establishing}               
 
+To establish a connection to transfer files there are three parts inside the file system that needs to be done. The first step is shown in figure \ref{nn}.
+ 
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.5\textwidth]{img/connectionToNamenode} 
+\caption{Part 1: Connection to the Namenode}
+\label{nn}
+\end{figure}
 
+In figure \ref{nn} is show the intern file system and a client that wants to start a file transfer. The red edges client/system interactions and the blue edges are interactions within the system.
 
+In step 1 of the figure the client wants to start a file transfer. So the first thing to do is to send a connection request to the system. This request goes at first to the Open vSwitch(OVS). The switch does not know, where to forward the connection because there is no flow table entry. So the switch asks Floodlight, show in step 2. In step 3 Floodlight computes path in the network and sends the flow entry back to the switch. As told, before file transfer can start, the Namenode has to decide on which server the client can connect with. So the request goes further to the Namenode(NN), show in step 4. The Namenode decides for one server and sends these information in step 5 back to the client. Now the client is ready to connect with the Datanode. This interaction is shown in figure \ref{dn}.
 
-          
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.5\textwidth]{img/connectionToDatanode} 
+\caption{Part 2: Connection to the Datanode}
+\label{dn}
+\end{figure}     
+
+In the second part, the client is now really able to start the file transfer and tries to open the connection. Again this connection request ends at the switch, which needs to find out, where to forward this request. So the steps one till 3 are the same as in the first part. After that, the flow table of the switch contains an entry for this connection request and it forwards it to, for example, Datanode 1(DN1). This is shown in step 4. In step 5 the Datanode answers the request and Client and Datanode 1 start the file transfer. Important for the third part is step 6. The Namenode not only decides to which Datanode the connection goes, but also it checks if the Client is a registered user. If it is, the Namenode will send the username and the current IP with port of the user to the monitoring system "Zabbix". Why it does that, is described in the third part, which is shown in figure 4.     
