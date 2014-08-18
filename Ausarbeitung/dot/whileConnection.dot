@@ -1,0 +1,41 @@
+digraph{
+
+    subgraph cluster_0 {
+        node[fontsize=15, shape = box];
+          {rank = same; Zabbix; DN1; DN2; NN; Floodlight}
+        edge [dir=none]
+        OVS;
+        Zabbix;
+        DN1;
+        DN2;
+        NN;
+        Floodlight;
+        OVS -> Zabbix;
+        OVS -> DN1
+        OVS -> DN2
+        OVS -> NN
+        OVS -> Floodlight
+        label = "File System"
+    }
+
+     subgraph connection1 {
+        node[fontsize=15];
+        Client;
+        edge [color=blue]
+        
+        OVS -> Floodlight [label= "3"]
+        Floodlight ->OVS [label = "2"]
+        Floodlight -> Zabbix[label = "5"]
+        Zabbix -> Floodlight [label = "4"]
+        
+    }
+
+     subgraph connection2 {
+        edge [dir = both, color=red]
+        Client -> OVS  [label= "1"]
+        OVS -> DN1 [label = "1"]
+        
+    }
+   
+
+}
