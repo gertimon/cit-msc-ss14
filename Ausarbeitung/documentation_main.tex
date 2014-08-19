@@ -5,6 +5,10 @@
 %\usepackage[style=numeric-comp]{biblatex}
 % *** GRAPHICS RELATED PACKAGES ***
 
+% graphs with tikz
+\usepackage{pgfplots,pgfplotstable}
+\usepackage{tikz}
+\usetikzlibrary{arrows,positioning,fit,backgrounds} 
 
 \hyphenation{op-tical net-works semi-conduc-tor}
 
@@ -72,8 +76,8 @@ The conclusion goes here.
 
 
 \appendices
-\section{Proof of the First Zonklar Equation}
-Appendix one text goes here.
+\section{Report Generator Overview}
+\input{tex/report_generator}
 
 \section{}
 Appendix two text goes here.
