@@ -1,7 +1,16 @@
 
-\subsection{Overview}
+\subsection{Motivation}
 
+To offer multiple users and applications a high available access on large filesystems there are different solutions known. Files can be stored on local filesystems (fs), may be shared using a network attached storage (nas)  or using a storage area network (san). for sharing storage in datacenters a san actually is a common used solution. they offer a redundant hardware setup on different locations using SCSI on FibreChannel or iSCSI over IP.
+There are less limitations on the given ressource power and data transmission speed but a manufacturer will connect a customer to original equipment which limits a customer through expansion costs.
 
+a possible solution for this case could be a cluster filesystem that consists of a lot of heterogeneous (smaller) computer systems. such a system should share computation between all nodes and give a lot of configurable options for keep redundant copies of files and offer fast delivery of files out of the network based on the number of nodes in that system.
+
+by holding a software based virtual filesystem it should be possible to react on new desires of customers like on filesize, number of files, available bandwidth. in opposite by having to many nodes the computation power is much to high and expensive for the given storage amount.  otherwise there will be a lot of work for keeping all the systems up to date. 
+
+we were interested in how to reduce costs by providing different customer plans to fulfil a given quality-of-service (QoS) aggreement by starting to separating into a expensive speed oriented and slower/cheaper plan. the costs should be 
+
+\subsection{comparison of common cluster file systems}
 
 \begin{itemize}
 \item was ist ein verteiltes dateisystem
