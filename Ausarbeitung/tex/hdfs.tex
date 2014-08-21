@@ -1,6 +1,7 @@
 
 \subsection{Motivation}
-
+\todo{which word to use? distributed filesystem (dfs)?}
+\todo{maybe duplicates the introduction}
 To offer multiple users and applications a high available access on large filesystems there are different solutions known. Files can be stored on local filesystems (fs), may be shared using a network attached storage (nas)  or using a storage area network (san). for sharing storage in datacenters a san actually is a common used solution. they offer a redundant hardware setup on different locations using SCSI on FibreChannel or iSCSI over IP.
 There are less limitations on the given ressource power and data transmission speed but a manufacturer will connect a customer to original equipment which limits a customer through expansion costs.
 
@@ -10,7 +11,16 @@ by holding a software based virtual filesystem it should be possible to react on
 
 we were interested in how to reduce costs by providing different customer plans to fulfil a given quality-of-service (QoS) aggreement by starting to separating into a expensive speed oriented and slower/cheaper plan. the costs should be 
 
-\subsection{comparison of common cluster file systems}
+\subsection{comparison and limitations of common cluster file systems}
+
+For our test system we have used the Apache Hadoop${^\textregistered}$ filesystem (HDFS). \todo{resolve error and inform tobias how this was done}
+
+vorgaben: große dateien/häufige downloads und veränderungen/kein datengrab
+
+A research on different known systems brought us the closer choice between GlusterFS \todo{link?/fußnote}
+
+\todo{see http://www.cubrid.org/blog/dev-platform/overview-and-recommendations-for-distributed-file-systems/ and http://www.datastax.com/wp-content/uploads/2012/09/WP-DataStax-HDFSvsCFS.pdf maybe?}
+
 
 \begin{itemize}
 \item was ist ein verteiltes dateisystem
