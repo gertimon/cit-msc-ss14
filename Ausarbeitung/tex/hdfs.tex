@@ -11,11 +11,18 @@ by holding a software based virtual filesystem it should be possible to react on
 
 we were interested in how to reduce costs by providing different customer plans to fulfil a given quality-of-service (QoS) aggreement by starting to separating into a expensive speed oriented and slower/cheaper plan. the costs should be 
 
-\subsection{comparison and limitations of common cluster file systems}
+\subsection{introduction into distributed filesystems}
 
-For our test system we have used the Apache Hadoop${^\textregistered}$ filesystem (HDFS). \todo{resolve error and inform tobias how this was done}
+The distributed filesystem (DFS) should be used to connect cloud storage with a client machine as being local storage as shown in figure~\ref{fig:dfs_example}. To mount the network storage as being local a client program has to be running on the client machine. By using the DFS it will remove local limitations on Storage while offering a given QoS for bandwidth and multiuser support.
 
-vorgaben: große dateien/häufige downloads und veränderungen/kein datengrab
+\todo{create a simplified copy in a better fitting style}
+\begin{figure}
+\centering
+\includegraphics[width=1\linewidth]{img/dfs_example.png}
+\caption{Basic idea of mounting a distributed filesystem}
+\label{fig:dfs_example}
+\end{figure}
+
 
 A research on different known systems brought us the closer choice between GlusterFS \todo{link?/fußnote}
 
@@ -30,14 +37,39 @@ A research on different known systems brought us the closer choice between Glust
 
 \subsection{System setup}
 
-wdh einleitung, ergänzungen sofern nicht später beschrieben:
+For our test system we have used the distributed filesystem (DFS) Apache Hadoop\textsuperscript{\textregistered} (HDFS) \footnote{http://hadoop.apache.org/}. This system was used due to the idea having an DFS running on heterogeneus systems from different hardware and operating systems. 
+
+The HDFS consits of two main parts. A nameserver that keeps the logic view of the filesystem and a various number of datanodes which keep the files organized in blocks of a fixed length. Multiple datanodes can be used to raise the maximum of available storage and to keep multiple replicas of files in different locations. Our testbed consits of two machines running a datanode. One was just a simple office pc, the other one was a powerful machine at CIT datacentre\footnote{Link?, erklärung CIT?}. Both were different in power consumption and maximum of provided bandwidth. 
+
+\todo{bildchen mit namenode, client und zwei datanodes} 
+
+For our test scenario we have planed to hold large filesystem images which will be downloaded in common case but changed too. Due to the limitations of given data stores we concentrated only on energy optimization for downloading files. When uploading the files will be synchronized to both machines for keep a redundant file copy in the system.
+Another point is that the files should be used sometimes, our strategys were not implemented for less energy using data archives that will never get touched by an user.
+
+\subsubsection{Connections to monitoring system}
+
+
+
+\subsubsection{Connections to SDN}
 
 \begin{itemize}
 \item verbindung zu sdn
 \item verbindung zu zabbix
 \end{itemize}
 
-\section{Extensions written}
+\subsection{Extensions written}
+
+By downloading a file from the DFS as first there will be a request to the namenode for a specified that should be downloaded by it's filename. If an user is allowed to get access to that file, the file block list will sent in an answer to the client. The file block list contains descriptions about all single data blocks, that represents the requestet file. For each data block the datanode locations are given. Depending on redundance settings for that file it is possible to recieve between one and multiple locations. 
+
+Given from our test bed the link to the office pc datanode and the second from CIT datacenter will be given. To reduce power consumption for an request we reduced the list of datanodes from block locations on different criteria. After recieving the list of data blocks and it's locations, the client application decides normally which locations for each data block should be chosen to be downloaded. After that step the client application creates the file as local copy from all downloaded data blocks automatically. By reducing the block location list before sending to the client we commanded which locations should be used from the client application.
+
+
+
+To provide an user related monitoring as base for a possible bill creation the DFS needed to fulfill the following functionalities:
+
+\begin{itemize}
+\item By connecting the namenode, the username needs to 
+\end{itemize}
 
 \subsubsection{server selection for downloading files}
 
