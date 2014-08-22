@@ -35,6 +35,8 @@ A research on different known systems brought us the closer choice between Glust
 \item ziele
 \end{itemize}
 
+\todo{move client information to this chapter???}
+
 \subsection{System setup}
 
 For our test system we have used the distributed filesystem (DFS) Apache Hadoop\textsuperscript{\textregistered} (HDFS) \footnote{http://hadoop.apache.org/}. This system was used due to the idea having an DFS running on heterogeneus systems from different hardware and operating systems. 
@@ -65,7 +67,7 @@ Given from our test bed the link to the office pc datanode and the second from C
 
 
 
-To provide an user related monitoring as base for a possible bill creation the DFS needed to fulfill the following functionalities:
+To provide a user related monitoring as base for a possible bill creation the DFS needed to fulfill the following functionalities:
 
 \begin{itemize}
 \item By connecting the namenode, the username needs to 
@@ -73,7 +75,37 @@ To provide an user related monitoring as base for a possible bill creation the D
 
 \subsubsection{server selection for downloading files}
 
+By comparing the power consumption while downloading files and while being idle the following values were measured.
+
+\begin{table}
+	\begin{tabular}{|l|r|r|}
+		\hline  & office pc & cit server \\ 
+		\hline idle &   75 W &   350 W \\ 
+		\hline on file download &   95 W &   360 W \\ 
+		\hline used bandwidth & todo & todo \\
+		\hline max. possible bandwidth & 1GB/s & 10GB/s \\
+		\hline
+	\end{tabular} 
+\label{tab:powerconsumptionvalues}
+\caption{approx. power consumption values from different datanodes }
+\todo{are these values correct?, size of table}
+\end{table}
+
+The values for \textit{on file download}, measured in table~\ref{tab:powerconsumptionvalues} were taken by downloading a file with an bandwidth of \todo{bandwidth value missing} MB/s. This limit was set by the client connection to the network.
+
+By using a static and dynamic algorithm that decides which datanode is used for downloads, different plans as cheap and fast delivery of files should be realized.
+
+On one side the idle costs are very different, otherwise the office pc power consumption rises approx. twice than of the cit server on same request. By downloading a file faster the consumption should raise exponential \todo{beleg?, stimmt das?}. Another question was if by using only one datanotes bandwidth until its completely used will there be more or less power voltage than sharing bandwidth between all machines to reduce their computational load. \todo{check that all questions are answered or just remove them later}
+
 \subsubsection{static selection}
+
+Based on the total power consumption of a machine, it seems that the usage of less powerful machines reduces energy costs. Based on this idea a manual taken decision for declaring a datanode machine as \textit{cheap} (office pc) or \textit{fast} (cit server). 
+
+While testing using one simultaneous user a first result was that idle costs needs to be separated from the higher power consumption while downloading files. For just storing files and keep them available, the office pc seems to be cheaper, while for al lot of downloads from files, the cit server raises it's power consumption for approx. one half of office pc.
+
+\todo{multiple users test (using full bandwidth)}
+
+\todo{implementation notes?}
 
 hintergrund, vermutungen, implementierung, test, auswertung
 
@@ -82,6 +114,7 @@ hintergrund, vermutungen, implementierung, test, auswertung
 hintergrund, vermutungen, implementierung, test, auswertung
 
 \subsection{Client connection}
+\label{sec:hdfs_client}
 \subsubsection{Terminal}
 \subsubsection{FUSE}
 
