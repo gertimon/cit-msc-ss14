@@ -118,6 +118,9 @@ hintergrund, vermutungen, implementierung, test, auswertung
 \subsubsection{Terminal}
 \subsubsection{FUSE}
 
+Filesystem in Userspace (FUSE) allows various filesystem that are implemented in user space to be integrated as a Unix filesystem. The Hadoop distribution already have a FUSE Client (Fuse-DFS) and with it we can mount HDFS as a standard filesystem. You can then use most of the Unix filesystem operations (such as ls, cat, rm, mv, mkdir, rmdir). However, at the time we write this, random write operations and permission related operations such as chmod, chown are not supported in Fuse-DFS. Another is that the performance is impacted because of all the memory copies and transitions from kernel to user space and then the JVM.
+
+Fuse-DFS is implemented in C using libhdfs and was complicated to compile and run because there is not good documentation about it.
 \subsection{reached goals}
 gesamte auswertung
 
