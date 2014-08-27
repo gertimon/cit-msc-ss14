@@ -50,8 +50,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="2.8"
-     inkscape:cx="140.04927"
-     inkscape:cy="785.13578"
+     inkscape:cx="62.032533"
+     inkscape:cy="893.48199"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -237,5 +237,28 @@
        id="path4173-4-8"
        inkscape:connector-type="orthogonal"
        inkscape:connector-curvature="1" />
+    <text
+       xml:space="preserve"
+       style="font-size:88.23997498px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="73.33503"
+       y="150.70058"
+       id="text4819-1-5-3"
+       sodipodi:linespacing="125%"
+       transform="scale(0.9717885,1.0290305)"><tspan
+         sodipodi:role="line"
+         id="tspan4821-7-2-4"
+         x="73.33503"
+         y="150.70058"
+         style="font-size:19.85399437px">\tiny EnergyDataPusher</tspan></text>
+    <path
+       sodipodi:type="arc"
+       style="fill:#000000;fill-opacity:0.17647059;stroke:#000000;stroke-width:0.84500003;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="path4965-4"
+       sodipodi:cx="60.357143"
+       sodipodi:cy="237.71933"
+       sodipodi:rx="59.642857"
+       sodipodi:ry="20"
+       d="m 120,237.71933 a 59.642857,20 0 1 1 -119.2857132,0 59.642857,20 0 1 1 119.2857132,0 z"
+       transform="matrix(0.42313049,0,0,0.56165822,16.517207,16.683085)" />
   </g>
 </svg>

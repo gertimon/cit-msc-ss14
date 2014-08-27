@@ -57,5 +57,6 @@
     \put(0.4301828,0.51736){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{\tiny http://localhost:8082}}}%
     \put(0.24323091,0.0835193){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{ZabbixSender}}}%
     \put(0.80727221,0.04232202){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{Zabbix}}}%
+    \put(0.13231703,0.32638732){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{\tiny EnergyDataPusher}}}%
   \end{picture}%
 \endgroup%

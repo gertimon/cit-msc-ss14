@@ -8,7 +8,8 @@ A main aspect of the project is the monitoring of energy consumption of the diff
 The Energy Meter \textit{EGM-PWM-LAN} of the brand \textit{Energenie} was linked to the power supply unit of the machines. One to the bigger machine asok05 and the other one to the office computer. The metering device has an Ethernet interface for connecting it to the existing network. It is possible to connect to the device via an implemented web server which contains a web interface to perform configurations and to see current energy data. Furthermore the web interface can be reached via internet if it is connected to a router with internet access. Energenie offers a cloud service \cite{Energenie.2014} where the energy meter can be registered. Thereafter energy data is sent and diagrams are created by the cloud service. Generated diagrams illustrate the current power usage and the energy consumed in a certain time window. It is also possible to configure the electricity price divided in night- and daytime to show how much money the metered machine has cost.
 
 \subsubsection{System Setup}
-An overview of the energy metering setup in the system can be seen in figure \ref{fig:energyMeteringSetup}. As mentioned in the previous section \ref{sec:EnergyMeter} each energy meter is connected to a machine.
+An overview of the energy metering setup in the system can be seen in figure \ref{fig:energyMeteringSetup}. As mentioned in the previous section \ref{sec:EnergyMeter} each energy meter is connected to a machine. The developed module $ EnergyDataPusher $ which fetches the current energy consumption is located in a virtual machine running on asok05. The energy data is fetched every two seconds via the module and is then delivered to the $ ZabbixSender $. This module then is responsible for transmitting the information to the Zabbix monitoring.
+
 \begin{figure}
 	\centering
 	\def\svgwidth{\columnwidth}
