@@ -48,13 +48,13 @@
   \global\let\svgwidth\undefined%
   \global\let\svgscale\undefined%
   \makeatother%
-  \begin{picture}(1,0.35244127)%
+  \begin{picture}(1,0.35534086)%
     \put(0,0){\includegraphics[width=\unitlength]{img/energy_CommunicationProtocol.pdf}}%
-    \put(0.14302388,0.27841297){\color[rgb]{0,0,0}\rotatebox{-1.52365831}{\makebox(0,0)[lb]{\smash{\footnotesize $Register Request (MAC, IP)$}}}}%
-    \put(0.03207382,0.32244551){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{EM}}}%
-    \put(0.89274375,0.32158106){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{Cloud}}}%
-    \put(0.14831754,0.18189815){\color[rgb]{0,0,0}\rotatebox{1.57525083}{\makebox(0,0)[lb]{\smash{\footnotesize $Cloud Heartbeat (Cloud ID, IP)$}}}}%
-    \put(0.14874289,0.05208621){\color[rgb]{0,0,0}\rotatebox{-1.52365831}{\makebox(0,0)[lb]{\smash{\footnotesize $Client Data (P, E, time, ...)$}}}}%
-    \put(0.14903677,0.11430908){\color[rgb]{0,0,0}\rotatebox{1.57525083}{\makebox(0,0)[lb]{\smash{\footnotesize $Cloud Register ACK (Cloud ID)$}}}}%
+    \put(0.14302388,0.28131257){\color[rgb]{0,0,0}\rotatebox{-1.52365831}{\makebox(0,0)[lb]{\smash{\footnotesize $Register Request (MAC, IP)$}}}}%
+    \put(0.03207382,0.3253451){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{EM}}}%
+    \put(0.89274375,0.32448066){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{Cloud}}}%
+    \put(0.14831754,0.18479774){\color[rgb]{0,0,0}\rotatebox{1.57525083}{\makebox(0,0)[lb]{\smash{\footnotesize $Cloud Heartbeat (Cloud ID, IP)$}}}}%
+    \put(0.14874289,0.05498581){\color[rgb]{0,0,0}\rotatebox{-1.52365831}{\makebox(0,0)[lb]{\smash{\footnotesize $Client Data (P, E, time, ...)$}}}}%
+    \put(0.14903677,0.11720868){\color[rgb]{0,0,0}\rotatebox{1.57525083}{\makebox(0,0)[lb]{\smash{\footnotesize $Cloud Register ACK (Cloud ID)$}}}}%
   \end{picture}%
 \endgroup%
