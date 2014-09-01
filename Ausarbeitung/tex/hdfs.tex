@@ -1,2 +1,145 @@
 
-\IEEEPARstart{J}{ust} start typing your Text here... Then compile the main document!
+\subsection{Motivation}
+\todo{which word to use? distributed filesystem (dfs)?}
+\todo{maybe duplicates the introduction}
+To offer multiple users and applications a high available access on large filesystems there are different solutions known. Files can be stored on local filesystems (fs), may be shared using a network attached storage (nas)  or using a storage area network (san). for sharing storage in datacenters a san actually is a common used solution. they offer a redundant hardware setup on different locations using SCSI on FibreChannel or iSCSI over IP.
+There are less limitations on the given ressource power and data transmission speed but a manufacturer will connect a customer to original equipment which limits a customer through expansion costs.
+
+a possible solution for this case could be a cluster filesystem that consists of a lot of heterogeneous (smaller) computer systems. such a system should share computation between all nodes and give a lot of configurable options for keep redundant copies of files and offer fast delivery of files out of the network based on the number of nodes in that system.
+
+by holding a software based virtual filesystem it should be possible to react on new desires of customers like on filesize, number of files, available bandwidth. in opposite by having to many nodes the computation power is much to high and expensive for the given storage amount.  otherwise there will be a lot of work for keeping all the systems up to date. 
+
+we were interested in how to reduce costs by providing different customer plans to fulfil a given quality-of-service (QoS) aggreement by starting to separating into a expensive speed oriented and slower/cheaper plan. the costs should be 
+
+\subsection{introduction into distributed filesystems}
+
+The distributed filesystem (DFS) should be used to connect cloud storage with a client machine as being local storage as shown in figure~\ref{fig:dfs_example}. To mount the network storage as being local a client program has to be running on the client machine. By using the DFS it will remove local limitations on Storage while offering a given QoS for bandwidth and multiuser support.
+
+\todo{create a simplified copy in a better fitting style}
+\begin{figure}
+\centering
+\includegraphics[width=1\linewidth]{img/dfs_example.png}
+\caption{Basic idea of mounting a distributed filesystem}
+\label{fig:dfs_example}
+\end{figure}
+
+
+A research on different known systems brought us the closer choice between GlusterFS \todo{link?/fußnote}
+
+\todo{see http://www.cubrid.org/blog/dev-platform/overview-and-recommendations-for-distributed-file-systems/ and http://www.datastax.com/wp-content/uploads/2012/09/WP-DataStax-HDFSvsCFS.pdf maybe?}
+
+
+\begin{itemize}
+\item was ist ein verteiltes dateisystem
+\item auswahl/unterschiedliche ansätze, vergleich, begründung der auswahl
+\item ziele
+\end{itemize}
+
+\todo{move client information to this chapter???}
+
+\subsection{System setup}
+
+For our test system we have used the distributed filesystem (DFS) Apache Hadoop\textsuperscript{\textregistered} (HDFS) \footnote{http://hadoop.apache.org/}. This system was used due to the idea having an DFS running on heterogeneus systems from different hardware and operating systems. 
+
+The HDFS consits of two main parts. A nameserver that keeps the logic view of the filesystem and a various number of datanodes which keep the files organized in blocks of a fixed length. Multiple datanodes can be used to raise the maximum of available storage and to keep multiple replicas of files in different locations. Our testbed consits of two machines running a datanode. One was just a simple office pc, the other one was a powerful machine at CIT datacentre\footnote{Link?, erklärung CIT?}. Both were different in power consumption and maximum of provided bandwidth. 
+
+\todo{bildchen mit namenode, client und zwei datanodes} 
+
+For our test scenario we have planed to hold large filesystem images which will be downloaded in common case but changed too. Due to the limitations of given data stores we concentrated only on energy optimization for downloading files. When uploading the files will be synchronized to both machines for keep a redundant file copy in the system.
+Another point is that the files should be used sometimes, our strategys were not implemented for less energy using data archives that will never get touched by an user.
+
+\subsubsection{Connections to monitoring system}
+
+
+
+\subsubsection{Connections to SDN}
+
+\begin{itemize}
+\item verbindung zu sdn
+\item verbindung zu zabbix
+\end{itemize}
+
+\subsection{Extensions written}
+
+By downloading a file from the DFS as first there will be a request to the namenode for a specified that should be downloaded by it's filename. If an user is allowed to get access to that file, the file block list will sent in an answer to the client. The file block list contains descriptions about all single data blocks, that represents the requestet file. For each data block the datanode locations are given. Depending on redundance settings for that file it is possible to recieve between one and multiple locations. 
+
+Given from our test bed the link to the office pc datanode and the second from CIT datacenter will be given. To reduce power consumption for an request we reduced the list of datanodes from block locations on different criteria. After recieving the list of data blocks and it's locations, the client application decides normally which locations for each data block should be chosen to be downloaded. After that step the client application creates the file as local copy from all downloaded data blocks automatically. By reducing the block location list before sending to the client we commanded which locations should be used from the client application.
+
+
+
+To provide a user related monitoring as base for a possible bill creation the DFS needed to fulfill the following functionalities:
+
+\begin{itemize}
+\item By connecting the namenode, the username needs to 
+\end{itemize}
+
+\subsubsection{server selection for downloading files}
+
+By comparing the power consumption while downloading files and while being idle the following values were measured.
+
+\begin{table}
+	\begin{tabular}{|l|r|r|}
+		\hline  & office pc & cit server \\ 
+		\hline idle &   75 W &   350 W \\ 
+		\hline on file download &   95 W &   360 W \\ 
+		\hline used bandwidth & todo & todo \\
+		\hline max. possible bandwidth & 1GB/s & 10GB/s \\
+		\hline
+	\end{tabular} 
+\label{tab:powerconsumptionvalues}
+\caption{approx. power consumption values from different datanodes }
+\todo{are these values correct?, size of table}
+\end{table}
+
+The values for \textit{on file download}, measured in table~\ref{tab:powerconsumptionvalues} were taken by downloading a file with an bandwidth of \todo{bandwidth value missing} MB/s. This limit was set by the client connection to the network.
+
+By using a static and dynamic algorithm that decides which datanode is used for downloads, different plans as cheap and fast delivery of files should be realized.
+
+On one side the idle costs are very different, otherwise the office pc power consumption rises approx. twice than of the cit server on same request. By downloading a file faster the consumption should raise exponential \todo{beleg?, stimmt das?}. Another question was if by using only one datanotes bandwidth until its completely used will there be more or less power voltage than sharing bandwidth between all machines to reduce their computational load. \todo{check that all questions are answered or just remove them later}
+
+\subsubsection{static selection}
+
+Based on the total power consumption of a machine, it seems that the usage of less powerful machines reduces energy costs. Based on this idea a manual taken decision for declaring a datanode machine as \textit{cheap} (office pc) or \textit{fast} (cit server). 
+
+While testing using one simultaneous user a first result was that idle costs needs to be separated from the higher power consumption while downloading files. For just storing files and keep them available, the office pc seems to be cheaper, while for al lot of downloads from files, the cit server raises it's power consumption for approx. one half of office pc.
+
+\todo{multiple users test (using full bandwidth)}
+
+\todo{implementation notes?}
+
+hintergrund, vermutungen, implementierung, test, auswertung
+
+\subsubsection{dynamic selection}
+
+To select a rack dynamically we used a ratio between the current bandwith of all rakcs and the used energy by them. The lower this ratio, the lower the used energy per transfered data and the energy consumption by one user.
+
+Finding the rack with lowest energy consumption than is easy. Only sort the list and take the first. It is also possible to use not only the first rack. Receive different blocks from different racks could be faster because of parallel download.
+
+In this case, we need to have a profil of the user, where he can choose the plan to download. In our test environment, we have onle two selectable profiles. These are cheap and fast.
+
+\subsubsection{Future plans of dynamic selection}
+
+In future, more smart ways of finding the best rack can be implemented. 
+
+For example, if the price of energy varies, it is better to save ernergy to reduce the costs. Or we can create our own energy by solar cells. If the sun is shining, we the price is low.
+
+An other Example is to use data from history. If we know, the user has no fast connection, then there is no use for a fast donwload. He can not use it. Also the data of the racks can be used. Learning over the time the best decision.
+
+The last Example is to use the service the user is using. If he only want to download, than a slow download cann be possible. If he wants to stream a video we have to use a fast rack.
+
+\subsection{Client connection}
+\label{sec:hdfs_client}
+\subsubsection{Terminal}
+\subsubsection{FUSE}
+
+Filesystem in Userspace (FUSE) allows various filesystem that are implemented in user space to be integrated as a Unix filesystem. The Hadoop distribution already have a FUSE Client (Fuse-DFS) and with it we can mount HDFS as a standard filesystem. You can then use most of the Unix filesystem operations (such as ls, cat, rm, mv, mkdir, rmdir). However, at the time we write this, random write operations and permission related operations such as chmod, chown are not supported in Fuse-DFS. Another is that the performance is impacted because of all the memory copies and transitions from kernel to user space and then the JVM.
+
+Fuse-DFS is implemented in C using libhdfs and was complicated to compile and run because there is not good documentation about it.
+\subsection{reached goals}
+gesamte auswertung
+
+
+
+
+
+%\IEEEPARstart{J}{ust} start typing your Text here... Then compile the main document!
