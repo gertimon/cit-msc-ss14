@@ -23,7 +23,7 @@ In the Smart Filesystem we use Software Defined Networking to measure the file t
 
  Of course there are more flows in the file system than just file transfers. But all file transfer flows contain the port $p=50010$ and the IP from one of the datanodes in the HDFS. So if there is a connection, where source or destination is IP $i$ and port $p$, than this is a connection the controller is interested in.
  
- When the controller finds a flow like this, it calculates the bandwidth every five seconds and sends it to the monitoring system. With this data the admins of the file system are able to oversee all transactions and to calculate a very specific power usage of each user\todo{Klingt schlecht}. 
+ When the controller finds a flow like this, it calculates the bandwidth every five seconds and sends it to the monitoring system. With this data the admins of the file system are able to oversee all transactions and to calculate a very specific power usage of each user. 
  
  \subsection{Implementation and Connection Establishing}               
 
@@ -38,7 +38,7 @@ To establish a connection to transfer files there are four parts inside the netw
 
 Figure \ref{nn} shows the intern file system and a client that wants to start a file transfer. The red edges denotes client/system interactions and the blue edges are interactions within the system.
 
-In step 1 of the figure the client wants to start a file transfer. So the first thing to do is to send a connection request to the system. This request goes at first to the Open vSwitch(OVS). The switch does not know, where to forward the connection because there is no flow table entry. So the switch asks Floodlight, show in step 2. In step 3 Floodlight computes the path in the network and sends the flow entry back to the switch. As told\todo{Really TOLD??}, before a file transfer can start, the Namenode has to decide on which server the client can connect. So the request goes further to the Namenode(NN), show in step 4. The Namenode decides for one server and sends these information in step 5 back to the client. Now the client is ready to connect with the Datanode. This interaction is shown in figure \ref{dn}.
+In step 1 of the figure the client wants to start a file transfer. So the first thing to do is to send a connection request to the system. This request goes at first to the Open vSwitch(OVS). The switch does not know, where to forward the connection because there is no flow table entry. So the switch asks Floodlight, show in step 2. In step 3 Floodlight computes the path in the network and sends the flow entry back to the switch. As told, before a file transfer can start, the Namenode has to decide on which server the client can connect. So the request goes further to the Namenode(NN), show in step 4. The Namenode decides for one server and sends these information in step 5 back to the client. Now the client is ready to connect with the Datanode. This interaction is shown in figure \ref{dn}.
 
 \begin{figure}[ht]
 \centering
