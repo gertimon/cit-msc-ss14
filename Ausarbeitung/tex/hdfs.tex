@@ -129,11 +129,16 @@ An other Example is to use data from history. If we know, the user has no fast c
 The last Example is to use the service the user is using. If he only want to download, than a slow download cann be possible. If he wants to stream a video we have to use a fast rack.
 
 \subsection{Client connection}
+
+To interacte with HDFS the client can use either the Filesystem in Userspace (FUSE) or the command line. There are many other interfaces to HDFS, but this two were the simplest and to many developers and users the most familiar.
+
 \label{sec:hdfs_client}
 \subsubsection{Terminal}
+
+When the filesystem is ready to be used, the client can use the Terminal to do all of the usual filesystem operations such as reading files, creating directories, moving files, deleting data, and listing directories. To make these operations you type hadoop command on the terminal for instance hadoop fs -ls to list a directory or hadoop fs -mkdir to create a directory. With hadoop fs -help the client can get detailed help on every command.
 \subsubsection{FUSE}
 
-Filesystem in Userspace (FUSE) allows various filesystem that are implemented in user space to be integrated as a Unix filesystem. The Hadoop distribution already have a FUSE Client (Fuse-DFS) and with it we can mount HDFS as a standard filesystem. You can then use most of the Unix filesystem operations (such as ls, cat, rm, mv, mkdir, rmdir). However, at the time we write this, random write operations and permission related operations such as chmod, chown are not supported in Fuse-DFS. Another is that the performance is impacted because of all the memory copies and transitions from kernel to user space and then the JVM.
+Filesystem in Userspace (FUSE) allows various filesystem that are implemented in user space to be integrated as a Unix filesystem. The Hadoop distribution already have a FUSE Client (Fuse-DFS) and with it we can mount HDFS as a standard filesystem. You can then use most of the Unix filesystem operations (such as ls, cat, rm, mv, mkdir, rmdir). However, at the time we write this, random write operations and permission related operations such as chmod, chown are not supported in Fuse-DFS. Another problem is that the performance is impacted because of all the memory copies and transitions from kernel to user space and then the JVM.
 
 Fuse-DFS is implemented in C using libhdfs and was complicated to compile and run because there is not good documentation about it.
 \subsection{reached goals}
