@@ -78,17 +78,18 @@ To provide a user related monitoring as base for a possible bill creation the DF
 By comparing the power consumption while downloading files and while being idle the following values were measured.
 
 \begin{table}
+	\centering
+	\caption{approx. power consumption values from different datanodes}	
 	\begin{tabular}{|l|r|r|}
-		\hline  & office pc & cit server \\ 
-		\hline idle &   75 W &   350 W \\ 
-		\hline on file download &   95 W &   360 W \\ 
-		\hline used bandwidth & todo & todo \\
-		\hline max. possible bandwidth & 1GB/s & 10GB/s \\
+		\hline \rule[-2ex]{0pt}{5.5ex}  & \textbf{office pc} & \textbf{Asok05} \\ 
+		\hline \rule[-2ex]{0pt}{5.5ex} \textit{idle} &   75 W &   350 W \\ 
+		\hline \rule[-2ex]{0pt}{5.5ex} \textit{on file download} &   95 W &   360 W \\ 
+		\hline \rule[-2ex]{0pt}{5.5ex} \textit{used bandwidth} & todo & todo \\
+		\hline \rule[-2ex]{0pt}{5.5ex} \textit{max. possible bandwidth} & 1GB/s & 10GB/s \\
 		\hline
 	\end{tabular} 
-\label{tab:powerconsumptionvalues}
-\caption{approx. power consumption values from different datanodes }
-\todo{are these values correct?, size of table}
+	\label{tab:powerconsumptionvalues}
+	\todo{are these values correct?, size of table}
 \end{table}
 
 The values for \textit{on file download}, measured in table~\ref{tab:powerconsumptionvalues} were taken by downloading a file with an bandwidth of \todo{bandwidth value missing} MB/s. This limit was set by the client connection to the network.
