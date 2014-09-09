@@ -3,7 +3,7 @@ digraph{
     subgraph cluster_0 {
         node[fontsize=15, shape = box];
           {rank = same; Zabbix; DN1; DN2; NN; Floodlight}
-        edge [dir=none]
+        edge [dir=none, style =bold]
         OVS;
         Zabbix;
         DN1;
@@ -21,7 +21,7 @@ digraph{
      subgraph connection1 {
         node[fontsize=15];
         Client;
-        edge [color=blue]
+        edge [style=dashed]
         
         OVS -> Floodlight [label= "2"]
         Floodlight ->OVS [label = "3"]
@@ -29,7 +29,7 @@ digraph{
     }
 
      subgraph connection2 {
-        edge [color=red]
+        edge [style=dotted]
         Client -> OVS  [label= "1"]
         OVS -> NN [label = "4"]
         OVS -> Client [label= "5"]
