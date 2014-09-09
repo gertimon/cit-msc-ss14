@@ -1,8 +1,60 @@
 
-\IEEEPARstart{J}{ust} start typing your Text here... Then compile the main document!
+\IEEEPARstart{B}{ased} on project restrictions and own decisions there was a hardware and software mixed test system created. This chapter will give a short introduction about how all the system parts are connected to each other. Detailed description about single parts will follow later.
 
-\subsection{Subsection Heading Here}
-Subsection text here.
+\subsection{Hardware Setup}
 
-\subsubsection{Subsubsection Heading Here}
-Subsubsection text here.
+Given by the project initiator, the institute for complex and distributed IT systems of TU Berlin (CIT) some hardware components were directly defined as prerequisites.
+
+\begin{enumerate}
+
+\item One powerful machine with high power usage of more than 400W placed in tubit data centre (TU Berlin), later called by name \textit{Asok05}.
+
+\item One energy-saving \textit{office pc} attached to TU network inside a staff office with lower bandwidth and power drain of 75W in idle mode.
+
+\item Two energy meters by type \textit{EGM-PWM-LAN} of the brand \textit{Energenie} which were used to measure the current drain of \textit{Asok05} and \textit{office pc}.
+
+\item For running services which should not influence the power usage measured by the energy meters, a virtual machine, placed in the tubit data centre was prepared to be used too.
+
+\end{enumerate}
+
+\todo{add some machine details (storage/bandwidth)}
+
+\subsection{Software Setup}
+
+The partly introduced software systems were used by team decisions described in chapters below.
+
+\begin{enumerate}
+
+\item As distributed file system Apache Haddop\textsuperscript{\textregistered} (HDFS) was used. The access to filesystem may be done using a terminal, a web client or a client as provided by Filesystem in Userspace (FUSE). HDFS consists of two main parts, the namenode which organises the filesystem structural view, and datanodes which store and replicate the data as blocks.
+
+\item To measure network traffic, all data were sent through a virtual network. A combination of Floodlight as controller and an Open vSwitch was used. 
+
+\item For monitoring user actions in the filesystem and on the software defined network a zabbix server was used. This service collects data from clients which are running a zabbix agent.
+
+\item To analyze the changes in energy consumption produced by user activities the power consumption of \textit{office pc} and \textit{Asok05} were measured.
+
+\item By evaluating the monitored data we are finally able to create a  report which informs about the power consumption for the whole system and for a single user. This service was implemented as web service on \todo{where is it running actually?}.
+
+\end{enumerate}
+
+\subsection{Services Setup}
+
+The distribution of services used in project are given in table~\ref{tab:services}.
+
+\todo{add report web service to table}
+
+\begin{table}[b]
+	\centering
+	\caption{Services and machines overview used in project. }
+	\begin{tabular}{|l|l|l|l|l|}
+		\hline \rule[-2ex]{0pt}{5.5ex} \textbf{Client PC} & \textbf{Office PC} & \textbf{Virtual Machine} & \textbf{Asok05} \\ 
+		\hline \rule[-2ex]{0pt}{5.5ex} Hadoop client & Hadoop data node & Hadoop name node & Hadoop data node \\ 
+		       \rule[-2ex]{0pt}{5.5ex}  & Energy meter & Zabbix server & Energy meter \\ 
+		       \rule[-2ex]{0pt}{5.5ex}  & Zabbix agent & Zabbix agent & Zabbix agent \\ 
+		       \rule[-2ex]{0pt}{5.5ex}  &  &  & Floodlight \\ 
+		       \rule[-2ex]{0pt}{5.5ex}  &  &  & Open vSwitch \\ 
+		       \rule[-2ex]{0pt}{5.5ex}  &  &  & Energy data agent \\ 
+		\hline 
+	\end{tabular}
+	\label{tab:services}
+\end{table}
