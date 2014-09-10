@@ -18,7 +18,7 @@ The distributed filesystem (DFS) should be used to connect cloud storage with a 
 \todo{create a simplified copy in a better fitting style}
 \begin{figure}
 \centering
-\includegraphics[width=1\linewidth]{img/dfs_example.png}
+%\includegraphics[width=1\linewidth]{img/dfs_example.png}
 \caption{Basic idea of mounting a distributed filesystem}
 \label{fig:dfs_example}
 \end{figure}
@@ -78,17 +78,18 @@ To provide a user related monitoring as base for a possible bill creation the DF
 By comparing the power consumption while downloading files and while being idle the following values were measured.
 
 \begin{table}
+	\centering
 	\begin{tabular}{|l|r|r|}
 		\hline  & office pc & cit server \\ 
 		\hline idle &   75 W &   350 W \\ 
-		\hline on file download &   95 W &   360 W \\ 
+		\hline on file download &   95 W &   390 W \\ 
 		\hline used bandwidth & todo & todo \\
 		\hline max. possible bandwidth & 1GB/s & 10GB/s \\
 		\hline
-	\end{tabular} 
-\label{tab:powerconsumptionvalues}
-\caption{approx. power consumption values from different datanodes }
-\todo{are these values correct?, size of table}
+	\end{tabular}\newline
+	\caption{approx. power consumption values from different datanodes}
+	\label{tab:powerconsumptionvalues}
+	\todo{are these values correct?, size of table}
 \end{table}
 
 The values for \textit{on file download}, measured in table~\ref{tab:powerconsumptionvalues} were taken by downloading a file with an bandwidth of \todo{bandwidth value missing} MB/s. This limit was set by the client connection to the network.
