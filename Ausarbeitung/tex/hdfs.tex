@@ -1,7 +1,8 @@
-
 \subsection{Motivation}
+
 \todo{which word to use? distributed filesystem (dfs)?}
 \todo{maybe duplicates the introduction}
+
 To offer multiple users and applications a high available access on large filesystems there are different solutions known. Files can be stored on local filesystems (fs), may be shared using a network attached storage (nas)  or using a storage area network (san). for sharing storage in datacenters a san actually is a common used solution. they offer a redundant hardware setup on different locations using SCSI on FibreChannel or iSCSI over IP.
 There are less limitations on the given ressource power and data transmission speed but a manufacturer will connect a customer to original equipment which limits a customer through expansion costs.
 
@@ -16,23 +17,22 @@ we were interested in how to reduce costs by providing different customer plans 
 The distributed filesystem (DFS) should be used to connect cloud storage with a client machine as being local storage as shown in figure~\ref{fig:dfs_example}. To mount the network storage as being local a client program has to be running on the client machine. By using the DFS it will remove local limitations on Storage while offering a given QoS for bandwidth and multiuser support.
 
 \todo{create a simplified copy in a better fitting style}
-\begin{figure}
-\centering
-%\includegraphics[width=1\linewidth]{img/dfs_example.png}
-\caption{Basic idea of mounting a distributed filesystem}
-\label{fig:dfs_example}
-\end{figure}
 
+\begin{figure}
+	\centering
+	\includegraphics[width=1\linewidth]{img/dfs_example.png}
+	\caption{Basic idea of mounting a distributed filesystem}
+	\label{fig:dfs_example}
+\end{figure}
 
 A research on different known systems brought us the closer choice between GlusterFS \todo{link?/fußnote}
 
 \todo{see http://www.cubrid.org/blog/dev-platform/overview-and-recommendations-for-distributed-file-systems/ and http://www.datastax.com/wp-content/uploads/2012/09/WP-DataStax-HDFSvsCFS.pdf maybe?}
 
-
 \begin{itemize}
-\item was ist ein verteiltes dateisystem
-\item auswahl/unterschiedliche ansätze, vergleich, begründung der auswahl
-\item ziele
+	\item was ist ein verteiltes dateisystem
+	\item auswahl/unterschiedliche ansätze, vergleich, begründung der auswahl
+	\item ziele
 \end{itemize}
 
 \todo{move client information to this chapter???}
@@ -50,13 +50,11 @@ Another point is that the files should be used sometimes, our strategys were not
 
 \subsubsection{Connections to monitoring system}
 
-
-
 \subsubsection{Connections to SDN}
 
 \begin{itemize}
-\item verbindung zu sdn
-\item verbindung zu zabbix
+	\item verbindung zu sdn
+	\item verbindung zu zabbix
 \end{itemize}
 
 \subsection{Extensions written}
@@ -65,12 +63,10 @@ By downloading a file from the DFS as first there will be a request to the namen
 
 Given from our test bed the link to the office pc datanode and the second from CIT datacenter will be given. To reduce power consumption for an request we reduced the list of datanodes from block locations on different criteria. After recieving the list of data blocks and it's locations, the client application decides normally which locations for each data block should be chosen to be downloaded. After that step the client application creates the file as local copy from all downloaded data blocks automatically. By reducing the block location list before sending to the client we commanded which locations should be used from the client application.
 
-
-
 To provide a user related monitoring as base for a possible bill creation the DFS needed to fulfill the following functionalities:
 
 \begin{itemize}
-\item By connecting the namenode, the username needs to 
+	\item By connecting the namenode, the username needs to 
 \end{itemize}
 
 \subsubsection{server selection for downloading files}
@@ -133,15 +129,19 @@ The last Example is to use the service the user is using. If he only want to dow
 To interacte with HDFS the client can use either the Filesystem in Userspace (FUSE) or the command line. There are many other interfaces to HDFS, but this two were the simplest and to many developers and users the most familiar.
 
 \label{sec:hdfs_client}
+
 \subsubsection{Terminal}
 
 When the filesystem is ready to be used, the client can use the Terminal to do all of the usual filesystem operations such as reading files, creating directories, moving files, deleting data, and listing directories. To make these operations you type hadoop command on the terminal for instance hadoop fs -ls to list a directory or hadoop fs -mkdir to create a directory. With hadoop fs -help the client can get detailed help on every command.
+
 \subsubsection{FUSE}
 
 Filesystem in Userspace (FUSE) allows various filesystem that are implemented in user space to be integrated as a Unix filesystem. The Hadoop distribution already have a FUSE Client (Fuse-DFS) and with it we can mount HDFS as a standard filesystem. You can then use most of the Unix filesystem operations (such as ls, cat, rm, mv, mkdir, rmdir). However, at the time we write this, random write operations and permission related operations such as chmod, chown are not supported in Fuse-DFS. Another problem is that the performance is impacted because of all the memory copies and transitions from kernel to user space and then the JVM.
 
 Fuse-DFS is implemented in C using libhdfs and was complicated to compile and run because there is not good documentation about it.
+
 \subsection{reached goals}
+
 gesamte auswertung
 
 
