@@ -1,18 +1,26 @@
-\subsection{Motivation}
+\subsection{From local to distributed filesystems}
 
 \todo{which word to use? distributed filesystem (dfs)?}
 \todo{maybe duplicates the introduction}
+\todo{is it clear that a san keeps storage for one machine and a dfs shares storage for different users/machines better?}
 
-To offer multiple users and applications a high available access on large filesystems there are different solutions known. Files can be stored on local filesystems (fs), may be shared using a network attached storage (nas)  or using a storage area network (san). for sharing storage in datacenters a san actually is a common used solution. they offer a redundant hardware setup on different locations using SCSI on FibreChannel or iSCSI over IP.
-There are less limitations on the given ressource power and data transmission speed but a manufacturer will connect a customer to original equipment which limits a customer through expansion costs.
+To offer multiple users and applications a high available access on large filesystems there are different solutions known. 
+Files can be stored on local filesystems, or may be shared using a network attached storage (NAS) for small businesses or for use at home. 
+While a local filesystem is strongly limited to capacity and multi user access a NAS allows to have an system available for different users. 
+But a NAS is limited for a small number of users and very much limited in world wide file sharing and a secure 24h availability.
 
-a possible solution for this case could be a cluster filesystem that consists of a lot of heterogeneous (smaller) computer systems. such a system should share computation between all nodes and give a lot of configurable options for keep redundant copies of files and offer fast delivery of files out of the network based on the number of nodes in that system.
+A first solution to offer data stores for multiple machines which is actually common in data centers is to setup a storage area network. 
+This system may store different filesystems for different client machines without being limited to the speed of one pysical harddrive. 
+For security reasons it is possible to keep a redundant copy of such a system in a different place and exporting backups too. 
+But is is not quite easy to resize that system and not the best solution for sharing same view of the data to different machines and machines placed outside of a data centre.
 
-by holding a software based virtual filesystem it should be possible to react on new desires of customers like on filesize, number of files, available bandwidth. in opposite by having to many nodes the computation power is much to high and expensive for the given storage amount.  otherwise there will be a lot of work for keeping all the systems up to date. 
+Companies like Facebook were facing these issues and solved them using a distributed filesystem (DFS) \cite{fb-hadoop}. The use of an DFS allows to raise the cluster storage  up to petabytes  \cite{fb-hadoop}. A lot of huge different companies already have decided, to use hadoop to store and backup their data  \cite{hadoop-poweredby}. Different algorithms such MapReduce are used to share limitations of cpu power and storage between clustered nodes \cite{dean2008mapreduce}. Further it is easy to apply changes on the number of nodes which makes it highly flexible to use. 
 
-we were interested in how to reduce costs by providing different customer plans to fulfil a given quality-of-service (QoS) aggreement by starting to separating into a expensive speed oriented and slower/cheaper plan. the costs should be 
+A lot of advantages such to reduce traffic while updating only fileparts which have changed, named random write. Other interesting questions are about creating snapshots or creating and applying backups where google was focusing on for their own filesystem implementation \cite{ghemawat2003google}.
 
-\subsection{introduction into distributed filesystems}
+By creating a small cluster in the tubit data centre the power consumtion that is used for the system itself and by performing user actions like up- and downloading files is analyzed.
+
+\subsection{Introduction of Apache Hadoop}
 
 The distributed filesystem (DFS) should be used to connect cloud storage with a client machine as being local storage as shown in figure~\ref{fig:dfs_example}. To mount the network storage as being local a client program has to be running on the client machine. By using the DFS it will remove local limitations on Storage while offering a given QoS for bandwidth and multiuser support.
 
@@ -57,7 +65,7 @@ Another point is that the files should be used sometimes, our strategys were not
 	\item verbindung zu zabbix
 \end{itemize}
 
-\subsection{Extensions written}
+\subsection{Data delivery strategies}
 
 By downloading a file from the DFS as first there will be a request to the namenode for a specified that should be downloaded by it's filename. If an user is allowed to get access to that file, the file block list will sent in an answer to the client. The file block list contains descriptions about all single data blocks, that represents the requestet file. For each data block the datanode locations are given. Depending on redundance settings for that file it is possible to recieve between one and multiple locations. 
 
@@ -145,7 +153,7 @@ Fuse-DFS is implemented in C using libhdfs and was complicated to compile and ru
 gesamte auswertung
 
 
-
+One disadvantage of such a system is the need of administration.
 
 
 %\IEEEPARstart{J}{ust} start typing your Text here... Then compile the main document!
