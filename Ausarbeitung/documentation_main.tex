@@ -1,3 +1,4 @@
+
 \documentclass[journal]{IEEEtran}
 
 % *** CITATION PACKAGES ***
@@ -164,5 +165,168 @@ The authors would like to thank...
 
 
 
+
+
+=======
+\documentclass[journal]{IEEEtran}
+
+% *** CITATION PACKAGES ***
+
+
+
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage[affil-it]{authblk}
+
+
+%\usepackage[style=numeric-comp]{biblatex}
+
+% *** GRAPHICS RELATED PACKAGES ***
+
+
+
+% graphs with tikz
+
+\usepackage{pgfplots,pgfplotstable}
+
+\usepackage{tikz}
+
+\usepackage[backend=bibtex]{biblatex}
+
+\bibliography{bib/bibliography}
+
+\usetikzlibrary{arrows,positioning,fit,backgrounds} 
+
+
+
+\hyphenation{op-tical net-works semi-conduc-tor}
+
+
+
+%%% TODO marks
+
+\usepackage{color}
+
+\newcommand{\todo}[1]{
+
+
+
+    \textcolor{red}{\hspace{-2cm} TODO: #1}
+
+    \PackageWarning{TODO:}{#1!}
+
+}
+
+
+
+
+
+\begin{document}
+
+
+
+\title{Smart File System}
+
+
+
+\author{Fabian Spie\ss, Alexander Janzen, Sascha Wolke, Alexander Platz, Tobias Wollowski, Gert Geidel, Franck Russel}
+
+\affil{Institut f\"ur Telekommunikationssysteme \\ Komplexe und Verteilte IT-Systeme}        
+% make the title area
+
+\maketitle
+
+
+
+
+
+\begin{abstract}
+
+%\boldmath
+
+The abstract goes here.
+
+\end{abstract}
+
+
+
+\IEEEpeerreviewmaketitle
+
+
+
+
+
+
+
+\section{Introduction}
+
+\input{tex/intro}
+
+\section{The Systemarchitecture}
+
+
+
+\input{tex/archi}
+
+
+
+\section{Filesystem}
+
+\input{tex/hdfs}
+
+
+
+\section{Software Defined Network}
+
+\input{tex/sdn}
+
+
+
+\section{Monitoring}
+
+
+
+\input{tex/zabbix}
+
+\input{tex/energyMetering}
+
+
+
+\section{Outlook}
+\input{tex/outlook}
+
+
+
+\section{Conclusion}
+
+The conclusion goes here.
+
+
+
+\section{Report Generator Overview}
+
+\input{tex/report_generator}
+
+
+% use section* for acknowledgement
+
+\section*{Acknowledgment}
+
+The authors would like to thank...
+
+\ifCLASSOPTIONcaptionsoff
+
+  \newpage
+
+\fi
+
+
+
+
+
+\printbibliography
+
+
+\end{document}
 
 
