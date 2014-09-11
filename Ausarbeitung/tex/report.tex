@@ -1,0 +1,13 @@
+The network metering with Zabbix is not only used for network managing  decisions. I is also possible for each user of the Smart Filesystem to get informations concerning his used energy and eventually his created costs.
+\subsection{A Cost Request}
+ The idea is, that each user can go on a website put a request for his account over a special time. The starting procedure is shown in figure bla. \todo{ref tikz}
+\input{tex/report_generator}
+
+ The request goes to the "ReportGenerator" which uses the account of the user and the given time frame to create a API request for Zabbix. Zabbix gets all information about the user in the given time frame from its database and sends it back to the ReportGenerator. Now these information will be packed as so called "HistoryEntries" and forwarded to an instance of the "UsageReport" class. 
+ 
+ This instance can import or export the data as files or starts the price calculation. To do that the UsageReport splits the data in one hour frames. This is possible because Zabbix stores for each data the time as well. These calculations will be made by the "UsageTimeFrame". After that the system can tell the uses how much he has to pay for the given time by listing the usage in one hour parts.
+ 
+ \subsection{Calculation of the price} 
+ The basic idea of the price concept is that the owners of the system do not have to pay for the maintenance of the system. Every user has pay a part of the energy usage if the severs run in idle mode as well as the user has to pay for his traffic. It should be noticed that this basic idea was made by the team. It can't work if just a few persons uses the system. On the other hand is the idea of distributed file systems that a lot of people use them. But it was not possibly to test that concept because there simply were not that much people to test that. 
+ 
+ If we want to compute the price for each user and each system in an hour, the first thing to is to extend the data from Zabbix. Firstly Zabbix stores engery usage of each sever every two seconds. Secondly, if there is a traffic flow, Zabbix will store information about that every five seconds. And last but not least 
