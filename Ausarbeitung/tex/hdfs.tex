@@ -14,9 +14,14 @@ This system may store different filesystems for different client machines withou
 For security reasons it is possible to keep a redundant copy of such a system in a different place and exporting backups too. 
 But is is not quite easy to resize that system and not the best solution for sharing same view of the data to different machines and machines placed outside of a data centre.
 
-Companies like Facebook were facing these issues and solved them using a distributed filesystem (DFS) \cite{fb-hadoop}. The use of an DFS allows to raise the cluster storage  up to petabytes  \cite{fb-hadoop}. A lot of huge different companies already have decided, to use hadoop to store and backup their data  \cite{hadoop-poweredby}. Different algorithms such MapReduce are used to share limitations of cpu power and storage between clustered nodes \cite{dean2008mapreduce}. Further it is easy to apply changes on the number of nodes which makes it highly flexible to use. 
+Companies like Facebook were facing these issues and solved them using a distributed filesystem (DFS) \cite{fb-hadoop}. 
+The use of an DFS allows to raise the cluster storage  up to petabytes  \cite{fb-hadoop}. 
+A lot of huge different companies already have decided, to use hadoop to store and backup their data  \cite{hadoop-poweredby}. 
+Different algorithms such MapReduce are used to share limitations of cpu power and storage between clustered nodes \cite{dean2008mapreduce}. 
+Further it is easy to apply changes on the number of nodes which makes it highly flexible to use. 
 
-A lot of advantages such to reduce traffic while updating only fileparts which have changed, named random write. Other interesting questions are about creating snapshots or creating and applying backups where google was focusing on for their own filesystem implementation \cite{ghemawat2003google}.
+A lot of advantages such to reduce traffic while updating only fileparts which have changed, named random write. 
+Other interesting questions are about creating snapshots or creating and applying backups where google was focusing on for their own filesystem implementation \cite{ghemawat2003google}.
 
 By creating a small cluster in the tubit data centre the power consumtion that is used for the system itself and by performing user actions like up- and downloading files is analyzed.
 
