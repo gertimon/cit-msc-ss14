@@ -62,19 +62,27 @@ The network metering with Zabbix is not only used for network managing  decision
   
   These table will be created for each user, each server and for each hour in the given time frame. If there is user data synchronization between the servers, it will identified as "internal traffic" and will be accounted for a user on the system which does the synchronization. After that the system can compute a price for each user for each second of an hour. The it sums up the prices and computes the mean value. Then we have the costs for each user and for each system. The last step is to sum up the mean values for each system to get the total costs for a user in an hour.
   
-  Computing the price for second must be separated in two different situations. The question is: "Does the user create traffic in this second?".
+  Computing the price for second must be separated in two different situations. The question is: "Does the user create traffic in this second?":
   \begin{enumerate}
 	\item
 	If not, the system will compute ratio of used data storage to overall used data storage and multiplies it the power consumption of the server in idle mode.
 	\item
 	If the user does create traffic it will do same. Moreover it will compute ratio of user traffic to all user traffic to this server and multiplies it with the needed energy in this second deducing the idle energy consumption.
   \end{enumerate}
+  
+  \subsection{Example}
      For instance the idle energie consumption of Asok05 is $400\ W$. Moreover say that the overall user storage in the moment is 3 terrabyte and the energy price is . So for second "0" the user has to pay:
     
-    $$(\frac{3000}{3000000} \cdot 400) = 0,4\ W $$
+    $$(\frac{3000}{3000000} \cdot 400) = 0.4\ W $$
     
     Let's say in the 5th second there two more users which create traffic of each 10 MB/s. So the used energy of our user is:
     
-     $$(\frac{3000}{3000000} \cdot 400) + (\frac{10}{30} \cdot (450 - 400))  \approx 0,4 + 17 \approx 14,4\ W $$
+     $$(\frac{3000}{3000000} \cdot 400) + (\frac{10}{30} \cdot (450 - 400))  \approx 0.4 + 17 \approx 17.4\ W $$
            
-  
+  	This is how the system computes the energy for each second. The next step is sum up these values. Imagine that the user did not create any more traffic in this hour. Then we have approximately:
+  	
+  	$$ 3590 \cdot 0.4\ W + 10 \cdot 17\ W \approx 1436 + 170 \approx 1606\ W$$
+  	
+  	This means the user has a mean energy usage of $1606 / 3600 \approx 0.45\ W/h$. If we multiplies that with current energy price of 21 cent per $kW$, the user has tp pay $ 0.00045\ kW/h \cdot 21\ cent/kW \approx 0.01\ cent$ for this hour.
+  	
+  	Now the system sums up this prices of each server and returns the overall price for the user in this hour.  
