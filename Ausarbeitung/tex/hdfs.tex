@@ -1,38 +1,51 @@
+\subsection{From local to distributed filesystems}
 
-\subsection{Motivation}
 \todo{which word to use? distributed filesystem (dfs)?}
 \todo{maybe duplicates the introduction}
-To offer multiple users and applications a high available access on large filesystems there are different solutions known. Files can be stored on local filesystems (fs), may be shared using a network attached storage (nas)  or using a storage area network (san). for sharing storage in datacenters a san actually is a common used solution. they offer a redundant hardware setup on different locations using SCSI on FibreChannel or iSCSI over IP.
-There are less limitations on the given ressource power and data transmission speed but a manufacturer will connect a customer to original equipment which limits a customer through expansion costs.
+\todo{is it clear that a san keeps storage for one machine and a dfs shares storage for different users/machines better?}
 
-a possible solution for this case could be a cluster filesystem that consists of a lot of heterogeneous (smaller) computer systems. such a system should share computation between all nodes and give a lot of configurable options for keep redundant copies of files and offer fast delivery of files out of the network based on the number of nodes in that system.
+To offer multiple users and applications a high available access on large filesystems there are different solutions known. 
+Files can be stored on local filesystems, or may be shared using a network attached storage (NAS) for small businesses or for use at home. 
+While a local filesystem is strongly limited to capacity and multi user access a NAS allows to have an system available for different users. 
+But a NAS is limited for a small number of users and very much limited in world wide file sharing and a secure 24h availability.
 
-by holding a software based virtual filesystem it should be possible to react on new desires of customers like on filesize, number of files, available bandwidth. in opposite by having to many nodes the computation power is much to high and expensive for the given storage amount.  otherwise there will be a lot of work for keeping all the systems up to date. 
+A first solution to offer data stores for multiple machines which is actually common in data centers is to setup a storage area network. 
+This system may store different filesystems for different client machines without being limited to the speed of one pysical harddrive. 
+For security reasons it is possible to keep a redundant copy of such a system in a different place and exporting backups too. 
+But is is not quite easy to resize that system and not the best solution for sharing same view of the data to different machines and machines placed outside of a data centre.
 
-we were interested in how to reduce costs by providing different customer plans to fulfil a given quality-of-service (QoS) aggreement by starting to separating into a expensive speed oriented and slower/cheaper plan. the costs should be 
+Companies like Facebook were facing these issues and solved them using a distributed filesystem (DFS) \cite{fb-hadoop}. 
+The use of an DFS allows to raise the cluster storage  up to petabytes  \cite{fb-hadoop}. 
+A lot of huge different companies already have decided, to use hadoop to store and backup their data  \cite{hadoop-poweredby}. 
+Different algorithms such MapReduce are used to share limitations of cpu power and storage between clustered nodes \cite{dean2008mapreduce}. 
+Further it is easy to apply changes on the number of nodes which makes it highly flexible to use. 
 
-\subsection{introduction into distributed filesystems}
+A lot of advantages such to reduce traffic while updating only fileparts which have changed, named random write. 
+Other interesting questions are about creating snapshots or creating and applying backups where google was focusing on for their own filesystem implementation \cite{ghemawat2003google}.
+
+By creating a small cluster in the tubit data centre the power consumtion that is used for the system itself and by performing user actions like up- and downloading files is analyzed.
+
+\subsection{Introduction of Apache Hadoop}
 
 The distributed filesystem (DFS) should be used to connect cloud storage with a client machine as being local storage as shown in figure~\ref{fig:dfs_example}. To mount the network storage as being local a client program has to be running on the client machine. By using the DFS it will remove local limitations on Storage while offering a given QoS for bandwidth and multiuser support.
 
 \todo{create a simplified copy in a better fitting style}
-\begin{figure}
-\centering
-%\includegraphics[width=1\linewidth]{img/dfs_example.png}
-\caption{Basic idea of mounting a distributed filesystem}
-\label{fig:dfs_example}
-\end{figure}
 
+\begin{figure}
+	\centering
+	\includegraphics[width=1\linewidth]{img/dfs_example.png}
+	\caption{Basic idea of mounting a distributed filesystem}
+	\label{fig:dfs_example}
+\end{figure}
 
 A research on different known systems brought us the closer choice between GlusterFS \todo{link?/fußnote}
 
 \todo{see http://www.cubrid.org/blog/dev-platform/overview-and-recommendations-for-distributed-file-systems/ and http://www.datastax.com/wp-content/uploads/2012/09/WP-DataStax-HDFSvsCFS.pdf maybe?}
 
-
 \begin{itemize}
-\item was ist ein verteiltes dateisystem
-\item auswahl/unterschiedliche ansätze, vergleich, begründung der auswahl
-\item ziele
+	\item was ist ein verteiltes dateisystem
+	\item auswahl/unterschiedliche ansätze, vergleich, begründung der auswahl
+	\item ziele
 \end{itemize}
 
 \todo{move client information to this chapter???}
@@ -50,27 +63,23 @@ Another point is that the files should be used sometimes, our strategys were not
 
 \subsubsection{Connections to monitoring system}
 
-
-
 \subsubsection{Connections to SDN}
 
 \begin{itemize}
-\item verbindung zu sdn
-\item verbindung zu zabbix
+	\item verbindung zu sdn
+	\item verbindung zu zabbix
 \end{itemize}
 
-\subsection{Extensions written}
+\subsection{Data delivery strategies}
 
 By downloading a file from the DFS as first there will be a request to the namenode for a specified that should be downloaded by it's filename. If an user is allowed to get access to that file, the file block list will sent in an answer to the client. The file block list contains descriptions about all single data blocks, that represents the requestet file. For each data block the datanode locations are given. Depending on redundance settings for that file it is possible to recieve between one and multiple locations. 
 
 Given from our test bed the link to the office pc datanode and the second from CIT datacenter will be given. To reduce power consumption for an request we reduced the list of datanodes from block locations on different criteria. After recieving the list of data blocks and it's locations, the client application decides normally which locations for each data block should be chosen to be downloaded. After that step the client application creates the file as local copy from all downloaded data blocks automatically. By reducing the block location list before sending to the client we commanded which locations should be used from the client application.
 
-
-
 To provide a user related monitoring as base for a possible bill creation the DFS needed to fulfill the following functionalities:
 
 \begin{itemize}
-\item By connecting the namenode, the username needs to 
+	\item By connecting the namenode, the username needs to 
 \end{itemize}
 
 \subsubsection{server selection for downloading files}
@@ -79,15 +88,15 @@ By comparing the power consumption while downloading files and while being idle 
 
 \begin{table}
 	\centering
+	\caption{approx. power consumption values from different datanodes}	
 	\begin{tabular}{|l|r|r|}
-		\hline  & office pc & cit server \\ 
-		\hline idle &   75 W &   350 W \\ 
-		\hline on file download &   95 W &   390 W \\ 
-		\hline used bandwidth & todo & todo \\
-		\hline max. possible bandwidth & 1GB/s & 10GB/s \\
+		\hline \rule[-2ex]{0pt}{5.5ex}  & \textbf{office pc} & \textbf{Asok05} \\ 
+		\hline \rule[-2ex]{0pt}{5.5ex} \textit{idle} &   75 W &   350 W \\ 
+		\hline \rule[-2ex]{0pt}{5.5ex} \textit{on file download} &   95 W &   360 W \\ 
+		\hline \rule[-2ex]{0pt}{5.5ex} \textit{used bandwidth} & todo & todo \\
+		\hline \rule[-2ex]{0pt}{5.5ex} \textit{max. possible bandwidth} & 1GB/s & 10GB/s \\
 		\hline
-	\end{tabular}\newline
-	\caption{approx. power consumption values from different datanodes}
+	\end{tabular} 
 	\label{tab:powerconsumptionvalues}
 	\todo{are these values correct?, size of table}
 \end{table}
@@ -129,18 +138,27 @@ An other Example is to use data from history. If we know, the user has no fast c
 The last Example is to use the service the user is using. If he only want to download, than a slow download cann be possible. If he wants to stream a video we have to use a fast rack.
 
 \subsection{Client connection}
+
+To interacte with HDFS the client can use either the Filesystem in Userspace (FUSE) or the command line. There are many other interfaces to HDFS, but this two were the simplest and to many developers and users the most familiar.
+
 \label{sec:hdfs_client}
+
 \subsubsection{Terminal}
+
+When the filesystem is ready to be used, the client can use the Terminal to do all of the usual filesystem operations such as reading files, creating directories, moving files, deleting data, and listing directories. To make these operations you type hadoop command on the terminal for instance hadoop fs -ls to list a directory or hadoop fs -mkdir to create a directory. With hadoop fs -help the client can get detailed help on every command.
+
 \subsubsection{FUSE}
 
-Filesystem in Userspace (FUSE) allows various filesystem that are implemented in user space to be integrated as a Unix filesystem. The Hadoop distribution already have a FUSE Client (Fuse-DFS) and with it we can mount HDFS as a standard filesystem. You can then use most of the Unix filesystem operations (such as ls, cat, rm, mv, mkdir, rmdir). However, at the time we write this, random write operations and permission related operations such as chmod, chown are not supported in Fuse-DFS. Another is that the performance is impacted because of all the memory copies and transitions from kernel to user space and then the JVM.
+Filesystem in Userspace (FUSE) allows various filesystem that are implemented in user space to be integrated as a Unix filesystem. The Hadoop distribution already have a FUSE Client (Fuse-DFS) and with it we can mount HDFS as a standard filesystem. You can then use most of the Unix filesystem operations (such as ls, cat, rm, mv, mkdir, rmdir). However, at the time we write this, random write operations and permission related operations such as chmod, chown are not supported in Fuse-DFS. Another problem is that the performance is impacted because of all the memory copies and transitions from kernel to user space and then the JVM.
 
 Fuse-DFS is implemented in C using libhdfs and was complicated to compile and run because there is not good documentation about it.
+
 \subsection{reached goals}
+
 gesamte auswertung
 
 
-
+One disadvantage of such a system is the need of administration.
 
 
 %\IEEEPARstart{J}{ust} start typing your Text here... Then compile the main document!
