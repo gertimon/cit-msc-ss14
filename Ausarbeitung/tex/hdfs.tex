@@ -18,12 +18,12 @@ Companies like Facebook were facing these issues and solved them using a distrib
 The use of an DFS allows to raise the cluster storage  up to petabytes  \cite{fb-hadoop}. 
 A lot of huge different companies already have decided, to use hadoop to store and backup their data  \cite{hadoop-poweredby}. 
 Different algorithms such MapReduce are used to share limitations of cpu power and storage between clustered nodes \cite{dean2008mapreduce}. 
-Further it is easy to apply changes on the number of nodes which makes it highly flexible to use. 
+Further it is easy to raise the number of nodes which makes it highly flexible to use. Only the power in administration will raise, cyaused on the number of heterogeneus machines, too.
 
-A lot of advantages such to reduce traffic while updating only fileparts which have changed, named random write. 
-Other interesting questions are about creating snapshots or creating and applying backups where google was focusing on for their own filesystem implementation \cite{ghemawat2003google}.
+For cases such as downloading huge files as operating system images it is important to find strategies for reducing traffic by only updating changed parts of such files, named random write.
+Different interesting questions are about creating snapshots or creating and applying backups where google was focusing on for their own filesystem implementation \cite{ghemawat2003google}.
 
-By creating a small cluster in the tubit data centre the power consumtion that is used for the system itself and by performing user actions like up- and downloading files is analyzed.
+Similar functionalities are available through the replacement of FibreChannel by iSCSI for SAN. But the use of such a system will limit to one manufacturer. Maybe thats one of the main reasons which makes distributed filesystems so popular.
 
 \subsection{Introduction of Apache Hadoop}
 
@@ -51,6 +51,8 @@ A research on different known systems brought us the closer choice between Glust
 \todo{move client information to this chapter???}
 
 \subsection{System setup}
+
+By creating a small cluster in the tubit data centre the power consumtion that is used for the system itself and by performing user actions like up- and downloading files is analyzed.
 
 For our test system we have used the distributed filesystem (DFS) Apache Hadoop\textsuperscript{\textregistered} (HDFS) \footnote{http://hadoop.apache.org/}. This system was used due to the idea having an DFS running on heterogeneus systems from different hardware and operating systems. 
 
