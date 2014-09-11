@@ -38,15 +38,17 @@ The distributed filesystem (DFS) should be used to connect cloud storage with a 
 	\label{fig:dfs_example}
 \end{figure}
 
-A research on different known systems brought us the closer choice between GlusterFS \todo{link?/fußnote}
-
-\todo{see http://www.cubrid.org/blog/dev-platform/overview-and-recommendations-for-distributed-file-systems/ and http://www.datastax.com/wp-content/uploads/2012/09/WP-DataStax-HDFSvsCFS.pdf maybe?}
+A research of known DFS brought us the choice between GlusterFS and Apache Hadoop.
 
 \begin{itemize}
 	\item was ist ein verteiltes dateisystem
 	\item auswahl/unterschiedliche ansätze, vergleich, begründung der auswahl
 	\item ziele
 \end{itemize}
+
+GlusterFS is developt by Red Hat inc. and written in C. Hadoop is part of Apache and written in Java.
+
+Both are open souce and can be easily extened by our own plugins. In addition, both offers a very active community and therefore a steady development. The support of Java was the main reason for hadoop. So our decision was made.
 
 \todo{move client information to this chapter???}
 
