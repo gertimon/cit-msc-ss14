@@ -8,6 +8,73 @@ The network metering with Zabbix is not only used for network managing  decision
  This instance can import or export the data as files or starts the price calculation. To do that the UsageReport splits the data in one hour frames. This is possible because Zabbix stores for each data the time as well. These calculations will be made by the "UsageTimeFrame". After that the system can tell the uses how much he has to pay for the given time by listing the usage in one hour parts.
  
  \subsection{Calculation of the price} 
- The basic idea of the price concept is that the owners of the system do not have to pay for the maintenance of the system. Every user has pay a part of the energy usage if the severs run in idle mode as well as the user has to pay for his traffic. It should be noticed that this basic idea was made by the team. It can't work if just a few persons uses the system. On the other hand is the idea of distributed file systems that a lot of people use them. But it was not possibly to test that concept because there simply were not that much people to test that. 
+ The basic idea of the price concept is that the owners of the system do not have to pay for the maintenance of the system. Every user has pay a part of the energy usage if the severs run in idle mode. The part depends on how much data of the user are stored in the system. Moreover the user has to pay for his traffic. It should be noticed that this basic idea was made by the team. It can't work if just a few persons uses the system. On the other hand is the idea of distributed file systems that a lot of people use them. But it was not possibly to test that concept because there simply were not that much people to test that. 
  
- If we want to compute the price for each user and each system in an hour, the first thing to is to extend the data from Zabbix. Firstly Zabbix stores engery usage of each sever every two seconds. Secondly, if there is a traffic flow, Zabbix will store information about that every five seconds. And last but not least 
+ If we want to compute the price for each user and each system in an hour, the first thing to is to extend the data from Zabbix. Firstly Zabbix stores engery usage of each sever every two seconds. Secondly, if there is a traffic flow, Zabbix will store information about that every five seconds. And last but not least Zabbix stores the used data of each user if it changes. Imagine a situation where user "A" transfers 100 megabytes in 10 seconds to the Asok05 server. Then the information created by zabbix looks like in table \ref{tb1}. 
+\begin{table}
+\centering
+\caption{Zabbix monitoring of user A}
+\begin{tabular}{|c|c|c|c|}
+ \hline Time in s & Data in MB & Traffic in MB/s & Energy in W \\ 
+  \hline 0 & 3000 & 0 & 400 \\ 
+ \hline 1 & - & 10 & - \\ 
+ \hline 2 & - & - & 450 \\ 
+ \hline 3 & - & - & -\\ 
+ \hline 4 & - & - & 450 \\ 
+ \hline 5 & - & - & - \\
+ \hline 6 & - & 10 & 445 \\ 
+ \hline 7 & - & - & -\\ 
+ \hline 8 & - & - & 450 \\ 
+ \hline 9 & - & - & - \\  
+ \hline 10 & - & - & 430 \\
+  \hline 11 & - & 10 & - \\
+ \hline 12 & 3100 & 0 & 400 \\  
+ \hline 
+ \end{tabular}
+ \label{tb1} 
+ \end{table}
+ 
+ To get a clear information when a flow starts and when a flow stops, Floodlight sends at the start and the end of a flow a zero to Zabbix. The given information is not enough compute a clear price for each user. So the next step is to complete the table for each user. For every empty energy entry the system takes the next known value. For the data usage the system takes the last known value. The same goes for traffic. So after that the table looks like table \ref{tb2}.
+ 
+ 
+ \begin{table}
+ \centering
+ \caption{Zabbix monitoring of user A}
+ \begin{tabular}{|c|c|c|c|}
+  \hline Time in s & Data in MB & Traffic in MB/s & Energy in W \\ 
+   \hline 0 & 3000 & 0 & 400 \\ 
+  \hline 1 & 3000 & 10 & 450 \\ 
+  \hline 2 & 3000 & 10 & 450 \\ 
+  \hline 3 & 3000 & 10 & 450\\ 
+  \hline 4 & 3000 & 10 & 450 \\ 
+  \hline 5 & 3000 & 10 & 445 \\
+  \hline 6 & 3000 & 10 & 445 \\ 
+  \hline 7 & 3000 & 10 & 450\\ 
+  \hline 8 & 3000 & 10 & 450 \\ 
+  \hline 9 & 3000 & 10 & 430 \\  
+  \hline 10 & 3000 & 10 & 430 \\
+   \hline 11 & 3000 & 10 & 400 \\
+  \hline 12 & 3100 & 0 & 400 \\  
+  \hline 
+  \end{tabular}
+  \label{tb2} 
+  \end{table}
+  
+  These table will be created for each user, each server and for each hour in the given time frame. If there is user data synchronization between the servers, it will identified as "internal traffic" and will be accounted for a user on the system which does the synchronization. After that the system can compute a price for each user for each second of an hour. The it sums up the prices and computes the mean value. Then we have the costs for each user and for each system. The last step is to sum up the mean values for each system to get the total costs for a user in an hour.
+  
+  Computing the price for second must be separated in two different situations. The question is: "Does the user create traffic in this second?".
+  \begin{enumerate}
+	\item
+	If not, the system will compute ratio of used data storage to overall used data storage and multiplies it the power consumption of the server in idle mode.
+	\item
+	If the user does create traffic it will do same. Moreover it will compute ratio of user traffic to all user traffic to this server and multiplies it with the needed energy in this second deducing the idle energy consumption.
+  \end{enumerate}
+     For instance the idle energie consumption of Asok05 is $400\ W$. Moreover say that the overall user storage in the moment is 3 terrabyte and the energy price is . So for second "0" the user has to pay:
+    
+    $$(\frac{3000}{3000000} \cdot 400) = 0,4\ W $$
+    
+    Let's say in the 5th second there two more users which create traffic of each 10 MB/s. So the used energy of our user is:
+    
+     $$(\frac{3000}{3000000} \cdot 400) + (\frac{10}{30} \cdot (450 - 400))  \approx 0,4 + 17 \approx 14,4\ W $$
+           
+  
