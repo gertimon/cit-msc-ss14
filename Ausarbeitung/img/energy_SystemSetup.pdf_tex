@@ -36,7 +36,7 @@
   }%
   \providecommand\rotatebox[2]{#2}%
   \ifx\svgwidth\undefined%
-    \setlength{\unitlength}{536.75011823bp}%
+    \setlength{\unitlength}{595.27558594bp}%
     \ifx\svgscale\undefined%
       \relax%
     \else%
@@ -48,15 +48,15 @@
   \global\let\svgwidth\undefined%
   \global\let\svgscale\undefined%
   \makeatother%
-  \begin{picture}(1,0.54049781)%
+  \begin{picture}(1,1.4142857)%
     \put(0,0){\includegraphics[width=\unitlength]{img/energy_SystemSetup.pdf}}%
-    \put(0.11207771,0.25486632){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{ASOK05}}}%
-    \put(0.44513241,0.25770474){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{OfficePC}}}%
-    \put(0.24348889,0.43677359){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{Energy Meter}}}%
-    \put(0.10216766,0.51832903){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{\tiny http://localhost:8081}}}%
-    \put(0.4301828,0.51736){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{\tiny http://localhost:8082}}}%
-    \put(0.24323091,0.0835193){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{ZabbixSender}}}%
-    \put(0.80727221,0.04232202){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{Zabbix}}}%
-    \put(0.13231703,0.32638732){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{\tiny EnergyDataPusher}}}%
+    \put(0.0775262,1.14138807){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{Asok05}}}%
+    \put(0.3778361,1.14394742){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{Office-PC}}}%
+    \put(0.19601748,1.30541083){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{Energy Meter}}}%
+    \put(0.06859048,1.37894802){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{\tiny http://localhost:8081}}}%
+    \put(0.36435628,1.37807427){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{\tiny http://localhost:8082}}}%
+    \put(0.19578486,0.98688731){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{ZabbixSender}}}%
+    \put(0.70437154,0.94974039){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{Zabbix}}}%
+    \put(0.09577566,1.20587736){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{\tiny EnergyDataPusher}}}%
   \end{picture}%
 \endgroup%
