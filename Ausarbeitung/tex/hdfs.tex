@@ -38,15 +38,17 @@ The distributed filesystem (DFS) should be used to connect cloud storage with a 
 	\label{fig:dfs_example}
 \end{figure}
 
-A research on different known systems brought us the closer choice between GlusterFS \todo{link?/fußnote}
-
-\todo{see http://www.cubrid.org/blog/dev-platform/overview-and-recommendations-for-distributed-file-systems/ and http://www.datastax.com/wp-content/uploads/2012/09/WP-DataStax-HDFSvsCFS.pdf maybe?}
+A research of known DFS brought us the choice between GlusterFS and Apache Hadoop.
 
 \begin{itemize}
 	\item was ist ein verteiltes dateisystem
 	\item auswahl/unterschiedliche ansätze, vergleich, begründung der auswahl
 	\item ziele
 \end{itemize}
+
+GlusterFS is developt by Red Hat inc. and written in C. Hadoop is part of Apache and written in Java.
+
+Both are open souce and can be easily extened by our own plugins. In addition, both offers a very active community and therefore a steady development. The support of Java was the main reason for hadoop. So our decision was made.
 
 \todo{move client information to this chapter???}
 
@@ -56,11 +58,11 @@ By creating a small cluster in the tubit data centre the power consumtion that i
 
 For our test system we have used the distributed filesystem (DFS) Apache Hadoop\textsuperscript{\textregistered} (HDFS) \footnote{http://hadoop.apache.org/}. This system was used due to the idea having an DFS running on heterogeneus systems from different hardware and operating systems. 
 
-The HDFS consits of two main parts. A nameserver that keeps the logic view of the filesystem and a various number of datanodes which keep the files organized in blocks of a fixed length. Multiple datanodes can be used to raise the maximum of available storage and to keep multiple replicas of files in different locations. Our testbed consits of two machines running a datanode. One was just a simple office pc, the other one was a powerful machine at CIT datacentre\footnote{Link?, erklärung CIT?}. Both were different in power consumption and maximum of provided bandwidth. 
+The HDFS consits of two main parts. A nameserver that keeps the logic view of the filesystem and a various number of datanodes which keep the files organized in blocks of a fixed length. Multiple datanodes can be used to raise the maximum of available storage and keep multiple replicas of files in different locations. Our test sytem is a set of two machines each running a datanode. One was just a simple office pc, the other one was a powerful machine at CIT datacentre\footnote{CIT, an instute of the TU-Berlin for Complex IT Systems}. Both were different in power consumption and maximum of provided bandwidth.
 
 \todo{bildchen mit namenode, client und zwei datanodes} 
 
-For our test scenario we have planed to hold large filesystem images which will be downloaded in common case but changed too. Due to the limitations of given data stores we concentrated only on energy optimization for downloading files. When uploading the files will be synchronized to both machines for keep a redundant file copy in the system.
+For our test scenario we have planed to hold large operatingsytem images which will be downloaded in common case but changed too. Due to the limitations of given data stores we concentrated only on energy optimization for downloading files. When uploading files our both test systems will be synchronized for a redundant file copy in each system.
 Another point is that the files should be used sometimes, our strategys were not implemented for less energy using data archives that will never get touched by an user.
 
 \subsubsection{Connections to monitoring system}
