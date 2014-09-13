@@ -3,12 +3,12 @@
   %head
     %meta(charset="utf-8")
     %meta(http-equiv="X-UA-Compatible" content="IE=edge")
-    %title CIT-Energy-Project
+    %title CIT-Energy-Project Report
     %meta(name="viewport" content="width=device-width, initial-scale=1")
     -# <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
     %link(rel="stylesheet" href="stylesheets/main.css")
     <!-- build:css stylesheets/vendor.css -->
-    %link(rel="stylesheet" href="bower_components/nvd3/nv.d3.css")
+    %link(rel="stylesheet" href="bower_components/c3/c3.css")
     <!-- endbuild -->
 
   %body
@@ -25,34 +25,15 @@
             %li#nav-mode-online
               %a(href="?mode=online") Online
 
-      %h2 Power usage
+    .container#charts
       %p.loading-banner
         Loading...
-      .row.chart
-        %svg.col-xs-4#power-pie-chart
-        -# we need a additional div here, otherwise popups calculating wrong positions
-        .col-xs-8
-          %div
-            %svg#power-line-chart
-
-      %h2 Storage usage
-      .chart#storage-chart
-        %p.loading-banner
-          Loading...
-        %svg
-
-      %h2 Traffic usage
-      .chart#traffic-chart
-        %p.loading-banner
-          Loading...
-        %svg
-
 
     <!-- build:js javascripts/vendor.js -->
     %script(src="bower_components/jquery/dist/jquery.js")
     %script(src="bower_components/bootstrap/dist/js/bootstrap.js")
     %script(src="bower_components/d3/d3.js")
-    %script(src="bower_components/nvd3/nv.d3.js")
+    %script(src="bower_components/c3/c3.js")
     <!-- endbuild -->
 
     <!-- build:js({.tmp,app}) javascripts/app.js -->
