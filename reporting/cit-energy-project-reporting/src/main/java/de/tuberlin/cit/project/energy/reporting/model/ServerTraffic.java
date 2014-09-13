@@ -20,7 +20,7 @@ class ServerTraffic {
     public void addEntry(TrafficHistoryEntry entry) {
         float traffic[] = this.userTraffic.get(entry.getUsername());
         int rangeStart;
-        int rangeEnd = (int) (this.timeFrame.getStartTime() - entry.getTimestamp());
+        int rangeEnd = (int) (entry.getTimestamp() - this.timeFrame.getStartTime());
 
         if (traffic == null) {
             traffic = new float[(int) this.timeFrame.getDurationInSeconds()];
@@ -36,5 +36,17 @@ class ServerTraffic {
         }
 
         this.lastUserTrafficEnd.put(entry.getUsername(), rangeEnd);
+    }
+    
+    public float[] getSum() {
+        float sum[] = new float[3600];
+        
+        for (String user : this.userTraffic.keySet()) {
+            float traffic[] = this.userTraffic.get(user);
+            for (int t = 0; t < traffic.length; t++)
+                sum[t] += traffic[t];
+        }
+        
+        return sum;
     }
 }

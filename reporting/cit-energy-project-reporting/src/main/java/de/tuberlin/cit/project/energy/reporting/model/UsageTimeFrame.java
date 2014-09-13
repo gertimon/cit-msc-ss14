@@ -2,18 +2,15 @@ package de.tuberlin.cit.project.energy.reporting.model;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import de.tuberlin.cit.project.energy.reporting.Properties;
-
 /**
- * Represents usage values on a given time frame.
+ * Represents usage values on a given time frame (3600s = 1h).
  *
  * @author Sascha
  */
@@ -43,11 +40,17 @@ public class UsageTimeFrame {
     private HashMap<String, Long> initialStorageEntries;
 
     // calculated statistics
-    private Map<String, Double> powerUsageByHostSum;
     private HashMap<String, float[]> powerUsageByHost;
     private HashMap<String, ServerTraffic> trafficByHost;
     private HashMap<String, long[]> storageByUser;
-    private HashMap<String, BillForAllServers> billByUser;
+
+    // sums
+    private HashMap<String, Float> powerUsageByHostSum;
+    private HashMap<String, Float> powerUsageByUserSum;
+    private float powerUsageByTypeSum[] = new float[2]; // 0=idle, 1=rest
+    private HashMap<String, Float> storageUsageByUserSum;
+    private HashMap<String, Float> trafficUsageByUserSum;
+
 
     public UsageTimeFrame(long startTime, long frameDuration) {
         this.startTime = startTime;
@@ -113,44 +116,13 @@ public class UsageTimeFrame {
      * After adding history entries, this method does the final calculation step.
      */
     public void calculateSummary() {
-        this.powerUsageByHostSum = calculatePowerUsageByHostSum();
         this.powerUsageByHost = generatePowerMap();
         this.trafficByHost = generateUserTrafficMap();
         this.storageByUser = generateUserStorageMap();
-        this.billByUser = calculateUserBills();
+        calculateUsageSums();
     }
 
-    public HashMap<String, BillForAllServers> getBillByUser() {
-        return billByUser;
-    }
-
-    /** Calculates the power usage in KWh per host */
-    private Map<String, Double> calculatePowerUsageByHostSum() {
-        HashMap<String, Double> powerUsageByHost = new HashMap<>();
-        HashMap<String, Long> lastTimestamp = new HashMap<>();
-
-        for (PowerHistoryEntry entry : this.powerUsageHistory) {
-            if (powerUsageByHost.containsKey(entry.getHostname())) {
-                long offset = entry.getTimestamp() - lastTimestamp.get(entry.getHostname());
-                double lastValue = powerUsageByHost.get(entry.getHostname());
-                powerUsageByHost.put(entry.getHostname(), lastValue + offset * entry.getUsedPower());
-                lastTimestamp.put(entry.getHostname(), entry.getTimestamp());
-
-            } else {
-                powerUsageByHost.put(entry.getHostname(), 0d);
-                lastTimestamp.put(entry.getHostname(), entry.getTimestamp());
-            }
-        }
-
-        // calculate KWh
-        for (String hostname : powerUsageByHost.keySet()) {
-            powerUsageByHost.put(hostname, powerUsageByHost.get(hostname) / (3600.0 * 1000));
-        }
-
-        return powerUsageByHost;
-    }
-
-    /** Generates an user -> traffic mapping. */
+    /** Generates an user -> storage mapping. */
     private HashMap<String, long[]> generateUserStorageMap() {
         HashMap<String, long[]> userStorage = new HashMap<String, long[]>();
 
@@ -193,6 +165,18 @@ public class UsageTimeFrame {
     /** Generates a server -> user -> traffic mapping. */
     private HashMap<String, ServerTraffic> generateUserTrafficMap() {
         HashMap<String, ServerTraffic> trafficByHost = new HashMap<>();
+        HashMap<String, TrafficHistoryEntry> lastEntry = new HashMap<>();
+
+        // merge entries
+        Iterator<TrafficHistoryEntry> it = this.trafficUsageHistory.iterator();
+        while(it.hasNext()) {
+            TrafficHistoryEntry current = it.next();
+            if (lastEntry.containsKey(current.getHostname()) && lastEntry.get(current.getHostname()).equals(current)) {
+                lastEntry.get(current.getHostname()).addUsedBytes(current);
+                it.remove();
+            } else
+                lastEntry.put(current.getHostname(), current);
+        }
 
         for (TrafficHistoryEntry entry : this.trafficUsageHistory) {
             ServerTraffic serverTraffic = trafficByHost.get(entry.getHostname());
@@ -241,104 +225,101 @@ public class UsageTimeFrame {
         return dataNodesPowers;
     }
 
-    private HashMap<String, BillForAllServers> calculateUserBills() {
-        HashMap<String, BillForAllServers> billforUserOfServers = new HashMap<>();
+    /** Generates the final summary statistics */
+    private void calculateUsageSums() {
+        String user[] = this.storageByUser.keySet().toArray(new String[]{});
+        String hosts[] = this.powerUsageByHost.keySet().toArray(new String[]{});
+        
+        float powerUsageByUserSum[] = new float[user.length];
+        float powerUsageByHostSum[] = new float[hosts.length];
+        float powerUsageByTypeSum[] = new float[2]; // 0=idle, 1=rest
+        float storageUsageByUserSum[] = new float[user.length];
+        float trafficUsageByUserSum[] = new float[user.length];
 
-        for (String username : this.storageByUser.keySet()) {
-            BillForAllServers bills = computeBill(
-                    this.powerUsageByHost, this.trafficByHost, this.storageByUser, username);
-            bills.setStartTime(this.startTime);
-            bills.setEndTime(getEndTime());
-            billforUserOfServers.put(username, bills);
-        }
+        float powerByHost[][] = new float[hosts.length][3600];
+        for (int h = 0; h < hosts.length; h++)
+            powerByHost[h] = this.powerUsageByHost.get(hosts[h]);
 
-        return billforUserOfServers;
-    }
+        long storageByUser[][] = new long[user.length][3600];
+        for (int u = 0; u < user.length; u++)
+            storageByUser[u] = this.storageByUser.get(user[u]);
 
-    private BillForAllServers computeBill(HashMap<String, float[]> serverPowers,
-            HashMap<String, ServerTraffic> usersTraffic, HashMap<String, long[]> userStorage, String user) {
+        long storageUsageSum[] = sum(storageByUser);
 
-        long[] userStore = userStorage.get(user);
-        if (userStore == null) {
-            userStore = new long[3600];
-            Arrays.fill(userStore, 0);
-        }
-        List<Bill> userBillsForServer = new LinkedList<>();
-        for (String serverName : usersTraffic.keySet()) {
-            ServerTraffic traffic = usersTraffic.get(serverName);
-            float[] userTrafficOFServer = traffic.getUserTraffic().get(user);
-            if (userTrafficOFServer == null) {
-                userTrafficOFServer = new float[3600];
-                Arrays.fill(userTrafficOFServer, 0);
+        for (int h = 0; h < hosts.length; h++) {
+            float idle = IDLE_POWERS.get(hosts[h]);
+            double usageByUserOnHost[] = new double[user.length];
+
+            ServerTraffic traffic = null;
+            float trafficSum[] = null;
+
+            if (this.trafficByHost.containsKey(hosts[h])) {
+                traffic = this.trafficByHost.get(hosts[h]);
+                trafficSum = traffic.getSum();
             }
-            Bill serverBill = computePrice(serverName, serverPowers.get(serverName), IDLE_POWERS.get(serverName),
-                    userTrafficOFServer, userStore, traffic.getUserTraffic(), userStorage, user);
-            userBillsForServer.add(serverBill);
-        }
-        BillForAllServers compBill = new BillForAllServers(userBillsForServer);
-        return compBill;
-    }
 
-    private Bill computePrice(String serverName, float[] server, int idlePower, float[] userTrafficForServer,
-            long[] userStore, HashMap<String, float[]> usersTrafficForServer, HashMap<String, long[]> usersStorage,
-            String user) {
+            for (int t = 0; t < 3600; t++) {
+                float currentIdle = Math.min(powerByHost[h][t], idle);
+                float currentRest = powerByHost[h][t] - currentIdle;
 
-        float[] pricePart = new float[3600];
-        double allTraffic = 0;
-        double allStorage = 0;
-        for (int i = 0; i < 3600; i++) {
-            if (userTrafficForServer[i] == 0) {
-                Set<String> keys = usersStorage.keySet();
-                long userPart = userStore[i];
-                long rest = 0;
-                for (String k : keys) {
-                    rest += usersStorage.get(k)[i];
+                // idle / storage
+                if (storageUsageSum[t] > 0) {
+                    for (int u = 0; u < user.length; u++) {
+                        if (storageByUser[u][t] > 0) {
+                            usageByUserOnHost[u] += (1.0 * storageByUser[u][t] / storageUsageSum[t]) * currentIdle;
+                            storageUsageByUserSum[u] += storageByUser[u][t];
+                        }
+                    }
                 }
-                pricePart[i] = (userPart / rest) * idlePower;
-                allStorage += rest;
-            } else {
-                Set<String> keys = usersStorage.keySet();
-                long userPart = userStore[i];
-                long rest = 0;
-                for (String k : keys) {
-                    rest += usersStorage.get(k)[i];
-                    allStorage += rest;
+
+                // rest / traffic
+                if (traffic != null && currentRest > 0 && trafficSum[t] > 0) {
+                    for (int u = 0; u < user.length; u++) {
+                        if (traffic.getUserTraffic().containsKey(user[u]) &&
+                                    traffic.getUserTraffic().get(user[u])[t] > 0) {
+
+                                usageByUserOnHost[u] += (traffic.getUserTraffic().get(user[u])[t] / trafficSum[t]) * currentRest;
+                                trafficUsageByUserSum[u] += traffic.getUserTraffic().get(user[u])[t];
+                        }
+                    }
                 }
-                pricePart[i] = (userPart / rest) * idlePower;
-                keys = usersTrafficForServer.keySet();
-                float userPart2 = userTrafficForServer[i];
-                float rest2 = 0;
-                for (String k : keys) {
-                    rest2 += usersTrafficForServer.get(k)[i];
-                    allTraffic += rest2;
-                }
-                pricePart[i] += (userPart2 / rest2) * (server[i] - idlePower);
+
+                powerUsageByHostSum[h] += powerByHost[h][t];
+                powerUsageByTypeSum[0] += currentIdle;
+                powerUsageByTypeSum[1] += currentRest;
+            }
+
+            for (int u = 0; u < user.length; u++) {
+                powerUsageByUserSum[u] += usageByUserOnHost[u];
             }
         }
-        float sum = 0;
-        float averageTraffic = 0;
-        long averageStorage = 0;
 
-        for (int i = 0; i < 3600; i++) {
-            sum += pricePart[i];
-            averageTraffic += userTrafficForServer[i];
-            averageStorage += userStore[i];
+        // map results
+        this.powerUsageByHostSum = new HashMap<>();
+        for (int h = 0; h < hosts.length; h++)
+            this.powerUsageByHostSum.put(hosts[h], powerUsageByHostSum[h] / (3600 * 1000)); // KWh
+        this.powerUsageByUserSum = new HashMap<>();
+        for (int u = 0; u < user.length; u++)
+            this.powerUsageByUserSum.put(user[u], powerUsageByUserSum[u] / (3600 * 1000)); // KWh
+        this.powerUsageByTypeSum = new float[powerUsageByTypeSum.length];
+        for (int t = 0; t < 2; t++)
+            this.powerUsageByTypeSum[t] = powerUsageByTypeSum[t] / (3600 * 1000); // KWh
+        this.storageUsageByUserSum = new HashMap<>();
+        for (int u = 0; u < user.length; u++)
+            this.storageUsageByUserSum.put(user[u], storageUsageByUserSum[u] / 3600); // AVG
+        this.trafficUsageByUserSum = new HashMap<>();
+        for (int u = 0; u < user.length; u++)
+            this.trafficUsageByUserSum.put(user[u], trafficUsageByUserSum[u]);        
+    }
+
+    private long[] sum(long values[][]) {
+        long[] result = new long[values[0].length];
+        Arrays.fill(result, 0);
+        for (int i = 0; i < values.length; i++) {
+            for (int t = 0; t < values[i].length; t++)
+                result[t] += values[i][t];
         }
-        float kWhOfUser = (sum / 3600) / 1000;
-        double price = kWhOfUser * Properties.KWH_PRICE;
-
-        averageTraffic = averageTraffic / 3600;
-        averageStorage = averageStorage / 3600;
-        allTraffic = (allTraffic / 3600);
-        allStorage = allStorage / 3600;
-        double averageStoragePercent = (averageStorage / allStorage) * 100;
-        double averageTrafficPercent = (averageTraffic / allTraffic) * 100;
-        if (Double.isNaN(averageTrafficPercent))
-            averageTrafficPercent = 0.0;
-
-        Bill bill = new Bill(serverName, user, kWhOfUser, averageTraffic, averageStorage, price, averageStoragePercent,
-                averageTrafficPercent);
-        return bill;
+        return result;
     }
 
     public ObjectNode toJson(ObjectMapper objectMapper) {
@@ -346,16 +327,22 @@ public class UsageTimeFrame {
         result.put("startTime", this.startTime);
         result.put("endTime", this.startTime + this.frameDuration - 1);
 
-        for (String hostname : this.powerUsageByHostSum.keySet()) {
-            double usage = powerUsageByHostSum.get(hostname);
-            result.with("powerUsageSum").put(hostname, usage);
-        }
+        for (String hostname : this.powerUsageByHostSum.keySet())
+            result.with("powerUsageByHost").put(hostname, this.powerUsageByHostSum.get(hostname));
+        for (String user : this.powerUsageByUserSum.keySet())
+            result.with("powerUsageByUser").put(user, this.powerUsageByUserSum.get(user));
+        result.with("powerUsageByType").put("idle", this.powerUsageByTypeSum[0]);
+        result.with("powerUsageByType").put("rest", this.powerUsageByTypeSum[1]);
+        for (String user : this.storageUsageByUserSum.keySet())
+            result.with("storageUsageByUser").put(user, this.storageUsageByUserSum.get(user));
+        for (String user : this.trafficUsageByUserSum.keySet())
+            result.with("trafficUsageByUser").put(user, this.trafficUsageByUserSum.get(user));
 
         // some debug informations
-        result.with("statistic").with("count").put("power", this.powerUsageHistory.size());
-        result.with("statistic").with("count").put("storage", this.storageUsageHistory.size());
-        result.with("statistic").with("count").put("initStorageEntries", this.initialStorageEntries.size());
-        result.with("statistic").with("count").put("traffic", this.trafficUsageHistory.size());
+        // result.with("statistic").with("count").put("power", this.powerUsageHistory.size());
+        // result.with("statistic").with("count").put("storage", this.storageUsageHistory.size());
+        // result.with("statistic").with("count").put("initStorageEntries", this.initialStorageEntries.size());
+        // result.with("statistic").with("count").put("traffic", this.trafficUsageHistory.size());
 
         return result;
     }
