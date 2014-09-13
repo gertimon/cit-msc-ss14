@@ -36,7 +36,7 @@
   }%
   \providecommand\rotatebox[2]{#2}%
   \ifx\svgwidth\undefined%
-    \setlength{\unitlength}{595.27558594bp}%
+    \setlength{\unitlength}{526.55831178bp}%
     \ifx\svgscale\undefined%
       \relax%
     \else%
@@ -48,15 +48,15 @@
   \global\let\svgwidth\undefined%
   \global\let\svgscale\undefined%
   \makeatother%
-  \begin{picture}(1,1.4142857)%
+  \begin{picture}(1,0.55095942)%
     \put(0,0){\includegraphics[width=\unitlength]{img/energy_SystemSetup.pdf}}%
-    \put(0.0775262,1.14138807){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{Asok05}}}%
-    \put(0.3778361,1.14394742){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{Office-PC}}}%
-    \put(0.19601748,1.30541083){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{Energy Meter}}}%
-    \put(0.06859048,1.37894802){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{\tiny http://localhost:8081}}}%
-    \put(0.36435628,1.37807427){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{\tiny http://localhost:8082}}}%
-    \put(0.19578486,0.98688731){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{ZabbixSender}}}%
-    \put(0.70437154,0.94974039){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{Zabbix}}}%
-    \put(0.09577566,1.20587736){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{\tiny EnergyDataPusher}}}%
+    \put(0.09793012,0.25979939){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{Asok05}}}%
+    \put(0.41312232,0.26269275){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{Office-PC}}}%
+    \put(0.22276903,0.44522756){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{Energy Meter}}}%
+    \put(0.08478966,0.52836156){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{\tiny http://localhost:8081}}}%
+    \put(0.41915369,0.52737377){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{\tiny http://localhost:8082}}}%
+    \put(0.22858325,0.08513586){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{ZabbixSender}}}%
+    \put(0.80354186,0.04314118){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{Zabbix}}}%
+    \put(0.11552258,0.33270471){\color[rgb]{0,0,0}\makebox(0,0)[lb]{\smash{\tiny EnergyDataPusher}}}%
   \end{picture}%
 \endgroup%
