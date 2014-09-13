@@ -1,5 +1,17 @@
 package de.tuberlin.cit.project.energy.reporting;
 
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
+import javax.naming.AuthenticationException;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -13,21 +25,10 @@ import de.tuberlin.cit.project.energy.zabbix.exception.InternalErrorException;
 import de.tuberlin.cit.project.energy.zabbix.model.ZabbixHistoryObject;
 import de.tuberlin.cit.project.energy.zabbix.model.ZabbixItem;
 
-import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
-import javax.naming.AuthenticationException;
-
 /**
  * Generates reports from zabbix data.
+ * 
+ * This class pulls all data from zabbix and collects them in an usage report.
  *
  * @author Sascha
  */
@@ -174,8 +175,6 @@ public class ReportGenerator {
                 System.err.println(username);
                 float usedBytes = h.getFloatValue();
                 long timestamp = h.getClock();
-//              System.out.println("TRAFFIC Found: " + h);
-//               System.out.println("Username=" + username + ", hostname=" + hostname);
 
                 trafficUsage.add(new TrafficHistoryEntry(timestamp, hostname, username, usedBytes));
             }
@@ -186,7 +185,6 @@ public class ReportGenerator {
         }
     }
 
-    // TODO retrieve one earlier created element too
     private void addUserStorage(UsageReport report) throws AuthenticationException, KeyManagementException,
             IllegalArgumentException, NoSuchAlgorithmException, ExecutionException, IOException,
             InternalErrorException, InterruptedException {
@@ -224,7 +222,6 @@ public class ReportGenerator {
             List<ZabbixHistoryObject> historyObjects = client.getHistory(params);
             
             // now fetch some initial values (last values before current period)
-            // TODO: we have to collect an initial value of all users!
             params.put("time_till", report.getStartTime() - 1);
             params.remove("time_from");
             params.put("sortorder", "DESC");
@@ -241,8 +238,6 @@ public class ReportGenerator {
                 String username = getUsernameFromKey(ZabbixParams.USER_DATA_USAGE_KEY, itemKeyMap.get(h.getItemId()));
                 long storageUsed = h.getLongValue();
                 long timestamp = h.getClock();
-//                System.out.println("STORAGE Found: " + h);
-//                System.out.println("Username=" + username);
 
                 storageUsage.add(new StorageHistoryEntry(timestamp, username, storageUsed));
             }
@@ -255,24 +250,5 @@ public class ReportGenerator {
 
     public void quit() {
         this.client.quit();
-    }
-
-    public static void main(String[] args) throws Exception {
-        ReportGenerator generator = new ReportGenerator();
-
-        long now = Calendar.getInstance().getTimeInMillis() / 1000;
-//        Calendar today = Calendar.getInstance();
-//        today.set(Calendar.HOUR_OF_DAY, 0);
-//        today.set(Calendar.MINUTE, 0);
-//        today.set(Calendar.SECOND, 0);
-//        long todaySeconds = today.getTimeInMillis() / 1000;
-
-        double days = 0.25;
-
-        UsageReport report = generator.getReport((long)(now - 60 * 60 * 24 * days), now, 60*60);
-
-        generator.quit();
-
-        System.out.println(report.toString());
     }
 }

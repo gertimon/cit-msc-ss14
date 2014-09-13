@@ -1,14 +1,18 @@
 package de.tuberlin.cit.project.energy.reporting.model;
 
-import java.text.DecimalFormat;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * @author Tobias und Sascha
+ * This class describes a time range containing all history entries and usage time frames.
+ *
+ * @author Tobias, Fabian und Sascha
  */
 public class UsageReport {
 
@@ -92,15 +96,6 @@ public class UsageReport {
         for (UsageTimeFrame frame : timeFrames)
             frame.calculateSummary();
         this.usageTimeFrames = timeFrames;
-
-        // dump bills
-        for (UsageTimeFrame frame : timeFrames) {
-            HashMap<String, BillForAllServers> bills = frame.getBillByUser();
-
-            for (BillForAllServers billsss : bills.values()) {
-                System.out.println(billsss);
-            }
-        }
     }
 
 
@@ -188,52 +183,7 @@ public class UsageReport {
         }
 
     }
-    
-    /**
-     * @param size
-     * @return
-     * @see http://stackoverflow.com/questions/3263892/format-file-size-as-mb-gb-etc
-     */
-    public static String readableFileSize(double size) {
 
-        if (size <= 0) {
-            return "0";
-        }
-        final String[] units = new String[]{"B", "KB", "MB", "GB", "TB"};
-        int digitGroups = (int) (Math.log10(size) / Math.log10(1024));
-        return new DecimalFormat("#,##0.#").format(size / Math.pow(1024, digitGroups)) + " " + units[digitGroups];
-    }
-
-    /**
-     * implementation time tests. will be kept as tests itself later.
-     *
-     * @return
-     */
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("\n# Report range: from ").append(new Date(this.startTime * 1000))
-          .append(" to ").append(new Date((this.startTime + this.intervalCount*this.intervalSize - 1) * 1000));
-
-        try {
-            // interesting values
-            // complete power usage
-            // user power assigned -> cost translation
-            // fast userTraffic used complete
-            // cheap userTraffic used complete
-            // fast userTraffic for user
-            // cheap userTraffic for user
-            // user storage median
-            // sb.append("\n- Storage Mean: ").append(readableFileSize(userStorage.calculateWeigthedHarmonicMedian(fromTime, toTime)));
-            sb.append("\n# Report finished\n");
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-
-        //
-        return sb.toString();
-    }
-    
     public ObjectNode toJson() {
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode output = objectMapper.createObjectNode();
@@ -246,8 +196,7 @@ public class UsageReport {
         for (UsageTimeFrame timeFrame : this.usageTimeFrames) {
             timeFrameNodes.add(timeFrame.toJson(objectMapper));
         }
-        
+
         return output;
     }
-
 }
