@@ -16,18 +16,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  */
 public class UsageReport {
 
-    /**
-     * Start time in seconds since 1970.
-     */
-    private final long fromTime;
-    /**
-     * End time in seconds since 1970.
-     */
-    private final long toTime;
-    /**
-     * Resolution in seconds (e.g. 1h).
-     */
-    private final int resolution;
+    /** Start time in seconds since 1970. */
+    private final long startTime;
+    private final long intervalCount;
+    /** Size in seconds (e.g. 1h). */
+    private final int intervalSize;
 
     private List<PowerHistoryEntry> powerUsage;
     private List<StorageHistoryEntry> storageUsage;
@@ -41,15 +34,18 @@ public class UsageReport {
     private LinkedList<UsageTimeFrame> usageTimeFrames;
 
     /**
-     * @param from       in seconds since 1970.
-     * @param to         in seconds since 1970.
-     * @param resolution in seconds.
+     * Construct a report with e.g. intervalCount=3 and intervalSize=60*60 => 3h starting at startTime.
+     *
+     * @param startTime in seconds since 1970, aligned with intervalSize.
+     * @param intervalSize in seconds.
      */
-    public UsageReport(long from, long to, int resolution) {
-        this.fromTime = from;
-        this.toTime = to;
-        this.resolution = resolution;
-        this.usageTimeFrames = new LinkedList<>();
+    public UsageReport(long startTime, int intervalCount, int intervalSize) {
+        this.startTime = startTime;
+        this.intervalCount = intervalCount;
+        this.intervalSize = intervalSize;
+
+        if (this.startTime % this.intervalSize != 0)
+            throw new IllegalArgumentException("Start time has to be aligned on interval size.");
     }
 
     public long getStartTime() {
@@ -88,6 +84,10 @@ public class UsageReport {
         this.trafficUsage = trafficUsage;
     }
 
+    public List<TrafficHistoryEntry> getTrafficUsage() {
+        return trafficUsage;
+    }
+
     @SuppressWarnings("unchecked")
     public void calculateReport() {
         LinkedList<UsageTimeFrame> timeFrames = initializeUsageTimeFrames();
@@ -98,15 +98,18 @@ public class UsageReport {
         this.usageTimeFrames = timeFrames;
     }
 
+    public LinkedList<UsageTimeFrame> initializeUsageTimeFrames() {
+        LinkedList<UsageTimeFrame> timeFrames = new LinkedList<>();
 
-        Iterator<PowerHistoryEntry> powerIterator = this.powerUsage.iterator();
-        Iterator<StorageHistoryEntry> storageIterator = this.storageUsage.iterator();
-        Iterator<TrafficHistoryEntry> trafficIterator = this.trafficUsage.iterator();
+        for (int i = 0; i < this.intervalCount; i++) {
+            timeFrames.add(new UsageTimeFrame(this.startTime + (i * this.intervalSize), this.intervalSize));
+        }
+        
+        return timeFrames;
+    }
 
-        long currentStart = from;
-        long currentEnd = from + this.resolution - 1;
-        UsageTimeFrame currentTimeFrame = new UsageTimeFrame(currentStart, this.resolution);
-        this.usageTimeFrames.add(currentTimeFrame);
+    public void assignDataToTimeFrames(long reportStartTime, long reportEndTime,
+            List<UsageTimeFrame> timeFrames, List<HistoryEntry> dataLists[]) {
 
         for (List<HistoryEntry> list : dataLists) {
             if (!list.isEmpty()) {
@@ -155,16 +158,10 @@ public class UsageReport {
                     }
                 }
 
-            while(storageIterator.hasNext()){
-                StorageHistoryEntry storageEntry = storageIterator.next();
-                storageIterator.remove();
-                currentTimeFrame.addStorageUsage(storageEntry);
-                if (storageEntry.getTimestamp() <= currentEnd) {
-                    storageEntry = storageIterator.next();
-                    storageIterator.remove();
-                    currentTimeFrame.addStorageUsage(storageEntry);
+                // add last entry
+                if (entry.getTimestamp() >= frame.getStartTime() && entry.getTimestamp() <= frame.getEndTime()) {
+                    frame.addUsageEntry(entry);
                 }
-            }
 
                 // fix initial values if we don't reach the last usage time frame
                 if (entry instanceof StorageHistoryEntry) {
@@ -178,10 +175,6 @@ public class UsageReport {
                 }
             }
         }
-        if (from + resolution <= to - resolution) {
-            calculateReport(from + resolution, to, resolution);
-        }
-
     }
 
     public ObjectNode toJson() {
