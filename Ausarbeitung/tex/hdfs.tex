@@ -40,51 +40,30 @@ The distributed filesystem (DFS) should be used to connect cloud storage with a 
 
 A research of known DFS brought us the choice between GlusterFS and Apache Hadoop.
 
-\begin{itemize}
-	\item was ist ein verteiltes dateisystem
-	\item auswahl/unterschiedliche ansätze, vergleich, begründung der auswahl
-	\item ziele
-\end{itemize}
-
 GlusterFS is developt by Red Hat inc. and written in C. Hadoop is part of Apache and written in Java.
 
 Both are open souce and can be easily extened by our own plugins. In addition, both offers a very active community and therefore a steady development. The support of Java was the main reason for hadoop. So our decision was made.
 
 \todo{move client information to this chapter???}
 
-\subsection{System setup}
+\subsection{Hadoop setup}
 
 By creating a small cluster in the tubit data centre the power consumtion that is used for the system itself and by performing user actions like up- and downloading files is analyzed.
 
-For our test system we have used the distributed filesystem (DFS) Apache Hadoop\textsuperscript{\textregistered} (HDFS) \footnote{http://hadoop.apache.org/}. This system was used due to the idea having an DFS running on heterogeneus systems from different hardware and operating systems. 
+For our test system we have used the distributed filesystem (DFS) Apache Hadoop\textsuperscript{\textregistered}. This system was used due to the idea having an DFS running on heterogeneus systems from different hardware and operating systems based on Java. 
 
-The HDFS consits of two main parts. A nameserver that keeps the logic view of the filesystem and a various number of datanodes which keep the files organized in blocks of a fixed length. Multiple datanodes can be used to raise the maximum of available storage and keep multiple replicas of files in different locations. Our test sytem is a set of two machines each running a datanode. One was just a simple office pc, the other one was a powerful machine at CIT datacentre\footnote{CIT, an instute of the TU-Berlin for Complex IT Systems}. Both were different in power consumption and maximum of provided bandwidth.
+Hadoop consits of two main parts. A nameserver that keeps the logic view of the filesystem and a various number of datanodes which keep the files organized in blocks of a fixed length. Multiple datanodes can be used to raise the available storage amount or to keep multiple replicas of files in different locations for security reasons or to share power between different machines. 
 
-\todo{bildchen mit namenode, client und zwei datanodes} 
+The datanodes were placed on the physical machines of our test system, \textit{Asok05} and the \textit{office pc}. Both are different in power consumption and maximum of provided bandwidth. A connection to the namenode which is placed on the virtual machine was made through a software defined network which is described in chapter\ref{sec:sdn}.
 
-For our test scenario we have planed to hold large operatingsytem images which will be downloaded in common case but changed too. Due to the limitations of given data stores we concentrated only on energy optimization for downloading files. When uploading files our both test systems will be synchronized for a redundant file copy in each system.
-Another point is that the files should be used sometimes, our strategys were not implemented for less energy using data archives that will never get touched by an user.
-
-\subsubsection{Connections to monitoring system}
-
-\subsubsection{Connections to SDN}
-
-\begin{itemize}
-	\item verbindung zu sdn
-	\item verbindung zu zabbix
-\end{itemize}
+To assign network traffic to users different attributes were sent to zabbix like client username, client ip and port on requests to a modified datanode.
+Combined with the information of software defined network it was possible to get an overview of current user bandwidth. Further the traffic amount for a time range was calculated. The namenode was used for sending the current user storage amount to the monitoring system.
 
 \subsection{Data delivery strategies}
 
-By downloading a file from the DFS as first there will be a request to the namenode for a specified that should be downloaded by it's filename. If an user is allowed to get access to that file, the file block list will sent in an answer to the client. The file block list contains descriptions about all single data blocks, that represents the requestet file. For each data block the datanode locations are given. Depending on redundance settings for that file it is possible to recieve between one and multiple locations. 
+The namenode is responsible to establish the first client connection. By recieving a file download request it will respond with a list of file blocks, and the assigned datanode locations. By varying the block list, different power consumption optimizations were analyzed.
 
-Given from our test bed the link to the office pc datanode and the second from CIT datacenter will be given. To reduce power consumption for an request we reduced the list of datanodes from block locations on different criteria. After recieving the list of data blocks and it's locations, the client application decides normally which locations for each data block should be chosen to be downloaded. After that step the client application creates the file as local copy from all downloaded data blocks automatically. By reducing the block location list before sending to the client we commanded which locations should be used from the client application.
-
-To provide a user related monitoring as base for a possible bill creation the DFS needed to fulfill the following functionalities:
-
-\begin{itemize}
-	\item By connecting the namenode, the username needs to 
-\end{itemize}
+After recieving the list of data blocks and related locations, the client application decides which locations for each data block should be chosen as download location. After that step the client application creates the file as local copy from all downloaded data blocks by itself. By reducing the block locations list before sending to the client we commanded which locations should be used from the client application.
 
 \subsubsection{server selection for downloading files}
 
