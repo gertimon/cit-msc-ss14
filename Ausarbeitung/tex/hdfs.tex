@@ -52,9 +52,15 @@ Both are open souce and can be easily extened by our own plugins. In addition, b
 
 \todo{move client information to this chapter???}
 
-\subsection{System setup}
+\subsection{Analyzed use case}
 
-By creating a small cluster in the tubit data centre the power consumtion that is used for the system itself and by performing user actions like up- and downloading files is analyzed.
+By creating a small hadoop cluster in the tubit data centre the power consumtion  the system itself aperforming user actions like up- and downloading files was analyzed.
+
+The featured use case analyzed is to imagine a user downloads huge files and uploads only small parts which have changed. This case would match the situation similar to a SAN, where operating system images are commonly stored. 
+
+While only having two machines for measure power consumption and using a redundance of two separate file copies we analyzed the differences in power consumption only for downloading files. All file uploads to the data cluster would raise the power of both machines due to synchronisation tasks for keeping redundant file copies. The redundance was needed to perform the different developed download strategies.
+
+\subsection{System architecture details}
 
 For our test system we have used the distributed filesystem (DFS) Apache Hadoop\textsuperscript{\textregistered} (HDFS) \footnote{http://hadoop.apache.org/}. This system was used due to the idea having an DFS running on heterogeneus systems from different hardware and operating systems. 
 
