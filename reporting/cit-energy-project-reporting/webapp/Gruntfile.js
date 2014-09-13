@@ -66,12 +66,18 @@ module.exports = function (grunt) {
                 // change this to '0.0.0.0' to access the server from outside
                 hostname: 'localhost'
             },
+            proxies: [ {
+                context: '/api',
+                host: 'localhost',
+                port: 50201
+            } ],
             livereload: {
                 options: {
-                    middleware: function (connect) {
+                    middleware: function (connect, options) {
                         return [
                             lrSnippet,
                             rewriteRulesSnippet,
+                            require('grunt-connect-proxy/lib/utils').proxyRequest,
                             mountFolder(connect, '.tmp'),
                             mountFolder(connect, 'app')
                         ];
@@ -244,6 +250,7 @@ module.exports = function (grunt) {
             'less:development',
             'haml:development',
             'coffee:development',
+            'configureProxies:livereload',
             'connect:livereload',
             'watch'
         ]);
