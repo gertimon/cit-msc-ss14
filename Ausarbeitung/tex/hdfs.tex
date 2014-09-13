@@ -40,55 +40,32 @@ The distributed filesystem (DFS) should be used to connect cloud storage with a 
 
 A research of known DFS brought us the choice between GlusterFS and Apache Hadoop.
 
-\begin{itemize}
-	\item was ist ein verteiltes dateisystem
-	\item auswahl/unterschiedliche ansätze, vergleich, begründung der auswahl
-	\item ziele
-\end{itemize}
-
 GlusterFS is developt by Red Hat inc. and written in C. Hadoop is part of Apache and written in Java.
 
 Both are open souce and can be easily extened by our own plugins. In addition, both offers a very active community and therefore a steady development. The support of Java was the main reason for hadoop. So our decision was made.
 
 \todo{move client information to this chapter???}
 
-\subsection{System setup}
+\subsection{Hadoop setup}
 
 By creating a small cluster in the tubit data centre the power consumtion that is used for the system itself and by performing user actions like up- and downloading files is analyzed.
 
-For our test system we have used the distributed filesystem (DFS) Apache Hadoop\textsuperscript{\textregistered} (HDFS) \footnote{http://hadoop.apache.org/}. This system was used due to the idea having an DFS running on heterogeneus systems from different hardware and operating systems. 
+For our test system we have used the distributed filesystem (DFS) Apache Hadoop\textsuperscript{\textregistered}. This system was used due to the idea having an DFS running on heterogeneus systems from different hardware and operating systems based on Java. 
 
-The HDFS consits of two main parts. A nameserver that keeps the logic view of the filesystem and a various number of datanodes which keep the files organized in blocks of a fixed length. Multiple datanodes can be used to raise the maximum of available storage and keep multiple replicas of files in different locations. Our test sytem is a set of two machines each running a datanode. One was just a simple office pc, the other one was a powerful machine at CIT datacentre\footnote{CIT, an instute of the TU-Berlin for Complex IT Systems}. Both were different in power consumption and maximum of provided bandwidth.
+Hadoop consits of two main parts. A nameserver that keeps the logic view of the filesystem and a various number of datanodes which keep the files organized in blocks of a fixed length. Multiple datanodes can be used to raise the available storage amount or to keep multiple replicas of files in different locations for security reasons or to share power between different machines. 
 
-\todo{bildchen mit namenode, client und zwei datanodes} 
+The datanodes were placed on the physical machines of our test system, \textit{Asok05} and the \textit{office pc}. Both are different in power consumption and maximum of provided bandwidth. A connection to the namenode which is placed on the virtual machine was made through a software defined network which is described in chapter\ref{sec:sdn}.
 
-For our test scenario we have planed to hold large operatingsytem images which will be downloaded in common case but changed too. Due to the limitations of given data stores we concentrated only on energy optimization for downloading files. When uploading files our both test systems will be synchronized for a redundant file copy in each system.
-Another point is that the files should be used sometimes, our strategys were not implemented for less energy using data archives that will never get touched by an user.
-
-\subsubsection{Connections to monitoring system}
-
-\subsubsection{Connections to SDN}
-
-\begin{itemize}
-	\item verbindung zu sdn
-	\item verbindung zu zabbix
-\end{itemize}
+To assign network traffic to users different attributes were sent to zabbix like client username, client ip and port on requests to a modified datanode.
+Combined with the information of software defined network it was possible to get an overview of current user bandwidth. Further the traffic amount for a time range was calculated. The namenode was used for sending the current user storage amount to the monitoring system.
 
 \subsection{Data delivery strategies}
 
-By downloading a file from the DFS as first there will be a request to the namenode for a specified that should be downloaded by it's filename. If an user is allowed to get access to that file, the file block list will sent in an answer to the client. The file block list contains descriptions about all single data blocks, that represents the requestet file. For each data block the datanode locations are given. Depending on redundance settings for that file it is possible to recieve between one and multiple locations. 
+The namenode is responsible to establish the first client connection. By recieving a file download request it will respond with a list of file blocks, and the assigned datanode locations. By varying the block list, different power consumption optimizations were analyzed.
 
-Given from our test bed the link to the office pc datanode and the second from CIT datacenter will be given. To reduce power consumption for an request we reduced the list of datanodes from block locations on different criteria. After recieving the list of data blocks and it's locations, the client application decides normally which locations for each data block should be chosen to be downloaded. After that step the client application creates the file as local copy from all downloaded data blocks automatically. By reducing the block location list before sending to the client we commanded which locations should be used from the client application.
+After recieving the list of data blocks and related locations, the client application decides which locations for each data block should be chosen as download location. After that step the client application creates the file as local copy from all downloaded data blocks by itself. By reducing the block locations list before sending to the client we commanded which locations should be used from the client application.
 
-To provide a user related monitoring as base for a possible bill creation the DFS needed to fulfill the following functionalities:
-
-\begin{itemize}
-	\item By connecting the namenode, the username needs to 
-\end{itemize}
-
-\subsubsection{server selection for downloading files}
-
-By comparing the power consumption while downloading files and while being idle the following values were measured.
+By comparing the power consumption while downloading files and while being idle the values given in table~\ref{tab:powerconsumptionvalues} were measured.
 
 \begin{table}
 	\centering
@@ -105,54 +82,43 @@ By comparing the power consumption while downloading files and while being idle 
 	\todo{are these values correct?, size of table}
 \end{table}
 
-The values for \textit{on file download}, measured in table~\ref{tab:powerconsumptionvalues} were taken by downloading a file with an bandwidth of \todo{bandwidth value missing} MB/s. This limit was set by the client connection to the network.
+The values for \textit{on file download} were taken by downloading a file over the tu berlin wifi.
 
-By using a static and dynamic algorithm that decides which datanode is used for downloads, different plans as cheap and fast delivery of files should be realized.
+By using a static and dynamic algorithm that decides which datanode is used for downloads, different plans as economic (low priced) and fast delivery (high priced) of files were realized.
 
-On one side the idle costs are very different, otherwise the office pc power consumption rises approx. twice than of the cit server on same request. By downloading a file faster the consumption should raise exponential \todo{beleg?, stimmt das?}. Another question was if by using only one datanotes bandwidth until its completely used will there be more or less power voltage than sharing bandwidth between all machines to reduce their computational load. \todo{check that all questions are answered or just remove them later}
+On one side the idle costs are very different, otherwise the power consumption of \textit{office pc} rises approx. twice as \textit{Asok05} for the same request. The relation to fast and low downloaded files to power consumption was compared and showed an exponential wattage raise. The idea to use a low powered machine for the given plan was implemented as static selection. As dynamic selection the idea to use full bandwith of one machine was implemented.
 
-\subsubsection{static selection}
+\subsubsection{Static datanode selection}
 
-Based on the total power consumption of a machine, it seems that the usage of less powerful machines reduces energy costs. Based on this idea a manual taken decision for declaring a datanode machine as \textit{cheap} (office pc) or \textit{fast} (cit server). 
+Based on the total power consumption of a machine, it seems that the usage of less powerful machines reduces energy costs for a provider. Based on this idea a manual taken decision for declaring a datanode machine as \textit{economic} (office pc) or \textit{fast} (Asok05). 
 
-While testing using one simultaneous user a first result was that idle costs needs to be separated from the higher power consumption while downloading files. For just storing files and keep them available, the office pc seems to be cheaper, while for al lot of downloads from files, the cit server raises it's power consumption for approx. one half of office pc.
+While testing using one simultaneous user a first result was that idle costs are needed to be separated from the gained power consumption produced by transfering files. 
 
-\todo{multiple users test (using full bandwidth)}
+For just storing files and keep them available, the office pc seems to be cheaper, while for transferring a lot of data, \textit{Asok05} raises it's power consumption for approx. one half of office pc.
 
-\todo{implementation notes?}
+\subsubsection{Dynamic datanode selection}
 
-hintergrund, vermutungen, implementierung, test, auswertung
+To select a datanode resource dynamically we used a ratio between the current bandwith of all datanodes and their consumed energy. The lower this ratio, the lower the used energy per transfered data and the energy consumption by one user.
 
-\subsubsection{dynamic selection}
+Finding the rack with lowest energy consumption than is easy. Only sort the list and take the first. It is also possible to use not only the first datanode. Receive different blocks from different nodes could be faster because of parallel download.
 
-To select a rack dynamically we used a ratio between the current bandwith of all rakcs and the used energy by them. The lower this ratio, the lower the used energy per transfered data and the energy consumption by one user.
-
-Finding the rack with lowest energy consumption than is easy. Only sort the list and take the first. It is also possible to use not only the first rack. Receive different blocks from different racks could be faster because of parallel download.
-
-In this case, we need to have a profil of the user, where he can choose the plan to download. In our test environment, we have onle two selectable profiles. These are cheap and fast.
+In this case, we need to have a profile of the user, where he can choose the plan to download. In our test environment, we usually used this approach and the static selection as fallback as a final result.
 
 \subsection{Client connection}
-
-To interacte with HDFS the client can use either the Filesystem in Userspace (FUSE) or the command line. There are many other interfaces to HDFS, but this two were the simplest and to many developers and users the most familiar.
-
 \label{sec:hdfs_client}
+
+To interacte with Hadoop filesystem the client can use either the Filesystem in Userspace (FUSE) or a command line tool.
 
 \subsubsection{Terminal}
 
-When the filesystem is ready to be used, the client can use the Terminal to do all of the usual filesystem operations such as reading files, creating directories, moving files, deleting data, and listing directories. To make these operations you type hadoop command on the terminal for instance hadoop fs -ls to list a directory or hadoop fs -mkdir to create a directory. With hadoop fs -help the client can get detailed help on every command.
+When the filesystem is running, the client can use a terminal window to do all of the usual filesystem operations such as reading files, creating directories, moving files, deleting data, or listing directories. 
+To make these operations you type hadoop command on the terminal for instance \texttt{hadoop fs -ls} to list a directory or \texttt{hadoop fs -mkdir} to create a directory. 
+With hadoop fs -help the client can get detailed help on every command. 
+Provided by this command it is possible to copy files between local and remote filesystem using \texttt{-copyFromLocal} or \texttt{-copyToLocal} as parameter, too.
 
 \subsubsection{FUSE}
 
-Filesystem in Userspace (FUSE) allows various filesystem that are implemented in user space to be integrated as a Unix filesystem. The Hadoop distribution already have a FUSE Client (Fuse-DFS) and with it we can mount HDFS as a standard filesystem. You can then use most of the Unix filesystem operations (such as ls, cat, rm, mv, mkdir, rmdir). However, at the time we write this, random write operations and permission related operations such as chmod, chown are not supported in Fuse-DFS. Another problem is that the performance is impacted because of all the memory copies and transitions from kernel to user space and then the JVM.
+Filesystem in Userspace (FUSE) allows various filesystems to be integrated into local filesystem. The Hadoop distribution already ships a FUSE Client (Fuse-DFS) and with it we can mount a hadoop directory into any existing filesystem to appear as local storage.
+However, random write operations and permission related operations such as chmod, chown are not supported in Fuse-DFS. Another problem is that the performance is impacted because of all the memory copies and transitions from kernel to user space and then the Java Virtual Machine.
 
 Fuse-DFS is implemented in C using libhdfs and was complicated to compile and run because there is not good documentation about it.
-
-\subsection{reached goals}
-
-gesamte auswertung
-
-
-One disadvantage of such a system is the need of administration.
-
-
-%\IEEEPARstart{J}{ust} start typing your Text here... Then compile the main document!
