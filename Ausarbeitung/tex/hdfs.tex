@@ -1,5 +1,9 @@
 \subsection{From local to distributed filesystems}
 
+\todo{which word to use? distributed filesystem (dfs)?}
+\todo{maybe duplicates the introduction}
+\todo{is it clear that a san keeps storage for one machine and a dfs shares storage for different users/machines better?}
+
 To offer multiple users and applications a high available access on large filesystems there are different solutions known. 
 Files can be stored on local filesystems or may be shared using a Network Attached Storage (NAS) for small businesses or for use at home. While a local filesystem is strongly limited to capacity and multi user access a NAS allows to have a system available for different users. But a NAS is limited for a small number of users and very much limited in world wide file sharing and a secure 24h availability.
 
@@ -52,7 +56,7 @@ By comparing the power consumption while downloading files and while being idle 
 
 \begin{table}
 	\centering
-	\caption{approx. power consumption values from differentso datanodes}	
+	\caption{approx. power consumption values from different datanodes}	
 	\begin{tabular}{|l|r|r|}
 		\hline \rule[-2ex]{0pt}{5.5ex}  & \textbf{Office Pc} & \textbf{Asok05} \\ 
 		\hline \rule[-2ex]{0pt}{5.5ex} \textit{idle} &   75 W &   400 W \\ 
@@ -76,7 +80,7 @@ Based on the total power consumption of a machine, it seems that the usage of le
 
 While testing using one simultaneous user a first result was that idle costs are needed to be separated from the gained power consumption produced by transferring files. 
 
-For just storing files and keep them available, the \textit{office pc} seems to have a lower consumption of electricity, while for transferring a lot of data, \textit{Asok05} raises it's wattage for approx. one half of \textit{office pc} only.
+For just storing files and keep them available, the office pc seems to be cheaper, while for transferring a lot of data, \textit{Asok05} raises its power consumption for approx. one half of the Office-PC.
 
 \subsubsection{Dynamic datanode selection}
 
