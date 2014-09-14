@@ -4,7 +4,7 @@ While a local filesystem is strongly limited to capacity and multi user access a
 But a NAS is limited for a small number of users and very much limited in world wide file sharing and a secure 24h availability.
 
 A first solution to offer data stores for multiple machines which is actually common in data centers is to setup a storage area network. 
-This system may store different filesystems for different client machines without being limited to the speed of one pysical harddrive. 
+This system may store different filesystems for different client machines without being limited to the speed of one physical harddrive. 
 For security reasons it is possible to keep a redundant copy of such a system in a different place and exporting backups too. 
 But is is not quite easy to resize that system and not the best solution for sharing same view of the data to different machines and machines placed outside of a data centre.
 
@@ -12,18 +12,18 @@ Companies like Facebook were facing these issues and solved them using a distrib
 The use of an DFS allows to raise the cluster storage  up to petabytes  \cite{fb-hadoop}. 
 A lot of huge different companies already have decided, to use hadoop to store and backup their data  \cite{hadoop-poweredby}. 
 Different algorithms such MapReduce are used to share limitations of cpu power and storage between clustered nodes \cite{dean2008mapreduce}. 
-Further it is easy to raise the number of nodes which makes it highly flexible to use. Only the power in administration will raise, cyaused on the number of heterogeneus machines, too.
+Further it is easy to raise the number of nodes which makes it highly flexible to use. Only the power in administration will raise, caused by the number of heterogeneus machines.
 
 For cases such as downloading huge files as operating system images it is important to find strategies for reducing traffic by only updating changed parts of such files, named random write.
 Different interesting questions are about creating snapshots or creating and applying backups where google was focusing on for their own filesystem implementation \cite{ghemawat2003google}.
 
-Similar functionalities are available through the replacement of FibreChannel by iSCSI for SAN. But the use of such a system will limit to one manufacturer. Maybe thats one of the main reasons which makes distributed filesystems so popular.
+Similar functionalities are available through the replacement of FibreChannel by iSCSI for SAN. But the use of such a system will limit to one manufacturer. Maybe that is one of the main reasons which makes distributed filesystems so popular.
 
 \subsection{Introduction of Apache Hadoop}
 
 The distributed filesystem (DFS) should be used to connect cloud storage with a client machine as being local storage as shown in figure~\ref{fig:dfs_example}. To mount the network storage as being local a client program has to be running on the client machine. By using the DFS it will remove local limitations on Storage while offering a given QoS for bandwidth and multiuser support.
 
-\todo{create a simplified copy in a better fitting style}
+\todo{create a simplified copy in a better fitting style(i didn't understand, copy from what?)}
 
 \begin{figure}
 	\centering
@@ -36,13 +36,13 @@ A research of known DFS brought us the choice between GlusterFS and Apache Hadoo
 
 GlusterFS is developt by Red Hat inc. and written in C. Hadoop is part of Apache and written in Java.
 
-Both are open souce and can be easily extened by our own plugins. In addition, both offers a very active community and therefore a steady development. The support of Java was the main reason for hadoop. So our decision was made.
+Both are open souce and can be easily extended by our own plugins. In addition, both offers a very active community and therefore a steady development. The support of Java was the main reason for hadoop. So our decision was made.
 
-\todo{move client information to this chapter???}
+\todo{move client information to this chapter???(i suggest to not move)}
 
 \subsection{Hadoop setup}
 
-By creating a small cluster in the tubit data centre the power consumtion that is used for the system itself and by performing user actions like up- and downloading files is analyzed.
+By creating a small cluster in the tubit data centre the power consumption that is used for the system itself and by performing user actions like up- and downloading files is analyzed.
 
 For our test system we have used the distributed filesystem (DFS) Apache Hadoop\textsuperscript{\textregistered}. This system was used due to the idea having an DFS running on heterogeneus systems from different hardware and operating systems based on Java. 
 
@@ -55,9 +55,9 @@ Combined with the information of software defined network it was possible to get
 
 \subsection{Data delivery strategies}
 
-The namenode is responsible to establish the first client connection. By recieving a file download request it will respond with a list of file blocks, and the assigned datanode locations. By varying the block list, different power consumption optimizations were analyzed.
+The namenode is responsible to establish the first client connection. By receiving a file download request it will respond with a list of file blocks, and the assigned datanode locations. By varying the block list, different power consumption optimizations were analyzed.
 
-After recieving the list of data blocks and related locations, the client application decides which locations for each data block should be chosen as download location. After that step the client application creates the file as local copy from all downloaded data blocks by itself. By reducing the block locations list before sending to the client we commanded which locations should be used from the client application.
+After receiving the list of data blocks and related locations, the client application decides which locations for each data block should be chosen as download location. After that step the client application creates the file as local copy from all downloaded data blocks by itself. By reducing the block locations list before sending to the client we commanded which locations should be used from the client application.
 
 By comparing the power consumption while downloading files and while being idle the values given in table~\ref{tab:powerconsumptionvalues} were measured.
 
