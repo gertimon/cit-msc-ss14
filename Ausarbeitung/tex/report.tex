@@ -1,7 +1,7 @@
 The network metering with Zabbix is not only used for network managing decisions. It is also possible for each user of the \textit{Smart Filesystem} to get informations concerning his created costs based on consumed energy by servers usage.
 
 \subsection{User report generation schema}
-  Reports can be read and generated via a small reporting web frontend. Involved Java classes and the overall procedure is shown in figure \ref{akt}.
+  Reports can be read and generated via a small reporting web frontend. Involved Java classes and the overall procedure is shown in figure~\ref{akt}.
 
  \begin{figure}
  \centering
@@ -16,7 +16,7 @@ The network metering with Zabbix is not only used for network managing decisions
  The price calculation concept covers the power consumption of the \textit{Smart Filesystem} and does not include any maintance costs.
  Every user has to pay a part of the energy usage if the severs run in idle mode. The part depends on how much data the user has stored in the system. Moreover the user has to pay for his traffic, which normally results in a higher power usage. It should be noticed that this basic concept, which was designed by the team, can't work if just a few persons uses the system. Distributed file systems are generally made for a lot of people using them and/or a lot of data stored in this system. Our simulation was unable to test such a situation because there simply were not that much test users and our test system was comparatively small. 
  
- If we want to compute the price for each user in an hour, the first thing to do is to extend the data from \textit{Zabbix}. Firstly \textit{Zabbix} stores energy usage of each sever every two seconds. Secondly, if there is a traffic flow, Zabbix will store information about that every five seconds. And last but not least \textit{Zabbix} stores the used data of each user if it changes. Imagine a situation where user \textit{u} transfers 100 megabytes in 10 seconds to the \textit{Asok05} server. Then the information created by \textit{Zabbix} looks like table \ref{tb1}. 
+ If we want to compute the price for each user in an hour, the first thing to do is to extend the data from \textit{Zabbix}. Firstly \textit{Zabbix} stores energy usage of each sever every two seconds. Secondly, if there is a traffic flow, Zabbix will store information about that every five seconds. And last but not least \textit{Zabbix} stores the used data of each user if it changes. Imagine a situation where user \textit{u} transfers 100 megabytes in 10 seconds to the \textit{Asok05} server. Then the information created by \textit{Zabbix} looks like table~\ref{tb1}. 
  To get clear information when a flow starts and when a flow stops, Floodlight sends at the start and the end of a flow a zero to \textit{Zabbix}. Storage usage gets reported on every change by the HDFS name node.
 
 \begin{table}
@@ -42,7 +42,7 @@ The network metering with Zabbix is not only used for network managing decisions
  \label{tb1} 
  \end{table}
  
- The initial values (0s) are based on the last known values. The given information is not enough to compute a price for each user at every second. So the next step is to complete the table by interplolating the data. For every empty energy entry the system takes the next known value. For the storage usage the system takes the last known value (if something changes, new values are present). Traffic values are represented as average over the last five seconds by floodlight and can be simply extended on the next values. After interplolating the data our table looks like table \ref{tb2}.
+ The initial values (0s) are based on the last known values. The given information is not enough to compute a price for each user at every second. So the next step is to complete the table by interplolating the data. For every empty energy entry the system takes the next known value. For the storage usage the system takes the last known value (if something changes, new values are present). Traffic values are represented as average over the last five seconds by floodlight and can be simply extended on the next values. After interplolating the data our table looks like table~\ref{tb2}.
  
  \begin{table}
  \centering
@@ -78,7 +78,7 @@ The network metering with Zabbix is not only used for network managing decisions
   \end{enumerate}
   
   \subsection{Example}
-    For instance the idle energie consumption of \textit{Asok05} is $400\ W$ and usage values are as listed in table \ref{tb2}. Moreover say that the overall user storage in the moment is $3\ TB$ and the energy price is $20\ cent$ per $KW/h$. So for second \textit{0} the user has to pay:
+    For instance the idle energie consumption of \textit{Asok05} is $400\ W$ and usage values are as listed in table~\ref{tb2}. Moreover say that the overall user storage in the moment is $3\ TB$ and the energy price is $20\ cent$ per $KW/h$. So for second \textit{0} the user has to pay:
     
      $$(\frac{3000}{3000000} \cdot 400) = 0.4\ W $$
     
