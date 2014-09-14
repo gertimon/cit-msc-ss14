@@ -94,14 +94,12 @@ To interact with Hadoop filesystem the client can use either the Filesystem in U
 
 \subsubsection{Terminal}
 
-When the filesystem is running, the client can use a terminal window to do all of the usual filesystem operations such as reading files, creating directories, moving files, deleting data, or listing directories. 
-To make these operations you type hadoop command on the terminal for instance \texttt{hadoop fs -ls} to list a directory or \texttt{hadoop fs -mkdir} to create a directory. 
-With hadoop fs -help the client can get detailed help on every command. 
+When the filesystem is running the client can use a terminal window to do all of the common filesystem operations such as reading/moving/deleting files or creating/listing directories. To proceed these operations you run a hadoop command on the terminal for instance \texttt{hadoop fs -ls} to list a directory or \texttt{hadoop fs -mkdir} to create a directory. With \texttt{hadoop fs -help} the client can get detailed help on every command. 
 Provided by this command it is possible to copy files between local and remote filesystem using \texttt{-copyFromLocal} or \texttt{-copyToLocal} as parameter, too.
 
 \subsubsection{FUSE}
 
-Filesystem in Userspace (FUSE) allows various filesystems to be integrated into local filesystem. The Hadoop distribution already ships a FUSE Client (Fuse-DFS) and with it we can mount a hadoop directory into any existing filesystem to appear as local storage.
-However, random write operations and permission related operations such as chmod, chown are not supported in Fuse-DFS. Another problem is that the performance is impacted because of all the memory copies and transitions from kernel to user space and then the Java Virtual Machine.
+FUSE allows various filesystems to be integrated into a local filesystem. The Hadoop distribution already ships a FUSE Client (Fuse-DFS) and with this we can mount a hadoop directory into any existing filesystem to appear as local storage.
+However, random write operations and permission related operations such as chmod, chown are not supported in Fuse-DFS. Another problem is that all memory copies, transitions from kernel to user space and the Java Virtual Machine impact on performance.
 
 Fuse-DFS is implemented in C using libhdfs and was complicated to compile and run because there is not good documentation about it.
