@@ -6,7 +6,7 @@ Given by the project initiator, the Institute for Complex and Distributed IT sys
 
 \begin{enumerate}
 
-\item One powerful machine with high power usage of around 350W placed in tubit data centre (TU Berlin), later called by name \textit{Asok05}.
+\item One powerful machine with high power usage of around 350W placed in tubit data center (TU Berlin), later called by name \textit{Asok05}.
 
 \item One energy-saving \textit{office pc} attached to TU network inside a staff office with lower bandwidth and power drain of 75W in idle mode.
 
@@ -16,7 +16,6 @@ Given by the project initiator, the Institute for Complex and Distributed IT sys
 
 \end{enumerate}
 
-\todo{add some machine details (storage/bandwidth)}
 
 \subsection{Software Setup}
 
@@ -24,7 +23,7 @@ The partly introduced software systems were used by team decisions described in 
 
 \begin{enumerate}
 
-\item As distributed file system Apache Haddop\textsuperscript{\textregistered} (HDFS) was used. The access to the filesystem is be done using a terminal, a web client or a client as provided by Filesystem in Userspace (FUSE). HDFS consists of two main parts, the namenode which organises the filesystem structural view, and datanodes which store and replicate the data as blocks.
+\item As distributed file system Apache Hadoop (HDFS) was used. The access to the filesystem is be done using a terminal, a web client or a client as provided by Filesystem in Userspace (FUSE). HDFS consists of two main parts, the namenode which organises the filesystem structural view, and datanodes which store and replicate the data as blocks.
 
 \item To measure network traffic, all data were sent through a virtual network. A combination of Floodlight as controller and an Open vSwitch was used. 
 
@@ -32,15 +31,13 @@ The partly introduced software systems were used by team decisions described in 
 
 \item To analyze the changes in energy consumption produced by user activities the power consumption of \textit{office pc} and \textit{Asok05} were measured.
 
-\item By evaluating the monitored data we are finally able to create a  report which informs about the power consumption for the whole system and for a single user. This service was implemented as web service on \todo{where is it running actually?}.
+\item By evaluating the monitored data we are finally able to create a  report which informs about the power consumption for the whole system and for a single user. This service was implemented as web service.
 
 \end{enumerate}
 
 \subsection{Services Setup}
 
 As an overview the distribution of services used in project are given in table~\ref{tab:services}. Mainly the virtual machine was used for common services, while the \textit{office pc} and \textit{Asok05} were used to deliver data to the client machine over the sdn.
-
-\todo{add report web service to table}
 
 \begin{table}[b]
 	\centering
@@ -50,7 +47,7 @@ As an overview the distribution of services used in project are given in table~\
 		\hline \rule[-2ex]{0pt}{5.5ex} Hadoop client & Hadoop data node & Hadoop name node & Hadoop data node \\ 
 		       \rule[-2ex]{0pt}{5.5ex}  & Energy meter & Zabbix server & Energy meter \\ 
 		       \rule[-2ex]{0pt}{5.5ex}  & Zabbix agent & Zabbix agent & Zabbix agent \\ 
-		       \rule[-2ex]{0pt}{5.5ex}  &  &  & Floodlight \\ 
+		       \rule[-2ex]{0pt}{5.5ex}  &  & Report & Floodlight \\ 
 		       \rule[-2ex]{0pt}{5.5ex}  &  &  & Open vSwitch \\ 
 		       \rule[-2ex]{0pt}{5.5ex}  &  &  & Energy data agent \\ 
 		\hline 
