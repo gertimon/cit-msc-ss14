@@ -16,17 +16,7 @@
 	The Zabbix server however received his very own selection of templates from a wide range of predesigned templates within Zabbix. These templates had not only just regular server load specific data types, but also a great number of items to better monitor Zabbix functionality and load.
 	It was decided to create a unified interface for the communication with Zabbix. This was further split into two, the "ZabbixSender" and the "ZabbixAPIClient". The "ZabbixSender" main task was to send trapper type data to Zabbix. The use of the command line prompt zabbix\_sender from Zabbix was canceled as the use from a JAVA program environment forked a new thread on every send just to execute the command line. This was deemed not efficient and further required the zabbix\_sender library installation. It became obsolete as a method was found for packaging data into a JSON package and sending it directly to Zabbix from a JAVA program environment. Furthermore the "ZabbixSender" was set up as a static class which is working itself through a list of queued data transfers to Zabbix. The "ZabbixSender" is used as a one-way communication interface. The "ZabbixAPIClient" was created as a means of retrieving data from Zabbix for example for analysis or to change the configuration of Zabbix. Thus the "ZabbixAPIClient" housed among many the methods for data history retrieval, creating and deleting user items in the "Cit Project Datanode Users" template and the most important of them all the method for authenticating. "ZabbixAPIClient" was also set up as a static class to be continuously referenced and called but to be created only once. Both the "ZabbixSender" and the "ZabbixAPIClient" communicate with Zabbix using its REST API interface by sending remote procedure calls in the form of JSON packages back and forth.
 The following is an example of such a JSON package\cite{zab3}:
-\begin{lstlisting}[frame=tb,
-  language=,
-  aboveskip=3mm,
-  belowskip=3mm,
-  showstringspaces=false,
-  columns=flexible,
-  basicstyle={\small\ttfamily},
-  numbers=none,
-  breaklines=true,
-  breakatwhitespace=true,
-  tabsize=3]
+\begin{lstlisting}[language=json_sw]
 {
     "jsonrpc": "2.0",
     "method": "user.login",
@@ -37,17 +27,7 @@ The following is an example of such a JSON package\cite{zab3}:
     "id": 1
 }\end{lstlisting} 
 	This is an example of the JSON remote procedure call of the method "user.login" sent to Zabbix. The field "id" is used to differentiate between calls to assign received results in the right way. The field "jsonrpc" simply gives the version of the JSON remote procedure calls. The field "params" holds all the information which is required for the method. In this case the only parameters are Zabbix login information. For other methods the parameters can be item ids, value or item names to be searched or filtered, whole definitions of new items or hosts for item or host creation, updated formulas for calculations or graph items for graphs, flags or database expressions and many more. The JSON request after being constructed is then put into the body of an http client post with a modified header so that the request would be received correctly and then sent to Zabbix. If Zabbix receives the JSON package and the formatting was correct, the method existed and the parameters were fitting the method, then Zabbix would return the result packaged in another JSON package like the following\cite{zab3} for the JSON remote procedure call from above:
-	\begin{lstlisting}[frame=tb,
-  language=,
-  aboveskip=3mm,
-  belowskip=3mm,
-  showstringspaces=false,
-  columns=flexible,
-  basicstyle={\small\ttfamily},
-  numbers=none,
-  breaklines=true,
-  breakatwhitespace=true,
-  tabsize=3]
+	\begin{lstlisting}[language=json_sw]
 {
     "jsonrpc": "2.0",
     "result": "0424bd59b807674191e7d77572075f33",
