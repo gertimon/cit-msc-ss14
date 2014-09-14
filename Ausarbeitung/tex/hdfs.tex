@@ -46,7 +46,7 @@ To assign network traffic to users different attributes are sent to \textit{Zabb
 
 The namenode is responsible to establish the first client connection. By receiving a file download request it responds with a list of file blocks and the assigned datanode locations. By varying the block list different power consumption optimizations are analyzed.
 
-After recieving the list of data blocks and related locations, the client application decides which locations for each data block is chosen as download location. After that step the client application creates the file as local copy from all downloaded data blocks by itself. By reducing the block locations list before sending to the client it is configured which locations is used from the client application.
+After receiving the list of data blocks and related locations, the client application decides which locations for each data block is chosen as download location. After that step the client application creates the file as local copy from all downloaded data blocks by itself. By reducing the block locations list before sending to the client it is configured which locations is used from the client application.
 
 By comparing the power consumption while downloading files and while being idle the values given in table~\ref{tab:powerconsumptionvalues} were measured.
 
