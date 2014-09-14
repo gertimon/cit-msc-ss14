@@ -1,19 +1,18 @@
-
 \IEEEPARstart{B}{ased} on project restrictions and own decisions there was a hardware and software mixed test system created. This chapter will give a short introduction about how all the system parts are connected to each other. Detailed description about single parts will follow later.
 
 \subsection{Hardware Setup}
 
-Given by the project initiator, the institute for complex and distributed IT systems of TU Berlin (CIT) some hardware components were directly defined as prerequisites.
+Given by the project initiator, the Institute for Complex and Distributed IT systems of TU Berlin (CIT), some hardware components were directly defined as prerequisites.
 
 \begin{enumerate}
 
-\item One powerful machine with high power usage of more than 400W placed in tubit data centre (TU Berlin), later called by name \textit{Asok05}.
+\item One powerful machine with high power usage of around 350W placed in tubit data centre (TU Berlin), later called by name \textit{Asok05}.
 
 \item One energy-saving \textit{office pc} attached to TU network inside a staff office with lower bandwidth and power drain of 75W in idle mode.
 
 \item Two energy meters by type \textit{EGM-PWM-LAN} of the brand \textit{Energenie} which were used to measure the current drain of \textit{Asok05} and \textit{office pc}.
 
-\item For running services which should not influence the power usage measured by the energy meters, a virtual machine, placed in the tubit data centre was prepared to be used too.
+\item For running services which should not influence the power usage measured by the energy meters, a virtual machine, placed in the tubit data centre was prepared to be used, too.
 
 \end{enumerate}
 
@@ -25,7 +24,7 @@ The partly introduced software systems were used by team decisions described in 
 
 \begin{enumerate}
 
-\item As distributed file system Apache Haddop\textsuperscript{\textregistered} (HDFS) was used. The access to filesystem may be done using a terminal, a web client or a client as provided by Filesystem in Userspace (FUSE). HDFS consists of two main parts, the namenode which organises the filesystem structural view, and datanodes which store and replicate the data as blocks.
+\item As distributed file system Apache Haddop\textsuperscript{\textregistered} (HDFS) was used. The access to the filesystem is be done using a terminal, a web client or a client as provided by Filesystem in Userspace (FUSE). HDFS consists of two main parts, the namenode which organises the filesystem structural view, and datanodes which store and replicate the data as blocks.
 
 \item To measure network traffic, all data were sent through a virtual network. A combination of Floodlight as controller and an Open vSwitch was used. 
 
