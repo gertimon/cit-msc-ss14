@@ -16,12 +16,12 @@ The network metering with Zabbix is not only used for network managing  decision
  \subsection{Calculation of the price} 
  The basic idea of the price concept is that the owners of the \textit{Smart Filesystem} do not have to pay for the maintenance of the system. Every user has pay a part of the energy usage if the severs run in idle mode. The part depends on how much data the user has stored in the system. Moreover the user has to pay for his traffic. It should be noticed that this basic idea, which was made by the team. It can't work if just a few persons uses the system. On the other hand the idea of distributed file systems is that a lot of people use them. But it was not possibly to test that concept because there simply were not that much test users. 
  
- If we want to compute the price for each user in an hour, the first thing to do is to extend the data from Zabbix. Firstly Zabbix stores energy usage of each sever every two seconds. Secondly, if there is a traffic flow, Zabbix will store information about that every five seconds. And last but not least Zabbix stores the used data of each user if it changes. Imagine a situation where user \textit{u} transfers 100 megabytes in 10 seconds to the \textit{Asok05} server. Then the information created by zabbix looks like the table \ref{tb1}. 
+ If we want to compute the price for each user in an hour, the first thing to do is to extend the data from Zabbix. Firstly Zabbix stores energy usage of each sever every two seconds. Secondly, if there is a traffic flow, Zabbix will store information about that every five seconds. And last but not least Zabbix stores the used data of each user if it changes. Imagine a situation where user \textit{u} transfers 100 megabytes in 10 seconds to the \textit{Asok05} server. Then the information created by Zabbix looks like the table \ref{tb1}. 
 \begin{table}
 \centering
 \caption{Generated data from Zabbix of user \textit{u}}
 \begin{tabular}{|c|c|c|c|}
- \hline Time in s & Data in MB & Traffic in MB/s & Energy in W \\ 
+ \hline Time in $s$ & Data in $MB$ & Traffic in $MB/s$ & Energy in $W$ \\ 
   \hline 0 & 3000 & 0 & 400 \\ 
  \hline 1 & - & 10 & - \\ 
  \hline 2 & - & - & 450 \\ 
@@ -47,7 +47,7 @@ The network metering with Zabbix is not only used for network managing  decision
  \centering
  \caption{Extended Data of user \textit{u}}
  \begin{tabular}{|c|c|c|c|}
-  \hline Time in s & Data in MB & Traffic in MB/s & Energy in W \\ 
+  \hline Time in s & Data in $MB$ & Traffic in $MB/s$ & Energy in $W$ \\ 
    \hline 0 & 3000 & 0 & 400 \\ 
   \hline 1 & 3000 & 10 & 450 \\ 
   \hline 2 & 3000 & 10 & 450 \\ 
