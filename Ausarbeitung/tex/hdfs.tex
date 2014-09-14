@@ -26,30 +26,27 @@ The Distributed Filesystem (DFS) should be used to connect cloud storage with a 
 
 A research of known DFS brought us the choice between GlusterFS and Apache Hadoop.
 
-GlusterFS is developt by Red Hat inc. and written in C. Hadoop is part of Apache and written in Java.
+GlusterFS is developed by Red Hat Inc. and written in C. Hadoop is part of Apache and written in Java.
 
-Both are open souce and can be easily extened by our own plugins. In addition, both offers a very active community and therefore a steady development. The support of Java was the main reason for hadoop. So our decision was made.
+Both are open souce and can easily be extended by our own plugins. In addition, both offer a very active community and therefore a steady development. The support of Java was the main reason for the decision for Hadoop.
 
 \todo{move client information to this chapter???}
 
 \subsection{Hadoop setup}
 
-By creating a small cluster in the tubit data centre the power consumtion that is used for the system itself and by performing user actions like up- and downloading files is analyzed.
+By creating a small cluster in the tubit data centre the power consumption used by system itself and during performing user actions like up- and downloading files is analyzed. For the test system the DFS Apache Hadoop\textsuperscript{\textregistered} is used due to the idea having an DFS running on heterogeneous systems from different hardware and operating systems based on Java. 
 
-For our test system we have used the distributed filesystem (DFS) Apache Hadoop\textsuperscript{\textregistered}. This system was used due to the idea having an DFS running on heterogeneus systems from different hardware and operating systems based on Java. 
+Hadoop consists of two main parts. A name server that keeps the logical view of the filesystem and a various number of datanodes which keep the files organized in blocks of a fixed length. Multiple datanodes can be used to raise the available storage amount or to keep multiple replicas of files in different locations for security reasons or to share power between different machines. 
 
-Hadoop consits of two main parts. A nameserver that keeps the logic view of the filesystem and a various number of datanodes which keep the files organized in blocks of a fixed length. Multiple datanodes can be used to raise the available storage amount or to keep multiple replicas of files in different locations for security reasons or to share power between different machines. 
+The datanodes were placed on the physical machines of the test system, \textit{Asok05} and the \textit{office pc}. Both are different in power consumption and maximum bandwidth. A connection to the namenode which is placed on the virtual machine was realized through a software defined network which is described in chapter\ref{sec:sdn}.
 
-The datanodes were placed on the physical machines of our test system, \textit{Asok05} and the \textit{office pc}. Both are different in power consumption and maximum of provided bandwidth. A connection to the namenode which is placed on the virtual machine was made through a software defined network which is described in chapter\ref{sec:sdn}.
-
-To assign network traffic to users different attributes were sent to zabbix like client username, client ip and port on requests to a modified datanode.
-Combined with the information of software defined network it was possible to get an overview of current user bandwidth. Further the traffic amount for a time range was calculated. The namenode was used for sending the current user storage amount to the monitoring system.
+To assign network traffic to users different attributes are sent to zabbix like client username, client ip and port on requests to a modified datanode. Combined with the information of software defined network it is possible to get an overview of current user bandwidth. Further the traffic amount for a time range is calculated. The namenode is used for sending the current user storage amount to the monitoring system.
 
 \subsection{Data delivery strategies}
 
-The namenode is responsible to establish the first client connection. By recieving a file download request it will respond with a list of file blocks, and the assigned datanode locations. By varying the block list, different power consumption optimizations were analyzed.
+The namenode is responsible to establish the first client connection. By receiving a file download request it responds with a list of file blocks and the assigned datanode locations. By varying the block list different power consumption optimizations are analyzed.
 
-After recieving the list of data blocks and related locations, the client application decides which locations for each data block should be chosen as download location. After that step the client application creates the file as local copy from all downloaded data blocks by itself. By reducing the block locations list before sending to the client we commanded which locations should be used from the client application.
+After recieving the list of data blocks and related locations, the client application decides which locations for each data block is chosen as download location. After that step the client application creates the file as local copy from all downloaded data blocks by itself. By reducing the block locations list before sending to the client it is configured which locations is used from the client application.
 
 By comparing the power consumption while downloading files and while being idle the values given in table~\ref{tab:powerconsumptionvalues} were measured.
 
@@ -68,11 +65,11 @@ By comparing the power consumption while downloading files and while being idle 
 	\todo{are these values correct?, size of table}
 \end{table}
 
-The values for \textit{on file download} were taken by downloading a file over the tu berlin wifi.
+The values for \textit{on file download} were taken by downloading a file over the TU-Berlin Wifi.
 
-By using a static and dynamic algorithm that decides which datanode is used for downloads, different plans as economic (low priced) and fast delivery (high priced) of files were realized.
+By using a static and dynamic algorithm that decides which datanode is used for downloads, different plans like economic (low priced) and fast delivery (high priced) of files are introduced.
 
-On one side the idle costs are very different, otherwise the power consumption of \textit{office pc} rises approx. twice as \textit{Asok05} for the same request. The relation to fast and low downloaded files to power consumption was compared and showed an exponential wattage raise. The idea to use a low powered machine for the given plan was implemented as static selection. As dynamic selection the idea to use full bandwith of one machine was implemented.
+On one side the idle costs are very different, otherwise the power consumption of \textit{office pc} rises approx. twice as \textit{Asok05} for the same request. The relation to fast and slow downloaded files to power consumption is compared and showed an exponential wattage raise. The idea to use a low powered machine for the given plan is implemented as static selection. As dynamic selection the idea to use full bandwidth of one machine is implemented.
 
 \subsubsection{Static datanode selection}
 
