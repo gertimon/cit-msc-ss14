@@ -46,10 +46,30 @@
 
     \textcolor{red}{\hspace{-2cm} TODO: #1}
 
-    \PackageWarning{TODO:}{#1!}
+    \PackageWarning{TODO:}{TODO #1}
 
 }
 
+% Listing styles
+\usepackage{listings}
+
+\lstdefinelanguage{json_sw}{
+    %numbers=left,
+    numberstyle=\scriptsize,
+    stepnumber=1,
+    numbersep=8pt,
+    showstringspaces=false,
+    breaklines=true,
+    frame=lines,
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=2,  
+}
 
 
 
@@ -60,9 +80,7 @@
 
 \title{Smart File System}
 
-
-
-\author{Gert Geidel, Alexander Janzen, Alexander Platz, Franck Russel, Fabian Spie\ss, Sascha Wolke, Tobias Wollowski}
+\author{Gert Geidel, Alexander Janzen, Alexander Platz, \\ Franck Russel, Fabian Spie\ss, Sascha Wolke, Tobias Wollowski}
 
 \affil{Institut f\"ur Telekommunikationssysteme \\ Komplexe und Verteilte IT-Systeme \\ TU Berlin}        
 % make the title area
@@ -92,7 +110,7 @@
 
 
 \section{Introduction}
-
+\label{sec:intro}
 \input{tex/intro}
 
 \section{The Systemarchitecture}
