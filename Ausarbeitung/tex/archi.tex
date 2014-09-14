@@ -1,4 +1,4 @@
-Based on project restrictions and own decisions there was a hardware and software mixed test system created. This chapter will give a short introduction about how all the system parts are connected to each other. Detailed description about will follow later.
+Based on project restrictions and free decisions a test system of specific hard- and software was created. This chapter will give a short introduction about how all the system parts are connected to each other. Detailed description about will follow.
 
 \subsection{Hardware Setup}
 
@@ -23,7 +23,7 @@ The partly introduced software systems were used by team decisions described in 
 
 \begin{enumerate}
 
-\item As distributed file system Apache Hadoop (HDFS) was used. The access to the filesystem is be done using a terminal, a web client or a client as provided by Filesystem in Userspace (FUSE). HDFS consists of two main parts, the namenode which organises the filesystem structural view, and datanodes which store and replicate the data as blocks.
+\item As distributed file system Apache Hadoop (HDFS) was used. The access to the filesystem is possible by using a terminal, a web client or a client such as FUSE. HDFS consists of two main components, the namenode which organises the filesystem structural view, and datanodes which store and replicate the data as blocks. Both can be distributed on different machines.
 
 \item To measure network traffic, all data were sent through a virtual network. A combination of Floodlight as controller and an Open vSwitch was used. 
 
