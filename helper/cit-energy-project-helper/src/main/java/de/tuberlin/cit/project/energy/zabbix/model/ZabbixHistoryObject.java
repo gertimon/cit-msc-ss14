@@ -15,11 +15,12 @@ public class ZabbixHistoryObject {
 
     @JsonProperty("itemid")
     private int itemId;
-    private long clock;
+    private long clock; // seconds
     private String value;
     private long ns;
     @JsonProperty("hosts")
     private List<HostId> hostIds;
+    private String username;
 
     public static class HostId {
 
@@ -35,6 +36,12 @@ public class ZabbixHistoryObject {
         return itemId;
     }
 
+    /**
+     * returns a timestamp in seconds. for conversion to date multiply value by
+     * 1000.
+     *
+     * @return
+     */
     public long getClock() {
         return clock;
     }
@@ -58,14 +65,27 @@ public class ZabbixHistoryObject {
     public int getIntValue() {
         return Integer.parseInt(this.value);
     }
+    
+    public long getLongValue() {
+        return Long.parseLong(this.value);
+    }
 
     public float getFloatValue() {
         return Float.parseFloat(this.value);
     }
+    
+    public String getUserName() {
+        return username;
+    }
+    
+    //required for getNumericHistory methods @ZabbixAPIClient
+    public void setUserName(String name) {
+        username = name;
+    }
 
     @Override
     public String toString() {
-        return "ZabbixHistoryObject{" + "itemId=" + itemId + ", clock=" + clock + ", value=" + value + ", ns=" + ns + ", hostIds=" + hostIds + '}';
+        return "ZabbixHistoryObject{" + "itemId=" + itemId + ", clock=" + clock + ", value=" + value + ", ns=" + ns +", username=" + username + ", hostIds=" + hostIds + '}';
     }
 
 }
