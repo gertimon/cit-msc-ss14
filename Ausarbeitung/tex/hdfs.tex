@@ -84,9 +84,11 @@ For just storing files and keep them available, the office pc seems to be cheape
 
 \subsubsection{Dynamic datanode selection}
 
-To select a datanode resource dynamically a ratio between the current bandwidth of all datanodes and their consumed energy is used. The lower this ratio, the lower the used energy per transferred data and the energy consumption by one user.
+To select a datanode resource dynamically we used a ratio between the current bandwith of all datanodes and their consumed energy. The lower this ratio, the lower the used energy per transferred data and the energy consumption by one user.
 
-Finding the rack with the lowest energy consumption is not big effort. Sorting the list and take the first datanode. It is also possible not to use only the first node. Receive different blocks from different nodes could be faster because of parallel download. In this case, a profile with which a user can choose the plan to download is necessary. In the test environment usually this approach and the static selection as fallback is used as a final result.
+Finding the rack with the lowest energy consumption is not big effort. Sorting the list and take the first datanode. It is also possible not to use only the first node. Receive different blocks from different nodes could be faster because of parallel download.
+
+In this case, we need to have a profile of the user where he can choose the plan to download. In our test environment we usually used this approach and the static selection as fallback as a final result.
 
 \subsection{Client connection}
 \label{sec:hdfs_client}
