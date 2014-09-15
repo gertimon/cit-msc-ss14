@@ -40,7 +40,12 @@
           <descriptorRefs>
             <descriptorRef>jar-with-dependencies</descriptorRef>
           </descriptorRefs>
-          <archive><compress/></archive>
+          <archive>
+            <compress/>
+            <manifest>
+              <mainClass>de.tuberlin.cit.project.energy.reporting.web.WebFrontEnd</mainClass>
+            </manifest>
+          </archive>
         </configuration>
         <executions>
           <execution>
