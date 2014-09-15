@@ -17,6 +17,7 @@ public class PowerUsageSimulator {
      */
     public static void main(String[] args) throws Exception {
         ZabbixSender zabbixSender = new ZabbixSender();
+        Random rand = new Random();
         String hosts[] = DEFAULT_HOSTS;
 
         if (args.length > 0) {
@@ -24,18 +25,14 @@ public class PowerUsageSimulator {
         }
 
         System.out.println("Simulating server power consumption every " + SIMULATING_INTERVAL + " seconds.");
-        EnergyDataPusher pusher = new EnergyDataPusher();
 
         while(true) {
             for(String hostname : hosts) {
-                //double powerConsumption = 200 + rand.nextInt(100);
-            	
-            	double powerConsumption = pusher.getPower(hostname);
+                double powerConsumption = 200 + rand.nextInt(100);
                 System.out.println("Host " + hostname + " consumed " + powerConsumption + "W.");
                 zabbixSender.sendPowerConsumption(hostname, powerConsumption);
-                
-                
             }
+
             Thread.sleep(SIMULATING_INTERVAL * 1000);
         }
     }
