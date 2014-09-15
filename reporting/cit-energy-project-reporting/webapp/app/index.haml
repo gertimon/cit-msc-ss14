@@ -1,0 +1,41 @@
+!!!5
+%html
+  %head
+    %meta(charset="utf-8")
+    %meta(http-equiv="X-UA-Compatible" content="IE=edge")
+    %title CIT-Energy-Project Report
+    %meta(name="viewport" content="width=device-width, initial-scale=1")
+    -# <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+    %link(rel="stylesheet" href="stylesheets/main.css")
+    <!-- build:css stylesheets/vendor.css -->
+    %link(rel="stylesheet" href="bower_components/c3/c3.css")
+    <!-- endbuild -->
+
+  %body
+    .container
+      .navbar.navbar-default
+        .container-fluid
+          .navbar-header
+            %a.navbar-brand(href="#")
+              CIT-Energy-Project Report
+          %p.navbar-text#date-container
+          %ul.nav.navbar-nav.navbar-right
+            %li#nav-mode-offline
+              %a(href="?mode=offline") Offline
+            %li#nav-mode-online
+              %a(href="?mode=online") Online
+
+    .container#charts
+      %p.loading-banner
+        Loading...
+
+    <!-- build:js javascripts/vendor.js -->
+    %script(src="bower_components/jquery/dist/jquery.js")
+    %script(src="bower_components/bootstrap/dist/js/bootstrap.js")
+    %script(src="bower_components/d3/d3.js")
+    %script(src="bower_components/c3/c3.js")
+    <!-- endbuild -->
+
+    <!-- build:js({.tmp,app}) javascripts/app.js -->
+    %script(src="javascripts/main.js")
+    <!-- endbuild -->

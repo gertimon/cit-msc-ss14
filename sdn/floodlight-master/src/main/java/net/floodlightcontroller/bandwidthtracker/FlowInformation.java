@@ -1,36 +1,46 @@
 package net.floodlightcontroller.bandwidthtracker;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+
 public class FlowInformation {
-    private long startTime;
-    private long endTime;
-    private int switchId;
     private String srcIp;
     private String dstIp;
-    private double dataSize;
+    private String srcPort;
+    private String dstPort;
     private String srcMac;
     private String dstMac;
-    private double bandWith;
-
-
-
+    private double dataSize;
+    private double bandWidth;
     private double time;
+    private String hashKey;
 
-
-
-    public FlowInformation(int id,long startTime, long endTime, String srcMac, String dstMac, String srcIP, String dstIP, long dataSize, double time){
-        switchId = id;
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.srcIp = srcIP;
-        this.dstIp = dstIP;
-        this.srcMac = srcMac;
-        this.dstMac = dstMac;
-        this.dataSize = (dataSize/1000000);
-        this.time = time;
-        bandWith = this.dataSize/this.time;
+    public FlowInformation(){
+        this(null,null,null,null,null,null,0,0.0);
     }
 
 
+    public FlowInformation(String srcMac, String dstMac, String srcIP, String dstIP, String srcPort,String dstPort, long dataSize, double time){
+        this.srcIp = srcIP;
+        this.dstIp = dstIP;
+        this.srcMac = srcMac;
+        this.srcPort = srcPort;
+        this.dstPort = dstPort;
+        this.dstMac = dstMac;
+        this.dataSize = dataSize;
+        this.time = time ;
+        bandWidth = computeBandwidth(this.dataSize/this.time);
+        hashKey = this.srcIp + this.srcPort + this.dstIp + this.dstPort;
+    }
+
+    public double getBandWidth() {
+        return bandWidth;
+    }
+
+    public String getDstIp() {
+        return dstIp;
+    }
 
     public String getSrcIp() {
         return srcIp;
@@ -45,6 +55,14 @@ public class FlowInformation {
 
     }
 
+    public String getSrcPort() {
+        return srcPort;
+    }
+
+    public String getDstPort() {
+        return dstPort;
+    }
+
     public double getTime() {
         return time;
     }
@@ -54,16 +72,32 @@ public class FlowInformation {
     }
 
     public String toString(){
-        return "Switch: " + switchId + ", MAC_Src: " + srcMac + ", MAC_Dst: " + dstMac + ", IP_Src: " +
-                srcIp + ", IP_Dst: " + dstIp + ", Datasize in MB: " +
-                dataSize + ", DurationTime: " + time +" s" + ", Bandwidth: " + bandWith + " Mb/s";
+        String flow ="MAC_Src: " + srcMac + ", IP_Src: " +
+                srcIp + ", SrcPort:" + srcPort + ", MAC_Dst: " + dstMac + ", IP_Dst: " + dstIp + ", DstPort: "+ dstPort + ", Datasize in Bytes: " +
+                dataSize + ", DurationTime: " + time +" s" + ", Bandwidth: " + bandWidth + " Bytes/s";
+        return flow;
     }
 
-    public long getStartTime() {
-        return startTime;
+    public String getHashKey(){
+        return hashKey;
     }
 
-    public long getEndTime() {
-        return endTime;
+    public void setBandwidth(double bandwidth) {
+        this.bandWidth = computeBandwidth(bandwidth);
+    }
+
+    //May be used later...
+    private double computeBandwidth(double bandWidth){
+        if (!Double.isInfinite(bandWidth) && !Double.isNaN(bandWidth)){
+            return round(bandWidth,2);
+        }else return 0.0;
+    }
+
+    private static double round(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        BigDecimal bd = new BigDecimal(value);
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
+        return bd.doubleValue();
     }
 }

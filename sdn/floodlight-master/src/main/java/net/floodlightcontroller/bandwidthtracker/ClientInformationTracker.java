@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 
@@ -21,26 +23,18 @@ import java.util.*;
 
 
 public class ClientInformationTracker implements IFloodlightModule{
-
-
+    private final static Logger log = LoggerFactory.getLogger(ClientInformationTracker.class);
 
     protected IFloodlightProviderService provider;
     protected IRestApiService service;
 
-
-    protected static Logger log;
-
     @Override
     public Collection<Class<? extends IFloodlightService>> getModuleServices() {
-
-
         return null;
     }
 
     @Override
     public Map<Class<? extends IFloodlightService>, IFloodlightService> getServiceImpls() {
-
-
         return null;
     }
 
@@ -55,17 +49,21 @@ public class ClientInformationTracker implements IFloodlightModule{
     @Override
     public void init(FloodlightModuleContext context) throws FloodlightModuleException {
         provider = context.getServiceImpl(IFloodlightProviderService.class);
-        log = LoggerFactory.getLogger(ClientInformationTracker.class);
-
-
     }
 
     @Override
     public void startUp(FloodlightModuleContext context) throws FloodlightModuleException {
-
-            //new Thread(new FlowTableGetter(provider,log)).start();
-            provider.addOFMessageListener(OFType.FLOW_REMOVED,new RemoveMessageListener());
-
+        try {
+            FlowTableGetter flowGetter = new FlowTableGetter(provider);
+            Thread flowWorker = new Thread(flowGetter);
+            flowWorker.start();
+            RemoveMessageListener removeMessageListener = new RemoveMessageListener(flowGetter);
+            provider.addOFMessageListener(OFType.FLOW_REMOVED, removeMessageListener);
+        } catch(KeyManagementException e) {
+            throw new FloodlightModuleException("Failed to initilize remove message listener.", e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new FloodlightModuleException("Failed to initilize remove message listener.", e);
+        }
     }
 }
 

@@ -7,83 +7,101 @@ import java.rmi.UnknownHostException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 /**
- * Simple asynchron zabbix sender.
- * 
+ * Simple asynchrony zabbix sender.
+ *
+ * New data gets collected within a queue and send via an additional thread.
+ *
  * @author CIT VS Energy Project Team
- * 
+ *
  * Configure zabbix endpoint via system properties:
  * java ... -Dzabbix.hostname=localhost -Dzabbix.port=10051
  */
 public class ZabbixSender implements Runnable {
-	
-	public static final String DEFAULT_ZABBIX_HOST = "mpjss14.cit.tu-berlin.de";
-	public static final String DEFAULT_ZABBIX_PORT = "10051";
-	
-	public static final String POWER_CONSUMPTION_KEY = "datanode.power";
-	public static final String USER_CLIENT_MAPPING_DUMMY_HOST = "UserClientMappingDummy";
-	public static final String USER_IP_MAPPING_KEY = "user.%s.ip";
-	public static final String USER_PORT_MAPPING_KEY = "user.%s.port";
-	public static final String USER_BANDWIDTH_KEY = "user.%s.bandwidth";
-	public static final String USER_DURATION_KEY = "user.%s.duration";
+    private static final Log log = LogFactory.getLog(ZabbixSender.class);
 
-	private final String zabbixHostname;
-	private final int zabbixPort;
-	private final BlockingQueue<HostKeyValueTriple> valuesQueue;
-	private final Thread senderThread;
-	
-	private class HostKeyValueTriple {
-		// TODO: add timestamp
-		public final String host;
-		public final String key;
-		public final String value;
-		
-		public HostKeyValueTriple(String host, String key, String value) {
-			this.host = host;
-			this.key = key;
-			this.value = value;
-		}
-		
-		@Override
-		public String toString() {
-			return "(" + host + ", " + key + ", " + value + ")";
-		}
-	}
-	
-	public ZabbixSender(String zabbixHostname, int zabbixPort) {
-		this.zabbixHostname = zabbixHostname;
-		this.zabbixPort = zabbixPort;
-		this.valuesQueue = new ArrayBlockingQueue<HostKeyValueTriple>(10);
-		this.senderThread = new Thread(this, "ZabbixSender");
-		this.senderThread.start();
-	}
+    private final String zabbixHostname;
+    private final int zabbixPort;
+    private final BlockingQueue<ObjectNode[]> valuesQueue;
+    private final Thread senderThread;
+    private final ObjectMapper objectMapper;
+    private boolean isFinishing = false;
 
-	public ZabbixSender() {
-		this(System.getProperty("zabbix.hostname", DEFAULT_ZABBIX_HOST),
-				Integer.parseInt(System.getProperty("zabbix.port", DEFAULT_ZABBIX_PORT)));
-	}
-	
-	public void run() {
-		System.out.println("New zabbix sender with hostname " + this.zabbixHostname + " started.");
-		while(!Thread.interrupted()) {
-			try {
-				HostKeyValueTriple data = valuesQueue.take();
-//				System.out.println("Sending: " + data);
-				sendDataToZabbix(data);
-			} catch (UnknownHostException e) {
-				break;
-			} catch (IOException e) {
-				// do nothing, just drop the current (failed) value
-				System.err.println("Failed to send values to zabbix!");
-			} catch (InterruptedException e) {
-			}
-		}
-	}
-	
-	public void quit() {
-		this.senderThread.interrupt();
-	}
+    public ZabbixSender(String zabbixHostname, int zabbixPort) {
+        this.zabbixHostname = zabbixHostname;
+        this.zabbixPort = zabbixPort;
+        this.valuesQueue = new ArrayBlockingQueue<ObjectNode[]>(10);
+        this.objectMapper = new ObjectMapper();
+        this.senderThread = new Thread(this, "ZabbixSender");
+        this.senderThread.start();
 
+        log.info("New ZabbixSender initialized with zabbix hostname " + this.zabbixHostname + " and port " + this.zabbixPort + ".");
+    }
+
+    public ZabbixSender() {
+        this(System.getProperty("zabbix.hostname", ZabbixParams.DEFAULT_ZABBIX_HOST),
+                Integer.parseInt(System.getProperty("zabbix.port", ZabbixParams.DEFAULT_ZABBIX_PORT)));
+    }
+
+    /**
+     * Sender thread.
+     *
+     * Fetches data from queue and send them to zabbix.
+     */
+    @Override
+    public void run() {
+        while(!Thread.interrupted()) {
+            try {
+                while (!this.valuesQueue.isEmpty()) {
+                    ObjectNode data[] = valuesQueue.take();
+                    sendDataToZabbix(data);
+                }
+            } catch (UnknownHostException e) {
+                System.err.println("Can't find zabbix host: " + e);
+                break;
+            } catch (IOException e) {
+                // do nothing, just drop the current (failed) value
+                System.err.println("Failed to send values to zabbix!");
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                if (this.isFinishing) {
+                    if (!this.valuesQueue.isEmpty())
+                        throw new RuntimeException("Sender finished, but unsend data found in queue!");
+                    else
+                        break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Waits until all data is transfered and stops sender thread.
+     * @throws InterruptedException 
+     */
+    public void quit() throws InterruptedException {
+        this.isFinishing = true;
+        this.senderThread.interrupt();
+        this.senderThread.join();
+    }
+
+    /**
+     * @return true if send queue contains values
+     */
+    public boolean hasUnsendDataLeft() {
+        return !this.valuesQueue.isEmpty();
+    }
+
+    /**
+     * Calculate special Zabbix agent protocol header (part before data as JSON).
+     * @param msglength length of JSON part
+     * @return Zabbix agent protocol header as bytes
+     */
     private byte[] calculateHeader(int msglength) {
         return new byte[]{
             'Z', 'B', 'X', 'D',
@@ -95,53 +113,170 @@ public class ZabbixSender implements Runnable {
             '\0', '\0', '\0', '\0'};
     }
 
-    private String toJson(HostKeyValueTriple data) {
-        return "{"
-            + " \"request\":\"sender data\","
-            + " \"data\":["
-            + "   {"
-            + "     \"host\":\"" + data.host + "\","
-            + "     \"key\":\"" + data.key + "\","
-            + "     \"value\":\"" + data.value + "\""
-            + "   }"
-            + " ] }";
+    /**
+     * Create JSON data nodes with given values.
+     * @param hostname known by Zabbix
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
+     */
+    private ObjectNode createDataNode(String hostname, String key, String value, long... clock) {
+        ObjectNode data = this.objectMapper.createObjectNode();
+        data.put("host", hostname);
+        data.put("key", key);
+        data.put("value", value);
+        if (clock.length > 0)
+            data.put("clock", clock[0]);
+        else
+            data.put("clock", System.currentTimeMillis() / 1000);
+        return data;
     }
 
-    private void sendDataToZabbix(HostKeyValueTriple data) throws UnknownHostException, IOException {
-    	String json = toJson(data);
-        byte[] header = calculateHeader(json.length());
+    /**
+     * Opens a connection and send given data objects.
+     * @param data JSON objects produced by {@link #createDataNode()}
+     */
+    private void sendDataToZabbix(ObjectNode data[]) throws UnknownHostException, IOException {
+        ObjectNode request = this.objectMapper.createObjectNode();
+        request.put("request", "sender data");
+        for(ObjectNode node : data)
+            request.withArray("data").add(node);
+        request.put("clock", System.currentTimeMillis()/1000);
+
+        String jsonRequest = request.toString();
+        byte[] header = calculateHeader(jsonRequest.length());
         
+        log.debug("Sending data: " + jsonRequest);
+
         Socket clientSocket = new Socket(this.zabbixHostname, this.zabbixPort);
         DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
         outToServer.write(header);
-        outToServer.write(json.getBytes());
+        outToServer.write(jsonRequest.getBytes());
         outToServer.flush();
         outToServer.close();
         clientSocket.close();
     }
-    
-    public void sendPowerConsumption(String hostname, double powerConsumed) {
-    	valuesQueue.add(new HostKeyValueTriple(hostname, POWER_CONSUMPTION_KEY, Double.toString(powerConsumed)));
-    }
-    
-    public void sendBandwidthUsage(String hostname, String username, double bandwidthConsumed) {
-    	valuesQueue.add(new HostKeyValueTriple(hostname, String.format(USER_BANDWIDTH_KEY, username), Double.toString(bandwidthConsumed)));
+
+    /**
+     * @param dataNodeName as hostname
+     * @param powerConsumed in watt
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
+     */
+    public void sendPowerConsumption(String dataNodeName, double powerConsumed, long... clock) {
+        valuesQueue.add(new ObjectNode[] {
+            createDataNode(dataNodeName, ZabbixParams.POWER_CONSUMPTION_KEY, Double.toString(powerConsumed), clock)
+        });
     }
 
-    public void sendDuration(String hostname, String username, double duration) {
-    	valuesQueue.add(new HostKeyValueTriple(hostname, String.format(USER_DURATION_KEY, username), Double.toString(duration)));
-    }
-
-    public void sendBandwidthUsageByIp(String hostname, String ip, double bandwidthConsumed) {
-    	throw new RuntimeException("Not implemented");
+    /**
+     * @param dataNodeName as hostname
+     * @param username
+     * @param delta allocated space change in bytes on given data node
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
+     */
+    public void sendDataUsageDelta(String dataNodeName, String username, long delta, long... clock) {
+        valuesQueue.add(new ObjectNode[]{
+            createDataNode(dataNodeName, String.format(ZabbixParams.USER_DATA_USAGE_DELTA_KEY, username), Long.toString(delta), clock)
+        });
     }
     
-    public void sendLastUserIP(String username, String lastIP) {
-    	valuesQueue.add(new HostKeyValueTriple(USER_CLIENT_MAPPING_DUMMY_HOST, String.format(USER_IP_MAPPING_KEY, username), lastIP));
+    /**
+     * @param dataNodeName as hostname
+     * @param username
+     * @param usage complete allocated space by user
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
+     */
+    public void sendDataUsage(String dataNodeName, String username, long usage, long... clock) {
+        valuesQueue.add(new ObjectNode[]{
+            createDataNode(dataNodeName, String.format(ZabbixParams.USER_DATA_USAGE_KEY, username), Long.toString(usage), clock)
+        });
     }
 
-    public void sendLastUserIPAndPort(String username, String lastIP, int lastPort) {
-    	sendLastUserIP(username, lastIP);
-    	valuesQueue.add(new HostKeyValueTriple(USER_CLIENT_MAPPING_DUMMY_HOST, String.format(USER_PORT_MAPPING_KEY, username), Integer.toBinaryString(lastPort)));
+    /**
+     * @param dataNodeName as hostname
+     * @param username
+     * @param eventJson event data in JSON notation
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
+     */
+    public void sendBlockEvent(String dataNodeName, String username, String eventJson, long... clock) {
+        valuesQueue.add(new ObjectNode[]{
+            createDataNode(dataNodeName, String.format(ZabbixParams.USER_BLOCK_EVENTS_KEY, username), eventJson, clock)
+        });
+    }
+
+    /**
+     * @param dataNodeName as hostname
+     * @param username
+     * @param bandwidthConsumed in KByte/second
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
+     */
+    public void sendBandwidthUsage(String dataNodeName, String username, double bandwidthConsumed, long... clock) {
+        valuesQueue.add(new ObjectNode[] {
+            createDataNode(dataNodeName, String.format(ZabbixParams.USER_BANDWIDTH_KEY, username), Double.toString(bandwidthConsumed), clock)
+        });
+    }
+
+    /**
+     * Log internal cluster bandwidth usage (e.g. HDFS replica creation).
+     *
+     * @param dataNodeName as hostname
+     * @param username
+     * @param bandwidthConsumed in KByte/second
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
+     */
+    public void sendInternalBandwidthUsage(String dataNodeName, String username, double bandwidthConsumed, long... clock) {
+        valuesQueue.add(new ObjectNode[] {
+            createDataNode(dataNodeName, String.format(ZabbixParams.USER_INTERNAL_BANDWIDTH_KEY, username), Double.toString(bandwidthConsumed), clock)
+        });
+    }
+
+    /**
+     * @param dataNodeName as hostname
+     * @param username
+     * @param duration in seconds
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
+     */
+    public void sendDuration(String dataNodeName, String username, double duration, long... clock) {
+        valuesQueue.add(new ObjectNode[] {
+            createDataNode(dataNodeName, String.format(ZabbixParams.USER_DURATION_KEY, username), Double.toString(duration), clock)
+        });
+    }
+
+    /**
+     * @param dataNodeName as hostname
+     * @param username
+     * @param clientAddress as ip:port
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
+     */
+    public void sendUserDataNodeConnection(String dataNodeName, String username, String clientAddress, long... clock) {
+        valuesQueue.add(new ObjectNode[] {
+            createDataNode(dataNodeName, String.format(ZabbixParams.USER_LAST_ADDRESS_MAPPING_KEY, username), clientAddress, clock)
+        });
+    }
+
+    /**
+     * Logs internal data node connections (e.g. HDFS replica creation)
+     *
+     * @param dataNodeName as hostname
+     * @param username
+     * @param srcDataNodeAddress as ip:port
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
+     */
+    public void sendInternalDataNodeConnection(String dataNodeName, String username, String srcDataNodeAddress, long... clock) {
+        valuesQueue.add(new ObjectNode[] {
+            createDataNode(dataNodeName, String.format(ZabbixParams.USER_LAST_INTERNAL_ADDRESS_MAPPING_KEY, username), srcDataNodeAddress, clock)
+        });
+    }
+
+    /**
+     * Logs internal data node connections (e.g. HDFS replica creation)
+     *
+     * @param dataNodeName as hostname
+     * @param username
+     * @param lastUsedProfile see {@link EnergyConservingDataNodeFilter}
+     * @param clock optional timestamp in seconds since January 1st 1970, current time otherwise
+     */
+    public void sendLastUsedProfile(String dataNodeName, String username, String profile, long... clock) {
+        valuesQueue.add(new ObjectNode[] {
+            createDataNode(dataNodeName, String.format(ZabbixParams.USER_LAST_USED_PROFILE_KEY, username), profile, clock)
+        });
     }
 }

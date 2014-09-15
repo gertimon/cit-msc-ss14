@@ -1,0 +1,163 @@
+
+\documentclass[journal]{IEEEtran}
+
+% *** CITATION PACKAGES ***
+
+
+
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage[affil-it]{authblk}
+\usepackage{caption}
+\usepackage{hyperref}
+
+
+%\usepackage[style=numeric-comp]{biblatex}
+
+% *** GRAPHICS RELATED PACKAGES ***
+
+
+
+% graphs with tikz
+
+\usepackage{pgfplots,pgfplotstable}
+
+\usepackage{tikz}
+
+\usepackage[backend=bibtex]{biblatex}
+
+\bibliography{bib/bibliography}
+
+\usetikzlibrary{arrows,positioning,fit,backgrounds} 
+
+
+
+\hyphenation{op-tical net-works semi-conduc-tor}
+
+
+
+%%% TODO marks
+
+\usepackage{color}
+
+\newcommand{\todo}[1]{
+
+
+
+    \textcolor{red}{\hspace{-2cm} TODO: #1}
+
+    \PackageWarning{TODO:}{TODO #1}
+
+}
+
+% Listing styles
+\usepackage{listings}
+
+\lstdefinelanguage{json_sw}{
+    %numbers=left,
+    numberstyle=\scriptsize,
+    stepnumber=1,
+    numbersep=8pt,
+    showstringspaces=false,
+    breaklines=true,
+    frame=lines,
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=2,  
+}
+
+
+
+
+\begin{document}
+
+
+
+\title{Smart Filesystem}
+
+\author{Gert Geidel, Alexander Janzen, Alexander Platz, \\ Franck Russel, Fabian Spie\ss, Sascha Wolke, Tobias Wollowski}
+
+\affil{Institut f\"ur Telekommunikationssysteme \\ Komplexe und Verteilte IT-Systeme \\ TU Berlin}        
+% make the title area
+
+\maketitle
+
+
+
+
+
+\begin{abstract}
+
+%\boldmath
+
+\input{tex/abstract}
+
+\end{abstract}
+
+
+
+\IEEEpeerreviewmaketitle
+
+
+
+
+
+
+
+\section{Introduction}
+\label{sec:intro}
+\input{tex/intro}
+
+\section{System Architecture}
+
+\input{tex/archi}
+
+
+
+\section{Filesystem}
+
+\input{tex/hdfs}
+
+
+
+\section{Software Defined Network}
+\label{sec:sdn}
+\input{tex/sdn}
+
+
+
+\section{Monitoring}
+
+
+
+\input{tex/zabbix}
+
+\input{tex/energyMetering}
+
+\section{Report Generator Overview}
+\input{tex/report}
+
+
+\section{Outlook}
+\label{sec:outlook}
+\input{tex/outlook}
+
+
+
+\section{Conclusion}
+\input{tex/conclusion}
+
+
+
+
+\printbibliography
+
+
+\end{document}
+
+

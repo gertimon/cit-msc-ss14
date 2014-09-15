@@ -1,0 +1,42 @@
+\subsection{Energy Metering}
+
+\subsubsection{Overview}
+A main aspect of the project is the monitoring of energy consumption of the different machines. Interesting to know is how high are the peaks when a file system operation is proceeding. Possibilities have been investigated how slow and fast data transfer and operations could be separated in two user-profiles \textit{fast} and \textit{economic} as mentioned in section~\ref{sec:intro}. Users could choose whether a file system operation should proceed fast with the given energy usage or whether it should not consume much energy but with lesser speed. A user-specified energy consumption where the amount of used energy is visible is one of the steps that is met by the energy metering. The Energy consumption of the two machines of the live system is monitored continuously by an energy meter for each machine. The data then are sent via a developed module every two seconds to the monitoring system Zabbix. In the project setup the more powerful and faster machine is the \textit{Asok05} and the slower and less energy-consuming machine is the \textit{office pc}. A user who configured its profile as \textit{fast} do file system operations on the Asok05, the \textit{economic} profile is directed to the \textit{office pc}.
+
+\subsubsection{Energy Meter}
+\label{sec:EnergyMeter}
+The Energy Meter \textit{EGM-PWM-LAN} of the brand \textit{Energenie} was linked to the power supply unit of each computers. The metering device has an Ethernet interface for connecting it to the existing network. Also it comes with an integrated web server what makes it is possible to connect to the meter through it to perform configurations and to see current energy data. Furthermore the web interface can be reached via internet if it is connected to a router with internet access. Energenie offers a cloud service \cite{Energenie.2014} where the energy meter can be registered. Thereafter energy data are sent and diagrams are created by the cloud service. Generated diagrams illustrate the current power usage and the energy consumed in a certain time window. It is also possible to configure the electricity price divided in night- and daytime to show how much money the metered machine has cost.
+
+\subsubsection{System Setup}
+An overview of the energy metering setup in the live system can be seen in figure \ref{fig:energyMeteringSetup}. As mentioned in the previous section \nameref{sec:EnergyMeter} each energy meter is connected to a machine. The developed module $ EnergyDataPusher $ which fetches the current energy consumption is located in a virtual machine running on the \textit{Asok05}. The energy data are fetched every two seconds via the module and is then delivered to the $ ZabbixSender $. This module then is responsible for transmitting the information to the Zabbix monitoring.
+
+\begin{figure}
+	\centering
+	\def\svgwidth{\columnwidth}
+	\input{img/energy_SystemSetup.pdf_tex}
+	\caption{Energy metering system setup}
+	\label{fig:energyMeteringSetup}
+\end{figure}
+
+\subsubsection{Data Collection}
+As the current data are shown on the web interface and is refreshed with every call, the power value is parsed out of the website. The $ EnergyDataPusher $ calls the interface every two seconds, reads the website source code and parses the value. The power value is not yet the actual value, it needs to be calculated with a fixed value of $ 466 $. This information was discovered in the Javascript-file which treats the raw data of the energy meter before it is displayed in the web interface. Other data sent from the energy meter are treated with other constants. That are some energy sensor dependant workarounds which is assumed like it is. Thereafter the $ EnergyDataPusher $ calls the $ ZabbixSender $ and passes the parsed values as parameters. The $ ZabbixSender $ uses the API of Zabbix to transmit the data. The sent data are the \textit{hostname} of the machine and the \textit{power consumption}.
+
+\subsubsection{Energy Meter Communication Protocol}
+With the help of the developed script $ energenie-cloud-dissector.lua $, which is attached, and Wireshark could be figured out how the communication protocol of the energy meter works and how the data are transmitted to the cloud service. The diagram in figure \ref{fig:energyCommunicationProtocol} shows the call flow between the Energy Meter (EM) and the Cloud. The EM initiates the connection via a Register Request and sends its MAC- and IP-Address to the cloud service. The cloud then acknowledges the register request with its IP-Address and its ID. After the communication channel has been established the EM sends every ten seconds its metered data. Which includes: Cloud-ID, time on device, Power in $ W $, Energy in $ kWh $ divided in night and day, cloud heartbeat request. After a certain time sending these data the EM requests a cloud heartbeat to assure that the connection is still up and data arrive at the cloud service.
+
+\begin{figure}
+	\centering
+	\def\svgwidth{0.75\columnwidth}
+	\input{img/energy_CommunicationProtocol.pdf_tex}
+	\caption{Call flow energy meter protocol}
+	\label{fig:energyCommunicationProtocol}
+\end{figure}
+
+Because of routing configurations which would have needed to be done and the missing authorisation to access parts of the system the energy metering keeps running the version of parsing the values out of the web interface. For that data sent by the energy meter need to be routed through a machine where it is possible to listen on the traffic. 
+
+
+
+
+
+
+
